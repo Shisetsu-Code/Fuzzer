@@ -150,8 +150,9 @@ export class PragmaticSession{
      }
    }
    const impact=classifyImpact(snapshots);
+   let finalBet=null;try{finalBet=(await this.economics()).bet;}catch{reason='BET_FINAL_STATE_UNKNOWN';}
    return {status:!reason&&impact.roundTripVerified?'OBSERVED':'PENDING',reason,before,after:snapshots[1]||null,actions,snapshots,wire,impact,
-     restored:before.bet!==null&&before.bet===snapshots.at(-1)?.bet};
+     finalBet,restored:before.bet>0&&before.bet===finalBet};
  }
 }
 
