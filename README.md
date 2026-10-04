@@ -9,7 +9,7 @@ Scripts independientes por proveedor para ejecutar demos mediante el MCP local H
 3. Guardar el `job_id` y consultar `pragmatic_fuzz_result`. Nunca repetir el inicio para consultar progreso.
 
 ```json
-{"tab_id":3,"game_url":"https://www.pragmaticplay.com/en/games/gates-of-olympus/","execute":true,"max_branches":8,"max_steps":100}
+{"tab_id":3,"game_url":"https://www.pragmaticplay.com/en/games/gates-of-olympus/","execute":true,"max_steps":100,"timeout_ms":360000}
 ```
 
 El trabajo usa pestañas DEMO nuevas con sesiones aisladas. No navega ni graba sobre la pestaña original. Cada rama reproduce su ruta en una demo nueva; guarda su HAR antes de cerrar la pestaña propia. La mayoría de edad debe haber sido confirmada por el usuario si el sitio la solicita.
@@ -57,8 +57,18 @@ No hay un número fijo de ramas por defecto. `max_branches` es un presupuesto op
 
 Los nodos incluyen una referencia a la serie económica medida de esa opción, cuando existe; no se completa la economía de un hermano por semejanza. Seleccionar una compra anidada tampoco demuestra envío: si falta una confirmación o el spin requerido no está demostrado, permanece pendiente.
 
-`pragmatic_fuzz_result` pagina las ramas con offset/limit y el grafo con graph_offset/graph_limit; graph.next_offset indica otra página. El contrato completo se guarda localmente. Sigue pendiente validar en vivo todas las variantes de menús anidados y corregir la continuación del bonus que falló en la muestra de cinco juegos.
+`pragmatic_fuzz_result` pagina las ramas con offset/limit y el grafo con graph_offset/graph_limit; graph.next_offset indica otra página. El contrato completo se guarda localmente. La [validación de cinco demos](docs/validation-pragmatic-five-2026-10-04.md) documenta inventarios, ramas pendientes y el reintento que confirmó una compra completa tras corregir el cierre. Siguen pendientes variantes de menús anidados y transiciones de bonus específicas.
 
 ## Procedencia
 
 El runtime de Pragmatic y su helper proceden de [Parser](https://github.com/Shisetsu-Code/Parser), referencia consultada `56817ddd45a864ad91087fa576319b9aad0e6436`. Fuzzer conserva el árbol y las invocaciones del cliente; añade recorrido por ramas, sesiones independientes, comparación de apuestas, captura y herramientas MCP propias.
+
+## Continuaciones y Ante Bet
+
+El controlador activo tiene prioridad sobre la respuesta del servidor. Cuando `StageSpin` sigue registrado, se termina la animación mediante su evento Stop antes de seleccionar opciones. `StageResultFreeSpin` programa sus propios giros: no se envía el botón normal de spin ni una petición directa al servidor para forzarlos. Su confirmación se basa en la instancia activa y `fsStartConfirmed`, además de los controles visibles.
+
+El cierre puede ser una transición del cliente sin una petición nueva. Si se registró un `doCollect` exitoso con `na=s`, el runtime conserva el estado final del bonus y permanece el controlador de resultado, se usa su evento Win/Lose registrado para cerrar la pantalla. No se aplica a un bonus sin cobro confirmado.
+
+`BetLevelV2.betLevelSettings.betLevelScale` permite enumerar uno o varios niveles de Ante Bet con su multiplicador respecto al nivel cero. Cada nivel se activa mediante el controlador real, validando disponibilidad. La verificación exige dos respuestas nuevas de giros normales con `bl` correcto y sin `pur`; activar el modo no prueba por sí solo su ejecución. Los modos no identificados permanecen pendientes.
+
+`timeout_ms` controla el presupuesto del recorrido, entre 1.000 y 600.000 ms; por defecto 180.000. La preparación y el guardado de HAR pueden agregar tiempo. Agotar el presupuesto conserva las rutas pendientes y nunca convierte un resultado parcial en completo.

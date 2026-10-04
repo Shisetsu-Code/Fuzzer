@@ -61,6 +61,7 @@ export class PragmaticSession{
      costSource:o.subtype==='buy_feature'?'derived:purchase-config.bet*BetDisplayed':'unknown',control:o.control}))};
  }
  async latestExchange(){const list=await this.entries();const entry=list.filter(e=>/gameService/.test(e.request?.url||'')&&e.response?.status===200&&e.response?.content?.text).at(-1);if(!entry)return {};const c=entry.response.content;return form(c.encoding==='base64'?Buffer.from(c.text,'base64').toString():c.text);}
+ async latestRequest(){return form((await this.entries()).filter(e=>/gameService/.test(e.request?.url||'')&&e.response?.status===200&&body(e)).at(-1)?.request?.postData?.text||'');}
  async purchaseMenu(){
    return this.frame.evaluate(()=>{
      let open=false;try{open=!!(Vars.FeaturePurchaseWindowIsOpen&&XT.GetBool(Vars.FeaturePurchaseWindowIsOpen));}catch{}
@@ -76,9 +77,11 @@ export class PragmaticSession{
  async observe(){
    await this.syncInit();const state=await this.provider.protocolState(this.frame),exchange=await this.latestExchange();
    if(!state)return {phase:'unknown',inventoryKnown:false,options:[]};
+   if(this.started&&state.stages?.some(s=>s.name==='StageSpin'||s.name==='StageResultFreeSpin'&&s.fsStartConfirmed===false&&state.fsStartNeedsConfirmation===true))return {phase:'feature',terminal:false,inventoryKnown:!!this.initial,options:[],state,exchange,continueAction:{id:'runtime:continue',kind:'continue'}};
+   if(this.started&&state.logicIsFreeSpin&&(state.freeSpins?.collected===true||state.freeSpins?.last===true||state.freeSpins?.inactive===true&&state.freeSpins.current===0&&state.freeSpins.max===0)&&exchange.na==='s'&&(await this.latestRequest()).action==='doCollect'&&state.stages?.some(s=>s.name==='StageResultFreeSpin'))return {phase:'feature',terminal:false,inventoryKnown:!!this.initial,options:[],state,exchange,continueAction:{id:'runtime:finish',kind:'runtime_finish'}};
    const picks=(state.pickerControls||[]).filter(c=>c.active!==false);
    if(picks.length)return {phase:'choice',inventoryKnown:!!this.initial,options:picks.map((c,i)=>({id:`pick:${c.root}:${c.name}:${c.event}:${i}`,kind:'pick',control:c})),state,exchange};
-   const finish=(state.bonusControls||[]).find(c=>c.active===true&&/FreeSpinsWindowWinCollectPressed|BonusRoundsOnContinuePressed/.test(c.event));
+   const finish=(state.bonusControls||[]).find(c=>c.active===true&&/FreeSpinsWindow(?:Win|Lose)CollectPressed|BonusRoundsOnContinuePressed/.test(c.event));
    if(this.started&&finish)return {phase:'feature',terminal:false,inventoryKnown:!!this.initial,options:[],state,exchange,continueAction:{id:'feature:finish',kind:'finish',control:finish}};
    if(this.started){
      const menu=await this.purchaseMenu();
@@ -108,7 +111,17 @@ export class PragmaticSession{
      if(selected?.ok===true&&selected.needsSpin===true){const submitted=await this.provider.press(this.frame,'spin');return {...submitted,selection:selected};}
      return selected;
    }
-   if(action.kind==='modifier'){this.started=true;return this.provider.pressControl(this.frame,action.control);}
+   if(action.kind==='modifier'){
+     this.started=true;
+     if(action.control?.kind==='BetLevelV2'){
+       const selected=await this.provider.setBetLevel(this.frame,action.control);
+       if(!selected.ok)return selected;
+       const verified=await this.verifyBase({expectedBetLevel:action.control.level});
+       this.pendingVerified=verified;
+       return {...selected,ok:verified,normalRoundsVerified:verified,reason:verified?null:'Ante Bet normal rounds or bl payload not confirmed'};
+     }
+     return this.provider.pressControl(this.frame,action.control);
+   }
    if(action.kind==='pick')return this.provider.pressProtocolChoice(this.frame,action.control);
    if(action.kind==='nested_buy'){
      this.started=true;
@@ -125,9 +138,22 @@ export class PragmaticSession{
      },{control:action.control});
    }
    if(action.kind==='finish'){this.pendingKind='continue';this.waitingOnly=true;return this.provider.pressProtocolChoice(this.frame,action.control);}
+   if(action.kind==='runtime_finish'){
+     this.pendingKind='continue';this.waitingOnly=true;
+     const serverCollected=(await this.latestRequest()).action==='doCollect'&&(await this.latestExchange()).na==='s';
+     return this.frame.evaluate(serverCollected=>{
+       const f=XT.GetObject(Vars.ReceivedFreeSpinsResponse);
+       if(!serverCollected||!(f?.IsFreeSpinsCollected===true||f?.IsLastFreeSpin===true||f?.IsFreeSpin===false&&f.CurrentSpin===0&&f.MaxSpins===0)||XT.GetBool(Vars.Logic_IsFreeSpin)!==true)return {ok:false,reason:'Free spin collection no longer proven'};
+       const won=f.TotalWin>0||(Vars.SpinCycleWinReceived&&XT.GetDouble(Vars.SpinCycleWinReceived)>0);
+       const event=Vars[won?'Evt_DataToCode_FreeSpinsWindowWinCollectPressed':'Evt_DataToCode_FreeSpinsWindowLoseCollectPressed'];
+       const registered=(XT.variablesEvent?.[event]||[]).some(holder=>(holder.OnValueChanged||[]).some(h=>h.isEnabled!==false&&h.object?.xtEnabled!==false&&h.object?.constructor?.name==='StageResultFreeSpin'));
+       if(!registered)return {ok:false,reason:'Active free spin result handler missing'};
+       XT.TriggerEvent(event);return {ok:true,kind:'free-spin-result-close',waiting:true};
+     },serverCollected);
+   }
    if(action.kind==='continue'){
      const exchange=await this.latestExchange(),state=await this.provider.protocolState(this.frame);
-     if(exchange.na==='c'&&state?.logicIsFreeSpin===true){this.waitingOnly=true;this.awaitingFinish=true;return {ok:true,waiting:true,kind:'collect-ui-wait',state};}
+     if(exchange.na==='c'&&state?.logicIsFreeSpin===true&&!state.stages?.some(s=>s.name==='StageSpin')){this.waitingOnly=true;this.awaitingFinish=true;return {ok:true,waiting:true,kind:'collect-ui-wait',state};}
      this.awaitingFinish=false;
      const r=await this.provider.continueProtocol(this.frame,exchange);
      if(r?.ok===false&&r.kind==='spin'&&r.state?.logicIsFreeSpin===true){this.waitingOnly=true;return {...r,ok:true,waiting:true,kind:'feature-end-wait'};}
@@ -137,26 +163,34 @@ export class PragmaticSession{
    return {ok:false,reason:'Unknown Pragmatic action'};
  }
  async waitForTransition(before,{deadline=Date.now()+15000,signal}={}){
+   if(this.pendingVerified){this.pendingVerified=false;return true;}
    const marker=this.pendingMarker??await this.wireMarker();const protocol=JSON.stringify(before.state||{});
    const until=Math.min(deadline,Date.now()+15000);
    while(Date.now()<until&&!signal?.aborted){
      await sleep(200);const e=await this.latestExchange(),s=await this.provider.protocolState(this.frame);
      if(await this.wireMarker()!==marker)return true;
      if(this.pendingKind==='nested_buy'&&before.menuSignature&&JSON.stringify(await this.purchaseMenu())!==before.menuSignature)return true;
-     if(this.awaitingFinish){if(s&&(!s.logicIsFreeSpin&&s.canSpin===true||(s.bonusControls||[]).some(c=>c.active===true&&/FreeSpinsWindowWinCollectPressed|BonusRoundsOnContinuePressed/.test(c.event))))return true;continue;}
+     if(this.awaitingFinish){if(s&&(!s.logicIsFreeSpin&&s.canSpin===true||(s.bonusControls||[]).some(c=>c.active===true&&/FreeSpinsWindow(?:Win|Lose)CollectPressed|BonusRoundsOnContinuePressed/.test(c.event))))return true;continue;}
      if(this.pendingKind==='modifier'&&s&&JSON.stringify(s)!==protocol)return true;
      if(this.pendingKind==='continue'&&this.waitingOnly&&s&&JSON.stringify(s)!==protocol&&
        (s.canSpin===true||s.confirmFSActive===true||(s.pickerControls||[]).some(c=>c.active!==false)||(s.bonusControls||[]).some(c=>c.active===true)))return true;
    }return false;
  }
- async verifyBase(){
+ async verifyBase({expectedBetLevel}={}){
    for(let i=0;i<2;i++){
+     const previous=new Set((await this.entries()).map(key));
      const before={exchange:await this.latestExchange(),state:await this.provider.protocolState(this.frame)};
      this.pendingMarker=await this.wireMarker();this.pendingKind='spin';
      const action=await this.provider.press(this.frame,'spin');if(action?.ok!==true||!(await this.waitForTransition(before,{deadline:Date.now()+15000})))return false;
      const until=Date.now()+15000;let ok=false;
      while(Date.now()<until){const s=await this.provider.protocolState(this.frame),e=await this.latestExchange();if(s?.canSpin===true&&!s.logicIsFreeSpin&&!s.spinBlockingFeatureIsRunning&&!s.respinInProgress&&!(s.pickerControls||[]).some(c=>c.active!==false)&&e.na==='s'){ok=true;break;}await sleep(200);}
      if(!ok)return false;
+     if(expectedBetLevel!==undefined){
+       const last=(await this.entries()).filter(e=>!previous.has(key(e))&&e.response?.status===200&&new URLSearchParams(e.request?.postData?.text||'').get('action')==='doSpin').at(-1);
+       const payload=new URLSearchParams(last?.request?.postData?.text||'');
+       const response=form(last?body(last):'');
+       if(!last||!payload.has('bl')||Number(payload.get('bl'))!==expectedBetLevel||payload.has('pur')||!['s','c'].includes(response.na)||response.fs!==undefined||response.fsmax!==undefined)return false;
+     }
    }return true;
  }
  async wireMarker(){const entries=await this.entries();const latest=entries.filter(e=>/gameService/.test(e.request?.url||'')&&e.response?.status===200&&body(e)).at(-1);return latest?key(latest):null;}
@@ -192,4 +226,3 @@ export class PragmaticSession{
      finalBet,restored:before.bet>0&&before.bet===finalBet};
  }
 }
-

@@ -27,3 +27,7 @@ La ejecución local `f65fdf5e-d9f7-4fbb-9231-03112b859d16` en Gates of Olympus c
 Pragmatic es el único proveedor implementado. La validación del experimento de apuesta es real; las compras/elecciones dependen del árbol del proveedor y conservan estados pendientes explícitos. No se certifican todos los juegos ni se han validado todas las compras anidadas en vivo. La fase adicional de 4–6 valores distintos y otras dimensiones no está implementada.
 
 La compra real de Gates fue enviada con pur=0 y respuesta 200. El recorrido posterior logró llegar a fs=15 y na=c usando el evento directo de servidor, pero no completó el cobro en UI; priorizar el evento de cliente tampoco completó la siguiente transición. Se conserva PENDING/TRANSITION_TIMEOUT: no hay prueba de cierre completo. HasAnteBet también sigue pendiente por no identificar su control. La protección final contra doble cierre pasa pruebas automatizadas. Suite actual: 27/27.
+
+## Ronda actual: cinco demos
+
+El registro anterior corresponde a una versión previa. La ronda de 2026-10-04 descubrió once compras y niveles múltiples de Ante Bet. Cuatro ramas Ante Bet se comprobaron; después de corregir el cierre del cliente, un reintento confirmó la compra 0 de Big Bass hasta dos tiradas normales. Helios conserva su inventario cuando un probe queda pendiente. La suite actual pasa 45 pruebas. Véase [el informe completo](validation-pragmatic-five-2026-10-04.md) para límites, revisiones y pendientes; la muestra original no certificó ningún juego entero.
