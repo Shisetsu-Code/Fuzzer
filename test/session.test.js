@@ -45,3 +45,12 @@ test('an accepted increase at the maximum never decreases the original stake',as
  s.economics=async()=>({bet:10,variables:{},options:[]});
  const probe=await s.probeBet();assert.equal(probe.status,'PENDING');assert.equal(probe.restored,true);assert.deepEqual(calls,['bet_increase']);
 });
+test('restoration is verified from a fresh final runtime read rather than the baseline snapshot',async()=>{
+ let reads=0;const s=new PragmaticSession({provider:{press:async()=>({ok:true})}});
+ s.economics=async()=>({bet:++reads===5?11:10,variables:{},options:[]});
+ const probe=await s.probeBet();assert.equal(probe.restored,false);assert.equal(probe.finalBet,11);
+});
+test('collect waits for the real final feature control instead of invoking an inactive event',async()=>{
+ const s=new PragmaticSession({entries:async()=>[],provider:{protocolState:async()=>({logicIsFreeSpin:true}),continueProtocol:async()=>{throw new Error('Inactive collect must not be invoked');}}});
+ s.latestExchange=async()=>({na:'c'});const result=await s.perform({kind:'continue'});assert.equal(result.kind,'collect-ui-wait');assert.equal(result.waiting,true);
+});

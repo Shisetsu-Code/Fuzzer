@@ -94,7 +94,10 @@ export class PragmaticSession{
    if(action.kind==='pick')return this.provider.pressProtocolChoice(this.frame,action.control);
    if(action.kind==='finish'){this.pendingKind='continue';this.waitingOnly=true;return this.provider.pressProtocolChoice(this.frame,action.control);}
    if(action.kind==='continue'){
-     const r=await this.provider.continueProtocol(this.frame,await this.latestExchange());
+     const exchange=await this.latestExchange(),state=await this.provider.protocolState(this.frame);
+     if(exchange.na==='c'&&state?.logicIsFreeSpin===true){this.waitingOnly=true;this.awaitingFinish=true;return {ok:true,waiting:true,kind:'collect-ui-wait',state};}
+     this.awaitingFinish=false;
+     const r=await this.provider.continueProtocol(this.frame,exchange);
      if(r?.ok===false&&r.kind==='spin'&&r.state?.logicIsFreeSpin===true){this.waitingOnly=true;return {...r,ok:true,waiting:true,kind:'feature-end-wait'};}
      this.waitingOnly=!!r?.waiting||['confirm-fs-start','cascade-stop'].includes(r?.kind);
      return r?.waiting?{...r,ok:true}:r;
@@ -107,6 +110,7 @@ export class PragmaticSession{
    while(Date.now()<until&&!signal?.aborted){
      await sleep(200);const e=await this.latestExchange(),s=await this.provider.protocolState(this.frame);
      if(await this.wireMarker()!==marker)return true;
+     if(this.awaitingFinish){if(s&&(!s.logicIsFreeSpin&&s.canSpin===true||(s.bonusControls||[]).some(c=>c.active===true&&/FreeSpinsWindowWinCollectPressed|BonusRoundsOnContinuePressed/.test(c.event))))return true;continue;}
      if(this.pendingKind==='modifier'&&s&&JSON.stringify(s)!==protocol)return true;
      if(this.pendingKind==='continue'&&this.waitingOnly&&s&&JSON.stringify(s)!==protocol&&
        (s.canSpin===true||s.confirmFSActive===true||(s.pickerControls||[]).some(c=>c.active!==false)||(s.bonusControls||[]).some(c=>c.active===true)))return true;
@@ -150,8 +154,9 @@ export class PragmaticSession{
      }
    }
    const impact=classifyImpact(snapshots);
+   let finalBet=null;try{finalBet=(await this.economics()).bet;}catch{reason='BET_FINAL_STATE_UNKNOWN';}
    return {status:!reason&&impact.roundTripVerified?'OBSERVED':'PENDING',reason,before,after:snapshots[1]||null,actions,snapshots,wire,impact,
-     restored:before.bet!==null&&before.bet===snapshots.at(-1)?.bet};
+     finalBet,restored:before.bet>0&&before.bet===finalBet};
  }
 }
 
