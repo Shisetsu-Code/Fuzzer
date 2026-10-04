@@ -58,3 +58,8 @@ test('pressing the final control clears the preceding UI wait before checking it
  const s=new PragmaticSession({entries:async()=>[],provider:{pressProtocolChoice:async()=>({ok:true})}});s.awaitingFinish=true;
  await s.perform({kind:'finish',control:{index:1}});assert.equal(s.awaitingFinish,false);
 });
+test('discovers every active purchase in a later menu rather than discarding it after started',async()=>{
+ const s=new PragmaticSession({entries:async()=>[],provider:{protocolState:async()=>({canSpin:true,pickerControls:[]})}});s.started=true;
+ s.purchaseMenu=async()=>({open:true,selected:0,options:Array.from({length:6},(_,index)=>({kind:'FeaturePurchaseOption',root:0,index,name:'Choice'+index,purchaseIndex:index}))});
+ const observed=await s.observe();assert.equal(observed.phase,'purchase-menu');assert.equal(observed.terminal,false);assert.equal(observed.options.length,6);
+});

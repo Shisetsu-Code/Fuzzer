@@ -61,6 +61,18 @@ export class PragmaticSession{
      costSource:o.subtype==='buy_feature'?'derived:purchase-config.bet*BetDisplayed':'unknown',control:o.control}))};
  }
  async latestExchange(){const list=await this.entries();const entry=list.filter(e=>/gameService/.test(e.request?.url||'')&&e.response?.status===200&&e.response?.content?.text).at(-1);if(!entry)return {};const c=entry.response.content;return form(c.encoding==='base64'?Buffer.from(c.text,'base64').toString():c.text);}
+ async purchaseMenu(){
+   return this.frame.evaluate(()=>{
+     let open=false;try{open=!!(Vars.FeaturePurchaseWindowIsOpen&&XT.GetBool(Vars.FeaturePurchaseWindowIsOpen));}catch{}
+     const options=[];let selected=null;
+     try{selected=XT.GetObject(Vars.FeaturePurchase)?.purchaseIndex??null;}catch{}
+     if(open)for(const [rootIndex,root] of (globalThis.globalRuntime?.sceneRoots||[]).entries()){
+       if(globalThis.FeaturePurchaseOption){const items=root.GetComponentsInChildren(FeaturePurchaseOption,true)||[];items.forEach((item,index)=>{if(item.gameObject?.activeInHierarchy===true&&(typeof item.OnClick==='function'||typeof item.OnPress==='function'))options.push({root:rootIndex,index,kind:'FeaturePurchaseOption',name:String(item.gameObject?.name||''),purchaseIndex:item.purchaseIndex??null});});}
+       if(globalThis.FeaturePurchaseV2){const managers=root.GetComponentsInChildren(FeaturePurchaseV2,true)||[];managers.forEach((manager,managerIndex)=>(manager.purchaseOptions||[]).forEach((item,index)=>{if(item?.gameObject?.activeInHierarchy===true&&(typeof item.OnClick==='function'||typeof item.Click==='function'||typeof item.OnPress==='function'))options.push({root:rootIndex,managerIndex,index,kind:'FeaturePurchaseV2Option',name:String(item.gameObject?.name||''),purchaseIndex:item.purchaseIndex??null});}));}
+     }
+     return {open,selected,options};
+   });
+ }
  async observe(){
    await this.syncInit();const state=await this.provider.protocolState(this.frame),exchange=await this.latestExchange();
    if(!state)return {phase:'unknown',inventoryKnown:false,options:[]};
@@ -68,6 +80,12 @@ export class PragmaticSession{
    if(picks.length)return {phase:'choice',inventoryKnown:!!this.initial,options:picks.map((c,i)=>({id:`pick:${c.root}:${c.name}:${c.event}:${i}`,kind:'pick',control:c})),state,exchange};
    const finish=(state.bonusControls||[]).find(c=>c.active===true&&/FreeSpinsWindowWinCollectPressed|BonusRoundsOnContinuePressed/.test(c.event));
    if(this.started&&finish)return {phase:'feature',terminal:false,inventoryKnown:!!this.initial,options:[],state,exchange,continueAction:{id:'feature:finish',kind:'finish',control:finish}};
+   if(this.started){
+     const menu=await this.purchaseMenu();
+     if(menu.open){return {phase:'purchase-menu',terminal:false,inventoryKnown:!!this.initial,menuSignature:JSON.stringify(menu),state,exchange,
+       options:menu.options.map(c=>({id:`nested:${c.kind}:${c.root}:${c.managerIndex??0}:${c.index}:${c.name}`,kind:'nested_buy',index:c.purchaseIndex,control:c}))};}
+     if(this.pendingKind==='nested_buy'&&Number.isInteger(menu.selected)&&menu.selected>=0)return {phase:'purchase-selected',terminal:false,inventoryKnown:!!this.initial,options:[],state,exchange,reason:'Nested purchase selected; submission/confirmation not yet proven'};
+   }
    const base=state.canSpin===true&&!state.logicIsFreeSpin&&!state.spinBlockingFeatureIsRunning&&!state.respinInProgress&&exchange.na==='s';
    if(base&&!this.started){
      const economic=await this.provider.listEconomicPurchases(this.frame);
@@ -92,6 +110,20 @@ export class PragmaticSession{
    }
    if(action.kind==='modifier'){this.started=true;return this.provider.pressControl(this.frame,action.control);}
    if(action.kind==='pick')return this.provider.pressProtocolChoice(this.frame,action.control);
+   if(action.kind==='nested_buy'){
+     this.started=true;
+     return this.frame.evaluate(({control})=>{
+       const root=globalThis.globalRuntime?.sceneRoots?.[control.root];if(!root)return {ok:false,reason:'Nested purchase root unavailable'};
+       let target;
+       if(control.kind==='FeaturePurchaseOption'&&globalThis.FeaturePurchaseOption)target=root.GetComponentsInChildren(FeaturePurchaseOption,true)?.[control.index];
+       if(control.kind==='FeaturePurchaseV2Option'&&globalThis.FeaturePurchaseV2)target=root.GetComponentsInChildren(FeaturePurchaseV2,true)?.[control.managerIndex]?.purchaseOptions?.[control.index];
+       if(!target||target.gameObject?.activeInHierarchy!==true||String(target.gameObject.name||'')!==control.name||control.purchaseIndex!=null&&target.purchaseIndex!==control.purchaseIndex)return {ok:false,reason:'Exact nested purchase control unavailable'};
+       if(typeof target.OnClick==='function'){target.OnClick();return {ok:true,strategy:'nested control OnClick'};}
+       if(typeof target.Click==='function'){target.Click();return {ok:true,strategy:'nested control Click'};}
+       if(typeof target.OnPress==='function'){target.OnPress(true);target.OnPress(false);return {ok:true,strategy:'nested control OnPress'};}
+       return {ok:false,reason:'Nested purchase control not executable'};
+     },{control:action.control});
+   }
    if(action.kind==='finish'){this.pendingKind='continue';this.waitingOnly=true;return this.provider.pressProtocolChoice(this.frame,action.control);}
    if(action.kind==='continue'){
      const exchange=await this.latestExchange(),state=await this.provider.protocolState(this.frame);
@@ -110,6 +142,7 @@ export class PragmaticSession{
    while(Date.now()<until&&!signal?.aborted){
      await sleep(200);const e=await this.latestExchange(),s=await this.provider.protocolState(this.frame);
      if(await this.wireMarker()!==marker)return true;
+     if(this.pendingKind==='nested_buy'&&before.menuSignature&&JSON.stringify(await this.purchaseMenu())!==before.menuSignature)return true;
      if(this.awaitingFinish){if(s&&(!s.logicIsFreeSpin&&s.canSpin===true||(s.bonusControls||[]).some(c=>c.active===true&&/FreeSpinsWindowWinCollectPressed|BonusRoundsOnContinuePressed/.test(c.event))))return true;continue;}
      if(this.pendingKind==='modifier'&&s&&JSON.stringify(s)!==protocol)return true;
      if(this.pendingKind==='continue'&&this.waitingOnly&&s&&JSON.stringify(s)!==protocol&&
