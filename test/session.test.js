@@ -50,3 +50,7 @@ test('restoration is verified from a fresh final runtime read rather than the ba
  s.economics=async()=>({bet:++reads===5?11:10,variables:{},options:[]});
  const probe=await s.probeBet();assert.equal(probe.restored,false);assert.equal(probe.finalBet,11);
 });
+test('collect waits for the real final feature control instead of invoking an inactive event',async()=>{
+ const s=new PragmaticSession({entries:async()=>[],provider:{protocolState:async()=>({logicIsFreeSpin:true}),continueProtocol:async()=>{throw new Error('Inactive collect must not be invoked');}}});
+ s.latestExchange=async()=>({na:'c'});const result=await s.perform({kind:'continue'});assert.equal(result.kind,'collect-ui-wait');assert.equal(result.waiting,true);
+});
