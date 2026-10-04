@@ -59,6 +59,8 @@ Los nodos incluyen una referencia a la serie económica medida de esa opción, c
 
 `pragmatic_fuzz_result` pagina las ramas con offset/limit y el grafo con graph_offset/graph_limit; graph.next_offset indica otra página. El contrato completo se guarda localmente. La [validación de cinco demos](docs/validation-pragmatic-five-2026-10-04.md) documenta inventarios, ramas pendientes y el reintento que confirmó una compra completa tras corregir el cierre. Siguen pendientes variantes de menús anidados y transiciones de bonus específicas.
 
+La [evidencia manual y prueba automática de Helios](docs/helios-manual-har-2026-10-04.md) incorpora un [contrato individual](contracts/pragmatic/vs20olympuspot.json): compras 80×/200×, Ante 1,5× y payloads sanitizados. Se distinguen las opciones anunciadas de las ejecutadas y se conserva el cierre `fs_total`.
+
 ## Procedencia
 
 El runtime de Pragmatic y su helper proceden de [Parser](https://github.com/Shisetsu-Code/Parser), referencia consultada `56817ddd45a864ad91087fa576319b9aad0e6436`. Fuzzer conserva el árbol y las invocaciones del cliente; añade recorrido por ramas, sesiones independientes, comparación de apuestas, captura y herramientas MCP propias.
