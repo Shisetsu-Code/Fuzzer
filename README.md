@@ -47,6 +47,18 @@ Node.js 22 o posterior. `node --test test/*.test.js` ejecuta las pruebas sin ins
 
 El catálogo comprobado es el MCP local de HardFire. No se publican estas funciones mediante Firetrace ni se despliega un servicio Cloudflare nuevo.
 
+## Descubrimiento dinámico y familias
+
+No se presupone que un juego tenga dos compras. `purInit` anuncia la lista actual del servidor, y el recorrido registra las opciones de los estados/menús observados. El grafo conserva cada opción con su padre, clase de control, costo disponible y estado UNTESTED/PENDING/EXPANDED/COMPLETE. Incluye opciones no ejecutadas. Los menús de compras activos que aparecen después de empezar también se inspeccionan; no se consideran un regreso terminal a base si aún tienen opciones.
+
+No hay un número fijo de ramas por defecto. `max_branches` es un presupuesto opcional, independiente de la cantidad descubierta. Permanecen límites de tiempo, profundidad y pasos; si se alcanzan, las rutas conocidas quedan pendientes y `coverage.graphComplete` es false. Una cola vacía no prueba por sí misma que nunca aparecerán opciones nuevas.
+
+`familyHints` describe patrones observados como entry→buy o buy→pick, además de transiciones del protocolo. `relateFamilies` compara esos patrones entre contratos. Son relaciones candidatas para reutilizar conocimiento de interacción; no copian cantidad, compras ni payloads de un juego a otro. Cada juego tiene que confirmar su inventario propio. Las familias con grafos parciales no equivalen a descubrimiento completo.
+
+Los nodos incluyen una referencia a la serie económica medida de esa opción, cuando existe; no se completa la economía de un hermano por semejanza. Seleccionar una compra anidada tampoco demuestra envío: si falta una confirmación o el spin requerido no está demostrado, permanece pendiente.
+
+`pragmatic_fuzz_result` pagina las ramas con offset/limit y el grafo con graph_offset/graph_limit; graph.next_offset indica otra página. El contrato completo se guarda localmente. Sigue pendiente validar en vivo todas las variantes de menús anidados y corregir la continuación del bonus que falló en la muestra de cinco juegos.
+
 ## Procedencia
 
 El runtime de Pragmatic y su helper proceden de [Parser](https://github.com/Shisetsu-Code/Parser), referencia consultada `56817ddd45a864ad91087fa576319b9aad0e6436`. Fuzzer conserva el árbol y las invocaciones del cliente; añade recorrido por ramas, sesiones independientes, comparación de apuestas, captura y herramientas MCP propias.

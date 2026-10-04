@@ -33,4 +33,22 @@ test('step limit never certifies an open bonus',async()=>{
  const s=fixture([{phase:'base',inventoryKnown:true,options:[{id:'buy:0',kind:'buy'}]}, {phase:'feature',continueAction:{id:'continue',kind:'continue'}},base]);
  const r=await runPragmatic(s,{maxSteps:1}); assert.equal(r.status,'PARTIAL');
 });
+test('discovers and executes seventeen purchases without a fixed default branch count',async()=>{
+ const r=await runPragmatic(fixture([{phase:'base',inventoryKnown:true,options:Array.from({length:17},(_,index)=>({id:'buy:'+index,kind:'buy',index}))},base]));
+ assert.equal(r.tree.length,17);assert.equal(r.status,'COMPLETE');assert.equal(r.graph.nodes.filter(n=>n.kind==='buy').length,17);
+});
+test('nested menus with more choices take priority over a provisional terminal flag',async()=>{
+ const r=await runPragmatic(fixture([{phase:'base',inventoryKnown:true,options:[{id:'buy:0',kind:'buy'}]},
+ {phase:'choice',terminal:true,options:Array.from({length:5},(_,i)=>({id:'nested:'+i,kind:'nested_buy'}))},base]));
+ assert.equal(r.tree.length,6);assert.equal(r.graph.nodes.filter(n=>n.kind==='nested_buy').length,5);assert.equal(r.status,'COMPLETE');
+});
+test('a safety budget retains every discovered unexecuted option in the graph',async()=>{
+ const r=await runPragmatic(fixture([{phase:'base',inventoryKnown:true,options:Array.from({length:7},(_,index)=>({id:'buy:'+index,kind:'buy'}))},base]),{maxBranches:2});
+ assert.equal(r.status,'PARTIAL');assert.equal(r.pendingPaths.length,5);assert.equal(r.graph.nodes.filter(n=>n.kind==='buy').length,7);assert.equal(r.coverage.graphComplete,false);
+});
+test('new options discovered while replaying a prefix are also scheduled',async()=>{
+ const options=[{id:'buy:0',kind:'buy'},{id:'buy:1',kind:'buy'}];
+ const s={observe:async()=>({phase:'base',inventoryKnown:true,options:options.slice(0,1)}),forkDemo:async()=>fixture([{phase:'base',inventoryKnown:true,options},base])};
+ const r=await runPragmatic(s);assert.equal(r.tree.length,2);assert.equal(r.inventory.length,2);assert.equal(r.coverage.rootPurchasesDiscovered,2);assert.equal(r.status,'COMPLETE');
+});
 
