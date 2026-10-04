@@ -54,3 +54,7 @@ test('collect waits for the real final feature control instead of invoking an in
  const s=new PragmaticSession({entries:async()=>[],provider:{protocolState:async()=>({logicIsFreeSpin:true}),continueProtocol:async()=>{throw new Error('Inactive collect must not be invoked');}}});
  s.latestExchange=async()=>({na:'c'});const result=await s.perform({kind:'continue'});assert.equal(result.kind,'collect-ui-wait');assert.equal(result.waiting,true);
 });
+test('pressing the final control clears the preceding UI wait before checking its transition',async()=>{
+ const s=new PragmaticSession({entries:async()=>[],provider:{pressProtocolChoice:async()=>({ok:true})}});s.awaitingFinish=true;
+ await s.perform({kind:'finish',control:{index:1}});assert.equal(s.awaitingFinish,false);
+});

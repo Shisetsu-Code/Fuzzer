@@ -83,7 +83,7 @@ export class PragmaticSession{
    return {phase:'feature',terminal:false,inventoryKnown:!!this.initial,options:[],state,exchange,continueAction:{id:'protocol:continue',kind:'continue'}};
  }
  async perform(action){
-   this.pendingMarker=await this.wireMarker();this.pendingKind=action.kind;this.waitingOnly=false;
+   this.pendingMarker=await this.wireMarker();this.pendingKind=action.kind;this.waitingOnly=false;this.awaitingFinish=false;
    if(action.kind==='buy'){
      if(!this.initial||!Number.isInteger(action.index)||action.index<0||action.index>=this.initial.count)return {ok:false,reason:'Purchase not enabled by doInit'};
      this.started=true;const selected=await this.provider.purchase(this.frame,action.index);
