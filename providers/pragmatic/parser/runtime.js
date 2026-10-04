@@ -1130,8 +1130,8 @@ export const pragmatic = {
         const spin = await frame.evaluate(() => {
           try {
             const event =
-              globalThis.Vars?.Evt_ToServer_RequestSpin ||
-              globalThis.Vars?.Evt_DataToCode_Pressed_Spin;
+              globalThis.Vars?.Evt_DataToCode_Pressed_Spin ||
+              globalThis.Vars?.Evt_ToServer_RequestSpin;
             if (!event || typeof globalThis.XT?.TriggerEvent !== 'function') {
               return { ok: false, reason: 'Pragmatic spin event unavailable' };
             }
