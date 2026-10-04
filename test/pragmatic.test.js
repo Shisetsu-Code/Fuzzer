@@ -51,4 +51,9 @@ test('new options discovered while replaying a prefix are also scheduled',async(
  const s={observe:async()=>({phase:'base',inventoryKnown:true,options:options.slice(0,1)}),forkDemo:async()=>fixture([{phase:'base',inventoryKnown:true,options},base])};
  const r=await runPragmatic(s);assert.equal(r.tree.length,2);assert.equal(r.inventory.length,2);assert.equal(r.coverage.rootPurchasesDiscovered,2);assert.equal(r.status,'COMPLETE');
 });
+test('purchase presence follows the updated root inventory rather than its initial snapshot',async()=>{
+ const options=[{id:'ante',kind:'modifier'},{id:'buy:0',kind:'buy'}];
+ const s={observe:async()=>({phase:'base',inventoryKnown:true,options:options.slice(0,1)}),forkDemo:async()=>fixture([{phase:'base',inventoryKnown:true,options},base])};
+ const r=await runPragmatic(s);assert.equal(r.buyFeaturePresence,'PRESENT');assert.equal(r.coverage.rootPurchasesDiscovered,1);
+});
 
