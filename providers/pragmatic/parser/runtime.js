@@ -941,8 +941,24 @@ export const pragmatic = {
         } catch {}
       }
 
+      const stages=[];
+      for(const key of ['Evt_DataToCode_Pressed_Stop','Evt_DataToCode_ConfirmFSStart','Evt_DataToCode_Pressed_Spin']) {
+        for(const holder of XT.variablesEvent?.[Vars[key]]||[])for(const handler of holder.OnValueChanged||[]) {
+          const object=handler.object;
+          if(handler.isEnabled===false||object?.xtEnabled===false||!/^Stage/.test(object?.constructor?.name||''))continue;
+          const name=object.constructor.name;
+          if(stages.some(s=>s.name===name))continue;
+          const flags={};for(const field of ['mustSpin','fsStartConfirmed','shouldEnterFS','freeSpinsEnded','changeToResult','spinEnded'])if(typeof object[field]==='boolean')flags[field]=object[field];
+          stages.push({name,...flags});
+        }
+      }
       return {
+        stages,
+        freeSpins: (()=>{try{const f=XT.GetObject(Vars.ReceivedFreeSpinsResponse);if(!f)return null;return {collected:f.IsFreeSpinsCollected===true,last:f.IsLastFreeSpin===true,inactive:f.IsFreeSpin===false,win:f.TotalWin>0,current:f.CurrentSpin,max:f.MaxSpins};}catch{return null;}})(),
+        betLevelIndex: (()=>{try{return XT.GetObject(Vars.BetLevelSettings)?.betLevelIndex??null;}catch{return null;}})(),
         canSpin: readBool('CanSpin'),
+        lastWinIsCounting: readBool('LastWinIsCounting'),
+        waitInResultForBigWin: readBool('WaitInResultForBigWin'),
         fsStartNeedsConfirmation: readBool('FSStartNeedsConfirmation'),
         logicIsFreeSpin: readBool('Logic_IsFreeSpin'),
         receivedFreeSpinsResponse: readBool('ReceivedFreeSpinsResponse'),
@@ -974,6 +990,22 @@ export const pragmatic = {
   async continueProtocol(frame, exchange) {
     const state = await this.protocolState(frame);
     const na = String(exchange?.na || '').toLowerCase();
+
+    // A successful response can arrive before the reels finish. Advance the
+    // active visual stage through its registered Stop handler, not the server.
+    if(state?.stages?.some(s=>s.name==='StageSpin')) {
+      return frame.evaluate(()=>{
+        XT.TriggerEvent(Vars.Evt_DataToCode_Pressed_Stop);
+        return {ok:true,waiting:true,kind:'spin-animation-stop'};
+      });
+    }
+    const fsStage=state?.stages?.find(s=>s.name==='StageResultFreeSpin');
+    if(fsStage&&state.fsStartNeedsConfirmation===true&&fsStage.fsStartConfirmed===false) {
+      return frame.evaluate(()=>{
+        XT.TriggerEvent(Vars.Evt_DataToCode_ConfirmFSStart);
+        return {ok:true,waiting:true,kind:'confirm-fs-start'};
+      });
+    }
 
     if (na === 'b' || (exchange?.bgid != null && String(exchange?.end ?? '') !== '1')) {
       const choices = (state?.pickerControls || []).filter(item => item.active !== false);
@@ -1126,7 +1158,7 @@ export const pragmatic = {
       // completed any start-confirmation phase. Use the internal server-request
       // event directly; do not infer a pending confirmation from the global
       // FSStartNeedsConfirmation configuration flag.
-      if (state?.canSpin === true) {
+      if (state?.canSpin === true && state?.logicIsFreeSpin !== true && state?.confirmFSActive !== true) {
         const spin = await frame.evaluate(() => {
           try {
             const event =
@@ -1173,6 +1205,14 @@ export const pragmatic = {
         return { ...confirm, state };
       }
 
+      // StageResultFreeSpin schedules its own spins. Pressed_Spin has no
+      // handler in that stage, and a direct request would bypass its lifecycle.
+      if (state?.logicIsFreeSpin === true && (state.lastWinIsCounting || state.waitInResultForBigWin)) {
+        return frame.evaluate(() => {
+          XT.TriggerEvent(Vars.Evt_DataToCode_Pressed_Stop);
+          return {ok:true,kind:'feature-counting-stop',waiting:true};
+        });
+      }
       return {
         ok: false,
         kind: 'feature-wait',
@@ -1530,7 +1570,41 @@ export const pragmatic = {
       });
     }
 
+    const levels=await this.listBetLevels(frame);
+    for(const level of levels)out.push({id:'ante_bet:'+level.level,subtype:'ante_bet',economicKind:'purchase',execution:'bet_level',index:level.level,multiplier:level.multiplier,control:level});
     return out;
+  },
+
+  async listBetLevels(frame) {
+    return frame.evaluate(()=>{
+      const levels=[];
+      for(const [rootIndex,root] of (globalThis.globalRuntime?.sceneRoots||[]).entries()) {
+        const Type=globalThis.BetLevelV2;if(!Type)continue;
+        for(const [managerIndex,manager] of (root.GetComponentsInChildren(Type,true)||[]).entries()) {
+          const settings=manager.betLevelSettings;
+          if(!settings||manager.featureAvailable!==true||manager.xtEnabled===false)continue;
+          const scales=settings.betLevelScale;
+          if(!Array.isArray(scales)||!(scales[0]>0))continue;
+          scales.forEach((scale,level)=>{
+            if(level===0||!(scale>0)||XT.GetBool('Jurisdiction_DisableAnteBet_Lvl'+level))return;
+            if(!levels.some(item=>item.level===level))levels.push({kind:'BetLevelV2',root:rootIndex,managerIndex,level,scale,multiplier:scale/scales[0]});
+          });
+        }
+      }
+      return levels;
+    }).catch(()=>[]);
+  },
+
+  async setBetLevel(frame,control) {
+    return frame.evaluate(control=>{
+      const root=globalThis.globalRuntime?.sceneRoots?.[control.root];
+      const manager=root?.GetComponentsInChildren(globalThis.BetLevelV2,true)?.[control.managerIndex];
+      if(!manager||manager.featureAvailable!==true||manager.xtEnabled===false||typeof manager.CanEnableBetLevel!=='function'||!manager.CanEnableBetLevel())return {ok:false,reason:'Ante Bet manager is not actionable'};
+      const settings=manager.betLevelSettings;
+      if(!Number.isInteger(control.level)||control.level<1||settings?.betLevelScale?.[control.level]!==control.scale||XT.GetBool('Jurisdiction_DisableAnteBet_Lvl'+control.level))return {ok:false,reason:'Ante Bet level no longer available'};
+      manager.SetBetLevel(control.level);
+      return {ok:settings.betLevelIndex===control.level,kind:'ante-bet',level:settings.betLevelIndex,multiplier:control.multiplier};
+    },control);
   },
 
   async purchase(frame, index) {

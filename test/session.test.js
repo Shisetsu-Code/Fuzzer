@@ -1,5 +1,42 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {assertDemoUrl,parseInit,PragmaticSession} from '../providers/pragmatic/session.js';
+test('a visible picker cannot bypass an unfinished spin stage',async()=>{
+ const s=new PragmaticSession({entries:async()=>[],provider:{protocolState:async()=>({stages:[{name:'StageSpin'}],pickerControls:[{active:true,name:'Pick'}]})}});s.started=true;
+ const state=await s.observe();assert.deepEqual(state.options,[]);assert.equal(state.continueAction.kind,'continue');
+});
+test('an old ante spin and a new collect response do not verify another normal round',async()=>{
+ const old={startedDateTime:'2026-10-04T00:00:00Z',request:{url:'https://demogamesfree.pragmaticplay.net/gameService',postData:{text:'action=doSpin&bl=1'}},response:{status:200,content:{text:'na=s'}}};
+ const collect={startedDateTime:'2026-10-04T00:00:01Z',request:{url:'https://demogamesfree.pragmaticplay.net/gameService',postData:{text:'action=doCollect'}},response:{status:200,content:{text:'na=s'}}};
+ let list=[old];const s=new PragmaticSession({entries:async()=>list,provider:{protocolState:async()=>({canSpin:true}),press:async()=>{list=[old,collect];return {ok:true};}}});
+ assert.equal(await s.verifyBase({expectedBetLevel:1}),false);
+});
+test('ante verification requires two newly completed normal requests with the selected level',async()=>{
+ const list=[{startedDateTime:'2026-10-04T00:00:00Z',request:{url:'https://demogamesfree.pragmaticplay.net/gameService',postData:{text:'action=doInit'}},response:{status:200,content:{text:'na=s'}}}];let count=0;
+ const s=new PragmaticSession({entries:async()=>list,provider:{protocolState:async()=>({canSpin:true}),press:async()=>{count++;list.push({startedDateTime:'2026-10-04T00:00:0'+count+'Z',request:{url:'https://demogamesfree.pragmaticplay.net/gameService',postData:{text:'action=doSpin&bl=2&index='+count}},response:{status:200,content:{text:'na=s&index='+count}}});return {ok:true};}}});
+ assert.equal(await s.verifyBase({expectedBetLevel:2}),true);assert.equal(count,2);
+});
+test('a normal ante round may end with collect after its winning spin',async()=>{
+ let count=0;const list=[{startedDateTime:'0',request:{url:'https://demogamesfree.pragmaticplay.net/gameService',postData:{text:'action=doInit'}},response:{status:200,content:{text:'na=s'}}}];
+ const s=new PragmaticSession({entries:async()=>list,provider:{protocolState:async()=>({canSpin:true}),press:async()=>{count++;for(const [action,text] of [['doSpin','na=c'],['doCollect','na=s']])list.push({startedDateTime:String(count)+action,request:{url:'https://demogamesfree.pragmaticplay.net/gameService',postData:{text:'action='+action+(action==='doSpin'?'&bl=1':'')+'&index='+count}},response:{status:200,content:{text}}});return {ok:true};}}});
+ assert.equal(await s.verifyBase({expectedBetLevel:1}),true);assert.equal(count,2);
+});
+test('closing an already collected free spin result requires the active stage handler',async()=>{
+ const events=[];const fs={IsFreeSpinsCollected:false,IsLastFreeSpin:true,TotalWin:1};
+ globalThis.Vars={ReceivedFreeSpinsResponse:'fs',Logic_IsFreeSpin:'logic',Evt_DataToCode_FreeSpinsWindowWinCollectPressed:'close'};
+ globalThis.XT={GetObject:()=>fs,GetBool:()=>true,TriggerEvent:e=>events.push(e),variablesEvent:{close:[{OnValueChanged:[{isEnabled:true,object:{constructor:{name:'StageResultFreeSpin'}}}]}]}};
+ try{const s=new PragmaticSession({frame:{evaluate:async(fn,arg)=>fn(arg)},entries:async()=>[]});s.latestRequest=async()=>({action:'doCollect'});s.latestExchange=async()=>({na:'s'});assert.equal((await s.perform({kind:'runtime_finish'})).ok,true);assert.deepEqual(events,['close']);fs.IsLastFreeSpin=false;assert.equal((await s.perform({kind:'runtime_finish'})).ok,false);assert.deepEqual(events,['close']);}
+ finally{delete globalThis.Vars;delete globalThis.XT;}
+});
+test('a collected bonus can reset its free spin object while the result stage still needs closing',async()=>{
+ const events=[],fs={IsFreeSpin:false,CurrentSpin:0,MaxSpins:0,TotalWin:0},handler={isEnabled:true,object:{constructor:{name:'StageResultFreeSpin'},xtEnabled:true}};
+ globalThis.Vars={ReceivedFreeSpinsResponse:'fs',Logic_IsFreeSpin:'logic',SpinCycleWinReceived:'win',Evt_DataToCode_FreeSpinsWindowWinCollectPressed:'close'};
+ globalThis.XT={GetObject:()=>fs,GetBool:()=>true,GetDouble:()=>100,TriggerEvent:e=>events.push(e),variablesEvent:{close:[{OnValueChanged:[handler]}]}};
+ try{
+  const s=new PragmaticSession({entries:async()=>[],frame:{evaluate:async(fn,arg)=>fn(arg)},provider:{protocolState:async()=>({logicIsFreeSpin:true,stages:[{name:'StageResultFreeSpin'}],freeSpins:{inactive:true,current:0,max:0}})}});s.started=true;s.latestRequest=async()=>({action:'doCollect'});s.latestExchange=async()=>({na:'s'});
+  assert.equal((await s.observe()).continueAction.kind,'runtime_finish');assert.equal((await s.perform({kind:'runtime_finish'})).ok,true);assert.deepEqual(events,['close']);
+  handler.object.xtEnabled=false;assert.equal((await s.perform({kind:'runtime_finish'})).ok,false);assert.deepEqual(events,['close']);
+ }finally{delete globalThis.Vars;delete globalThis.XT;}
+});
 test('reads the real non JSON purInit grammar without executing code',()=>{
  const init=parseInit('sc=0.1&purInit='+encodeURIComponent('[{bet:2000,type:"default"},{bet:10000,type:"default"}]'));
  assert.equal(init.count,2);assert.equal(init.options[0].bet,2000);

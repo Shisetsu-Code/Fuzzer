@@ -5,10 +5,10 @@ import {assertDemoUrl} from '../../providers/pragmatic/session.js';
 import {runPragmatic,compareEconomics} from '../../providers/pragmatic/flow.js';
 import {createDecisionGraph,familyHints,linkEconomics} from '../../providers/pragmatic/graph.js';
 const jobs=new Map();
-export function registerFuzzerTools({register,z,text,controller}){
+export function registerFuzzerTools({register,z,text,controller,sessionFactory=createHardFireSession,artifactDir=path.join(os.homedir(),'.hardfire','fuzzer')}){
  register('pragmatic_fuzz_start','Run the independent Pragmatic Fuzzer on new isolated DEMO tabs using the selected tab public launcher. Discover nested purchases/choices, compare bet variables and capture real payloads. Returns job_id immediately; never repeat start to poll.',{
    tab_id:z.number().int().positive(),game_url:z.string().url().optional(),execute:z.boolean().default(false),
-   max_branches:z.number().int().min(1).max(1000).optional(),max_steps:z.number().int().min(1).max(200).default(100)
+   max_branches:z.number().int().min(1).max(1000).optional(),max_steps:z.number().int().min(1).max(200).default(100),timeout_ms:z.number().int().min(1000).max(600000).default(180000)
  },false,async args=>{
    if([...jobs.values()].some(j=>j.status==='RUNNING'))throw new Error('A Pragmatic Fuzzer job is already running');
    const tab=controller.tabs.resolve(args.tab_id);const gameUrl=assertDemoUrl(args.game_url||controller._wc(tab).getURL());
@@ -17,10 +17,11 @@ export function registerFuzzerTools({register,z,text,controller}){
    void (async()=>{
      let session;
      try{
-       session=await createHardFireSession(controller,{gameUrl});
+       session=await sessionFactory(controller,{gameUrl});
        const discovery=await session.observe();const betProbe=await session.probeBet();
        const comparison=betProbe.after?compareEconomics(betProbe.before,betProbe.after):null;
-       const result=args.execute&&betProbe.restored?await runPragmatic(session,{maxBranches:args.max_branches,maxSteps:args.max_steps}):{provider:'pragmatic',status:betProbe.status==='OBSERVED'&&!args.execute?'DISCOVERED':'PARTIAL',reason:args.execute&&!betProbe.restored?'BET_NOT_RESTORED':betProbe.reason,inventory:discovery.options,inventoryKnown:discovery.inventoryKnown};
+       const result=args.execute&&betProbe.restored&&betProbe.status==='OBSERVED'?await runPragmatic(session,{maxBranches:args.max_branches,maxSteps:args.max_steps,timeoutMs:args.timeout_ms}):{provider:'pragmatic',status:betProbe.status==='OBSERVED'&&!args.execute?'DISCOVERED':'PARTIAL',reason:args.execute&&!betProbe.restored?'BET_NOT_RESTORED':betProbe.reason,inventory:discovery.options,inventoryKnown:discovery.inventoryKnown};
+       if(!result.buyFeaturePresence)result.buyFeaturePresence=discovery.inventoryKnown===true?(discovery.options.some(o=>o.kind==='buy')?'PRESENT':'ABSENT'):'UNKNOWN';
        result.betProbe=betProbe;result.priceComparison=comparison;result.source_tab_id=args.tab_id;
        result.gameUrl=gameUrl;
        if(!result.graph){const graph=createDecisionGraph();graph.observe([],discovery);result.graph=graph.export();result.coverage={rootInventoryKnown:discovery.inventoryKnown===true,rootPurchasesDiscovered:discovery.options.filter(o=>o.kind==='buy').length,branchesExecuted:0,graphComplete:false};result.familyHints=familyHints(result);}
@@ -32,7 +33,7 @@ export function registerFuzzerTools({register,z,text,controller}){
      finally{
        try{await session?.close();job.har=session?.har;}catch(error){job.status='PARTIAL';job.cleanupError=String(error.message).slice(0,200);}
        if(job.status==='RUNNING')job.status=job.result?.status||'ERROR';
-       try{const dir=path.join(os.homedir(),'.hardfire','fuzzer');await fs.mkdir(dir,{recursive:true});job.artifact=path.join(dir,id+'.json');await fs.writeFile(job.artifact,JSON.stringify(job,null,2));}catch{job.artifactError='Could not save local contract';}
+       try{await fs.mkdir(artifactDir,{recursive:true});job.artifact=path.join(artifactDir,id+'.json');await fs.writeFile(job.artifact,JSON.stringify(job,null,2));}catch{job.artifactError='Could not save local contract';}
      }
    })();return text({job_id:id,status:'RUNNING',source_tab_id:args.tab_id});
  });
