@@ -14,7 +14,7 @@ export function parseInit(text){
  const options=Array.isArray(value)?value:value?.options;
  return Array.isArray(options)?{count:options.length,options,source:'doInit'}:null;
 }
-function form(text){const p=new URLSearchParams(text);return Object.fromEntries([...p].filter(([k])=>/^(action|symbol|c|l|bl|pur|bgid|ind|end|na|fs|fsmax|reel_set|s|sh|sw|sc|rs|trail|index|counter|total_bet_min|total_bet_max)$/.test(k)));}
+function form(text){const p=new URLSearchParams(text);return Object.fromEntries([...p].filter(([k])=>/^(action|symbol|c|l|bl|pur|bgid|ind|end|na|fs|fsmax|fs_total|reel_set|s|sh|sw|sc|rs|trail|index|counter|total_bet_min|total_bet_max)$/.test(k)));}
 const body=e=>e.response?.content?.encoding==='base64'?Buffer.from(e.response.content.text||'','base64').toString():e.response?.content?.text||'';
 const key=e=>[e.startedDateTime,e.request?.postData?.text,body(e)].join('|');
 export class PragmaticSession{
@@ -185,11 +185,12 @@ export class PragmaticSession{
      const until=Date.now()+15000;let ok=false;
      while(Date.now()<until){const s=await this.provider.protocolState(this.frame),e=await this.latestExchange();if(s?.canSpin===true&&!s.logicIsFreeSpin&&!s.spinBlockingFeatureIsRunning&&!s.respinInProgress&&!(s.pickerControls||[]).some(c=>c.active!==false)&&e.na==='s'){ok=true;break;}await sleep(200);}
      if(!ok)return false;
-     if(expectedBetLevel!==undefined){
+     {
        const last=(await this.entries()).filter(e=>!previous.has(key(e))&&e.response?.status===200&&new URLSearchParams(e.request?.postData?.text||'').get('action')==='doSpin').at(-1);
        const payload=new URLSearchParams(last?.request?.postData?.text||'');
        const response=form(last?body(last):'');
-       if(!last||!payload.has('bl')||Number(payload.get('bl'))!==expectedBetLevel||payload.has('pur')||!['s','c'].includes(response.na)||response.fs!==undefined||response.fsmax!==undefined)return false;
+       if(!last||payload.has('pur')||!['s','c'].includes(response.na)||response.fs!==undefined||response.fsmax!==undefined||response.fs_total!==undefined)return false;
+       if(expectedBetLevel!==undefined&&(!payload.has('bl')||Number(payload.get('bl'))!==expectedBetLevel))return false;
      }
    }return true;
  }

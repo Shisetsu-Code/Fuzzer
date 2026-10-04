@@ -1,0 +1,576 @@
+{
+  "log": {
+    "entries": [
+      {
+        "startedDateTime": "2026-10-04T20:43:40.426-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doInit&symbol=vs20olympuspot&index=1&counter=1"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "index=1&na=s&bl=0&c=0.10&counter=2&l=20&sc=0.01%2C0.02%2C0.03%2C0.04%2C0.05%2C0.10%2C0.20%2C0.30%2C0.40%2C0.50%2C0.75%2C1.00%2C2.00%2C3.00%2C4.00%2C5.00%2C6.00%2C7.00%2C8.00%2C9.00%2C10.00%2C11.00%2C12.00&bls=20%2C30&total_bet_max=48%2C000.00&purInit=%5B%7Bbet%3A1600%2Ctype%3A%22default%22%7D%2C%7Bbet%3A4000%2Ctype%3A%22default%22%7D%5D&total_bet_min=0.20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:43:53.473-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=1&index=2&counter=3"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "index=2&na=s&bl=1&c=0.05&counter=4&l=30"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:43:54.919-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=1&index=3&counter=5"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "index=3&na=s&bl=1&c=0.05&counter=6&l=30"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:43:56.317-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=1&index=4&counter=7"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "index=4&na=c&bl=1&c=0.05&counter=8&l=30"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:43:56.597-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "symbol=vs20olympuspot&action=doCollect&index=5&counter=9"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "index=5&na=s&counter=10"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:43:58.467-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=1&index=6&counter=11"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "index=6&na=s&bl=1&c=0.05&counter=12&l=30"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:44:04.491-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&pur=1&index=7&counter=13"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=8&index=7&na=s&bl=0&fs=1&c=0.05&counter=14&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:44:15.582-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=8&counter=15"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=8&index=8&na=s&bl=0&fs=2&c=0.05&counter=16&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:44:17.684-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=9&counter=17"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=8&index=9&na=s&bl=0&fs=3&c=0.05&counter=18&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:44:19.348-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=10&counter=19"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=8&index=10&na=s&bl=0&fs=4&c=0.05&counter=20&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:44:21.018-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=11&counter=21"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=8&index=11&na=s&bl=0&fs=5&c=0.05&counter=22&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:44:22.402-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=12&counter=23"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=8&index=12&na=s&bl=0&fs=5&c=0.05&counter=24&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:44:26.115-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=13&counter=25"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=8&index=13&na=s&bl=0&fs=6&c=0.05&counter=26&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:44:27.782-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=14&counter=27"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=8&index=14&na=s&bl=0&fs=7&c=0.05&counter=28&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:44:29.885-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=15&counter=29"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=8&index=15&na=s&bl=0&fs=8&c=0.05&counter=30&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:44:31.267-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=16&counter=31"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=8&index=16&na=s&bl=0&fs=8&c=0.05&counter=32&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:44:32.848-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=17&counter=33"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=8&index=17&na=s&bl=0&fs=8&c=0.05&counter=34&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:44:40.832-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=18&counter=35"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=11&index=18&na=s&bl=0&fs=9&c=0.05&counter=36&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:44:48.947-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=19&counter=37"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=14&index=19&na=s&bl=0&fs=10&c=0.05&counter=38&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:44:57.236-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=20&counter=39"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=14&index=20&na=s&bl=0&fs=10&c=0.05&counter=40&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:45:41.334-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=21&counter=41"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=14&index=21&na=s&bl=0&fs=11&c=0.05&counter=42&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:46:05.728-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=22&counter=43"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=14&index=22&na=s&bl=0&fs=11&c=0.05&counter=44&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:46:06.963-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=23&counter=45"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=14&index=23&na=s&bl=0&fs=11&c=0.05&counter=46&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:46:14.530-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=24&counter=47"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=14&index=24&na=s&bl=0&fs=12&c=0.05&counter=48&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:46:16.197-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=25&counter=49"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=14&index=25&na=s&bl=0&fs=13&c=0.05&counter=50&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:46:17.829-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=26&counter=51"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fsmax=14&index=26&na=s&bl=0&fs=14&c=0.05&counter=52&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:46:19.462-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=27&counter=53"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "fs_total=14&index=27&na=c&bl=0&c=0.05&counter=54&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:46:21.495-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "symbol=vs20olympuspot&action=doCollect&index=28&counter=55"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "index=28&na=s&counter=56"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:46:47.200-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=29&counter=57"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "index=29&na=s&bl=0&c=0.05&counter=58&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:46:50.862-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=1&index=30&counter=59"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "index=30&na=s&bl=1&c=0.05&counter=60&l=30"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:46:52.863-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=1&index=31&counter=61"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "index=31&na=s&bl=1&c=0.05&counter=62&l=30"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:46:54.246-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=1&index=32&counter=63"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "index=32&na=s&bl=1&c=0.05&counter=64&l=30"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:46:55.664-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=1&index=33&counter=65"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "index=33&na=s&bl=1&c=0.05&counter=66&l=30"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:46:57.078-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=1&index=34&counter=67"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "index=34&na=c&bl=1&c=0.05&counter=68&l=30"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:46:57.362-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "symbol=vs20olympuspot&action=doCollect&index=35&counter=69"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "index=35&na=s&counter=70"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:47:06.332-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=36&counter=71"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "index=36&na=s&bl=0&c=0.05&counter=72&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:47:07.715-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "action=doSpin&symbol=vs20olympuspot&c=0.05&l=20&bl=0&index=37&counter=73"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "index=37&na=c&bl=0&c=0.05&counter=74&l=20"
+          }
+        }
+      },
+      {
+        "startedDateTime": "2026-10-04T20:47:07.996-03:00",
+        "request": {
+          "url": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+          "postData": {
+            "text": "symbol=vs20olympuspot&action=doCollect&index=38&counter=75"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "text": "index=38&na=s&counter=76"
+          }
+        }
+      }
+    ]
+  }
+}

@@ -20,6 +20,13 @@ test('a normal ante round may end with collect after its winning spin',async()=>
  const s=new PragmaticSession({entries:async()=>list,provider:{protocolState:async()=>({canSpin:true}),press:async()=>{count++;for(const [action,text] of [['doSpin','na=c'],['doCollect','na=s']])list.push({startedDateTime:String(count)+action,request:{url:'https://demogamesfree.pragmaticplay.net/gameService',postData:{text:'action='+action+(action==='doSpin'?'&bl=1':'')+'&index='+count}},response:{status:200,content:{text}}});return {ok:true};}}});
  assert.equal(await s.verifyBase({expectedBetLevel:1}),true);assert.equal(count,2);
 });
+test('a final free-spin response with fs_total cannot count as a normal ante round',async()=>{
+ const list=[{startedDateTime:'0',request:{url:'https://demogamesfree.pragmaticplay.net/gameService',postData:{text:'action=doInit'}},response:{status:200,content:{text:'na=s'}}}];let count=0;
+ const s=new PragmaticSession({entries:async()=>list,provider:{protocolState:async()=>({canSpin:true}),press:async()=>{count++;for(const [action,text] of [['doSpin','na=c&fs_total=14'],['doCollect','na=s']])list.push({startedDateTime:String(count)+action,request:{url:'https://demogamesfree.pragmaticplay.net/gameService',postData:{text:'action='+action+(action==='doSpin'?'&bl=1':'')+'&index='+count}},response:{status:200,content:{text}}});return {ok:true};}}});
+ assert.equal((await s.latestExchange()).na,'s');
+ assert.equal(await s.verifyBase({expectedBetLevel:1}),false);
+ assert.equal((await s.capture('read',0)).exchanges.find(e=>e.request.action==='doSpin').response.fs_total,'14');
+});
 test('closing an already collected free spin result requires the active stage handler',async()=>{
  const events=[];const fs={IsFreeSpinsCollected:false,IsLastFreeSpin:true,TotalWin:1};
  globalThis.Vars={ReceivedFreeSpinsResponse:'fs',Logic_IsFreeSpin:'logic',Evt_DataToCode_FreeSpinsWindowWinCollectPressed:'close'};

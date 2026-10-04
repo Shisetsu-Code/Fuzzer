@@ -1,0 +1,204 @@
+{
+  "schema": "fuzzer/provider-evidence/v1",
+  "provider": "pragmatic",
+  "game": "Helios Triple Sun",
+  "symbol": "vs20olympuspot",
+  "publicUrl": "https://www.pragmaticplay.com/en/games/helios-triple-sun/",
+  "endpoint": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v5/gameService",
+  "source": {
+    "kind": "manual-har",
+    "filename": "www.pragmaticplay.com_Archive [26-10-04 20-47-15].har",
+    "gameServiceExchanges": 38,
+    "fullHarPublished": false
+  },
+  "baseBet": {
+    "formula": "coin * baseLines",
+    "baseLines": 20,
+    "observedCoin": "0.05",
+    "observedBaseBet": 1,
+    "normalRequestExample": {
+      "action": "doSpin",
+      "symbol": "vs20olympuspot",
+      "c": "0.05",
+      "l": "20",
+      "bl": "0",
+      "index": "29",
+      "counter": "57"
+    }
+  },
+  "anteBet": [
+    {
+      "index": 1,
+      "scale": 30,
+      "multiplier": 1.5,
+      "availability": "doInit.bls",
+      "observed": true,
+      "requestExamples": [
+        {
+          "action": "doSpin",
+          "symbol": "vs20olympuspot",
+          "c": "0.05",
+          "l": "20",
+          "bl": "1",
+          "index": "2",
+          "counter": "3"
+        },
+        {
+          "action": "doSpin",
+          "symbol": "vs20olympuspot",
+          "c": "0.05",
+          "l": "20",
+          "bl": "1",
+          "index": "3",
+          "counter": "5"
+        }
+      ],
+      "responseLines": [
+        "30"
+      ]
+    }
+  ],
+  "purchases": [
+    {
+      "index": 0,
+      "type": "default",
+      "multiplier": 80.0,
+      "availability": "doInit.purInit",
+      "manualRequestObserved": false,
+      "executionEvidence": null
+    },
+    {
+      "index": 1,
+      "type": "default",
+      "multiplier": 200.0,
+      "availability": "doInit.purInit",
+      "manualRequestObserved": true,
+      "executionEvidence": {
+        "request": {
+          "action": "doSpin",
+          "symbol": "vs20olympuspot",
+          "c": "0.05",
+          "l": "20",
+          "bl": "0",
+          "pur": "1",
+          "index": "7",
+          "counter": "13"
+        },
+        "initialFreeSpins": 8,
+        "advertisedMaximumsObserved": [
+          8,
+          11,
+          14
+        ],
+        "continuationRequests": 20,
+        "continuationExample": {
+          "action": "doSpin",
+          "symbol": "vs20olympuspot",
+          "c": "0.05",
+          "l": "20",
+          "bl": "0",
+          "index": "8",
+          "counter": "15"
+        },
+        "finalSpinResponse": {
+          "fs_total": "14",
+          "na": "c",
+          "bl": "0",
+          "c": "0.05",
+          "l": "20"
+        },
+        "collectRequest": {
+          "symbol": "vs20olympuspot",
+          "action": "doCollect",
+          "index": "28",
+          "counter": "55"
+        },
+        "collectResponse": {
+          "index": "28",
+          "na": "s",
+          "counter": "56"
+        },
+        "followingBaseSpinRequests": [
+          {
+            "action": "doSpin",
+            "symbol": "vs20olympuspot",
+            "c": "0.05",
+            "l": "20",
+            "bl": "0",
+            "index": "29",
+            "counter": "57"
+          },
+          {
+            "action": "doSpin",
+            "symbol": "vs20olympuspot",
+            "c": "0.05",
+            "l": "20",
+            "bl": "0",
+            "index": "36",
+            "counter": "71"
+          },
+          {
+            "action": "doSpin",
+            "symbol": "vs20olympuspot",
+            "c": "0.05",
+            "l": "20",
+            "bl": "0",
+            "index": "37",
+            "counter": "73"
+          }
+        ],
+        "wireCycleCompleted": true,
+        "uiChoicesVerified": false
+      }
+    }
+  ],
+  "choices": {
+    "status": "UNKNOWN",
+    "reason": "HAR proves requests and responses; it does not inventory local UI choices"
+  },
+  "runtimeManagedFields": [
+    "mgckey",
+    "index",
+    "counter",
+    "repeat",
+    "sInfo"
+  ],
+  "notes": [
+    "Ante mode changes bl to 1 while request l stays 20; response l becomes 30.",
+    "Only pur=1 was executed in the supplied manual HAR. pur=0 is configured, not manually validated.",
+    "fs_total marks a final free-spin result even when fs and fsmax disappear.",
+    "A response na=c is followed by doCollect; na=s alone does not distinguish normal spin from a feature continuation."
+  ],
+  "automaticRecheck": {
+    "jobId": "f8c64a96-e596-436a-9cdb-eb8dcce5b5f4",
+    "status": "PARTIAL",
+    "error": null,
+    "reason": null,
+    "branches": [
+      {
+        "path": [
+          "buy_feature:0"
+        ],
+        "status": "PENDING",
+        "reason": "RETURN_TO_BASE_UNCONFIRMED",
+        "steps": 28
+      },
+      {
+        "path": [
+          "buy_feature:1"
+        ],
+        "status": "COMPLETE",
+        "reason": null,
+        "steps": 51
+      },
+      {
+        "path": [
+          "ante_bet:1"
+        ],
+        "status": "COMPLETE",
+        "reason": null,
+        "steps": 1
+      }
+    ]
+  }
+}
