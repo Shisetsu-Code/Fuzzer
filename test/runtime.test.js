@@ -19,3 +19,8 @@ test('the last advertised free spin still advances while runtime proves the feat
  try{const provider={...pragmatic,protocolState:async()=>({canSpin:true,logicIsFreeSpin:true})};const result=await provider.continueProtocol({evaluate:async(fn,arg)=>fn(arg)},{na:'s',fs:'15',fsmax:'15'});assert.equal(result.kind,'protocol-spin');assert.deepEqual(events,['spin']);}
  finally{delete globalThis.Vars;delete globalThis.XT;}
 });
+test('feature spins use the UI lifecycle event before the direct server event',async()=>{
+ const events=[];globalThis.Vars={Evt_ToServer_RequestSpin:'server',Evt_DataToCode_Pressed_Spin:'ui'};globalThis.XT={TriggerEvent:e=>events.push(e)};
+ try{const provider={...pragmatic,protocolState:async()=>({canSpin:true,logicIsFreeSpin:true})};await provider.continueProtocol({evaluate:async(fn,arg)=>fn(arg)},{na:'s',fs:'2',fsmax:'15'});assert.deepEqual(events,['ui']);}
+ finally{delete globalThis.Vars;delete globalThis.XT;}
+});
