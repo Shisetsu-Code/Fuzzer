@@ -150,15 +150,16 @@ export class PragmaticSession{
    if(action.kind==='runtime_finish'){
      this.pendingKind='continue';this.waitingOnly=true;
      const serverCollected=(await this.latestRequest()).action==='doCollect'&&(await this.latestExchange()).na==='s';
-     return this.frame.evaluate(serverCollected=>{
+     const result=await this.frame.evaluate(({serverCollected,physical})=>{
        const f=XT.GetObject(Vars.ReceivedFreeSpinsResponse);
        if(!serverCollected||!(f?.IsFreeSpinsCollected===true||f?.IsLastFreeSpin===true||f?.IsFreeSpin===false&&f.CurrentSpin===0&&f.MaxSpins===0)||XT.GetBool(Vars.Logic_IsFreeSpin)!==true)return {ok:false,reason:'Free spin collection no longer proven'};
        const won=f.TotalWin>0||(Vars.SpinCycleWinReceived&&XT.GetDouble(Vars.SpinCycleWinReceived)>0);
        const event=Vars[won?'Evt_DataToCode_FreeSpinsWindowWinCollectPressed':'Evt_DataToCode_FreeSpinsWindowLoseCollectPressed'];
        const registered=(XT.variablesEvent?.[event]||[]).some(holder=>(holder.OnValueChanged||[]).some(h=>h.isEnabled!==false&&h.object?.xtEnabled!==false&&h.object?.constructor?.name==='StageResultFreeSpin'));
        if(!registered)return {ok:false,reason:'Active free spin result handler missing'};
-       XT.TriggerEvent(event);return {ok:true,kind:'free-spin-result-close',waiting:true};
-     },serverCollected);
+       if(!physical)XT.TriggerEvent(event);return {ok:true,kind:'free-spin-result-close',waiting:true};
+     },{serverCollected,physical:!!this.clickContinue});
+     if(result.ok&&this.clickContinue){const state=await this.provider.protocolState(this.frame);if((state?.pickerControls||[]).some(c=>c.active!==false)||(await this.purchaseMenu()).open)return {ok:false,reason:'Result has choices or an open purchase menu'};const marker=await this.wireMarker();if(this.resultClickMarker===marker)return {ok:false,reason:'Result click already attempted'};this.resultClickMarker=marker;this.pendingKind='result_click';return {...await this.clickContinue(),kind:'physical-result-continue'};}return result;
    }
    if(action.kind==='continue'){
      const exchange=await this.latestExchange(),state=await this.provider.protocolState(this.frame);
