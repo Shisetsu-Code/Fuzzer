@@ -1,5 +1,11 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {assertDemoUrl,parseInit,PragmaticSession} from '../providers/pragmatic/session.js';
+test('base verification finishes an active stop control before requesting ordinary spins',async()=>{
+ const list=[{startedDateTime:'init',request:{url:'https://demogamesfree.pragmaticplay.net/gameService',postData:{text:'action=doInit'}},response:{status:200,content:{text:'na=s'}}}];const actions=[];let stopActive=true;
+ const s=new PragmaticSession({entries:async()=>list,provider:{protocolState:async()=>({canSpin:true,stopActive}),press:async(_frame,action)=>{actions.push(action);if(action==='stop')stopActive=false;else if(!stopActive)list.push({startedDateTime:String(list.length),request:{url:'https://demogamesfree.pragmaticplay.net/gameService',postData:{text:'action=doSpin&index='+list.length}},response:{status:200,content:{text:'na=s'}}});return {ok:true};}}});
+ s.latestExchange=async()=>({na:'s'});
+ assert.equal(await s.verifyBase(),true);assert.deepEqual(actions,['stop','spin','spin']);
+});
 test('result dismissal retries spaced clicks until base and stops before a fourth click',async()=>{
  let clicks=0;const state={canSpin:true,logicIsFreeSpin:false,spinBlockingFeatureIsRunning:true,stages:[{name:'StageResult'}]};
  const s=new PragmaticSession({entries:async()=>[],clickContinue:async()=>{clicks++;if(clicks===3)state.spinBlockingFeatureIsRunning=false;return {ok:true};},provider:{protocolState:async()=>state}});s.started=true;s.latestExchange=async()=>({na:'s'});s.latestRequest=async()=>({action:'doCollect'});s.purchaseMenu=async()=>({open:false});
