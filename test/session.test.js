@@ -1,5 +1,11 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {assertDemoUrl,parseInit,PragmaticSession} from '../providers/pragmatic/session.js';
+test('a proven collected free-spin result prefers a physical click over an internal event',async()=>{
+ let clicks=0;const events=[];globalThis.Vars={ReceivedFreeSpinsResponse:'fs',Logic_IsFreeSpin:'logic',Evt_DataToCode_FreeSpinsWindowWinCollectPressed:'close'};
+ globalThis.XT={GetObject:()=>({IsLastFreeSpin:true,TotalWin:1}),GetBool:()=>true,TriggerEvent:e=>events.push(e),variablesEvent:{close:[{OnValueChanged:[{object:{constructor:{name:'StageResultFreeSpin'}}}]}]}};
+ try{const s=new PragmaticSession({frame:{evaluate:async(fn,arg)=>fn(arg)},entries:async()=>[],clickContinue:async()=>{clicks++;return {ok:true};},provider:{protocolState:async()=>({pickerControls:[]})}});s.latestRequest=async()=>({action:'doCollect'});s.latestExchange=async()=>({na:'s'});s.purchaseMenu=async()=>({open:false});assert.equal((await s.perform({kind:'runtime_finish'})).kind,'physical-result-continue');assert.equal(clicks,1);assert.deepEqual(events,[]);}
+ finally{delete globalThis.Vars;delete globalThis.XT;}
+});
 test('a collected bonus blocked in the result stage receives one physical continue click',async()=>{
  let clicked=0;const state={canSpin:true,logicIsFreeSpin:false,spinBlockingFeatureIsRunning:true,stages:[{name:'StageResult'}]};
  const s=new PragmaticSession({entries:async()=>[],clickContinue:async()=>{clicked++;return {ok:true};},provider:{protocolState:async()=>state}});s.started=true;s.syncInit=async()=>{};s.latestExchange=async()=>({na:'s'});s.latestRequest=async()=>({action:'doCollect'});s.purchaseMenu=async()=>({open:false});
