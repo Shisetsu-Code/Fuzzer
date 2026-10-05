@@ -731,7 +731,7 @@ export const pragmatic = {
         for (let ri = 0; ri < roots.length; ri++) {
           try {
             const items = roots[ri].GetComponentsInChildren(XTButton, true) || [];
-            for (const b of items) allButtons.push(b);
+            for (const b of items) if (b.gameObject?.activeInHierarchy === true && b.xtEnabled !== false) allButtons.push(b);
           } catch {}
         }
       }
