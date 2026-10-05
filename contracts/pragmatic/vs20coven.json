@@ -228,5 +228,36 @@
         }
       ]
     }
-  ]
+  ],
+  "catalogFollowup": {
+    "branches": [
+      {
+        "actionReason": "Protocol does not prove an active feature spin",
+        "reason": "ACTION_FAILED",
+        "status": "PENDING",
+        "path": [
+          "buy_feature:0"
+        ]
+      },
+      {
+        "actionReason": null,
+        "reason": null,
+        "status": "COMPLETE",
+        "path": [
+          "buy_feature:1"
+        ]
+      },
+      {
+        "actionReason": null,
+        "reason": null,
+        "status": "COMPLETE",
+        "path": [
+          "ante_bet:1"
+        ]
+      }
+    ],
+    "publicUrl": "https://www.pragmaticplay.fun/en/slots/coven-rising/",
+    "jobId": "1c8ba668-f326-40cc-b32e-21a0e0e197de",
+    "status": "PARTIAL"
+  }
 }

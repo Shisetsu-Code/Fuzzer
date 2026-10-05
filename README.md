@@ -9,7 +9,7 @@ Scripts independientes por proveedor para ejecutar demos mediante el MCP local H
 3. Guardar el `job_id` y consultar `pragmatic_fuzz_result`. Nunca repetir el inicio para consultar progreso.
 
 ```json
-{"tab_id":3,"game_url":"https://www.pragmaticplay.com/en/games/gates-of-olympus/","execute":true,"max_steps":100,"timeout_ms":360000}
+{"tab_id":3,"game_url":"https://www.pragmaticplay.fun/en/slots/coven-rising/","execute":true,"max_steps":200,"timeout_ms":360000}
 ```
 
 El trabajo usa pestañas DEMO nuevas con sesiones aisladas. No navega ni graba sobre la pestaña original. Cada rama reproduce su ruta en una demo nueva; guarda su HAR antes de cerrar la pestaña propia. La mayoría de edad debe haber sido confirmada por el usuario si el sitio la solicita.
@@ -47,7 +47,9 @@ Node.js 22 o posterior. `node --test test/*.test.js` ejecuta las pruebas sin ins
 
 El catálogo comprobado es el MCP local de HardFire. No se publican estas funciones mediante Firetrace ni se despliega un servicio Cloudflare nuevo.
 
-También se admite como `game_url` el lanzador DEMO público usado por el catálogo `.fun`: `https://demogamesfree.pragmaticplay.net/hub-demo/openGame.do?gameSymbol=vs20coven&lang=en&cur=USD&gcpif=8012&jurisdiction=99`. Cada rama abre ese lanzador y obtiene su propia sesión. Se rechazan URLs de juego autenticadas, parámetros ajenos y credenciales copiadas del HAR. La página `.fun` completa no se acepta directamente como lanzador del Fuzzer; se utiliza su entrada oficial DEMO. Ver el [contrato de Coven](contracts/pragmatic/vs20coven.json).
+La entrada recomendada es la página del juego del catálogo `.fun`, por ejemplo `https://www.pragmaticplay.fun/en/slots/coven-rising/`. Cada rama abre esa página en una sesión aislada, confirma el aviso de edad previamente autorizado y pulsa su botón Play Demo. El sitio crea la sesión DEMO dentro de su iframe; no se vuelve a pulsar el botón una vez cargado. Solo se admiten rutas de juego `/en/slots/<slug>/` sin query ni fragmento. La raíz del catálogo sirve para elegir el juego; la herramienta requiere la URL de su página individual.
+
+Se mantiene compatible el lanzador DEMO público `https://demogamesfree.pragmaticplay.net/hub-demo/openGame.do?gameSymbol=vs20coven&lang=en&cur=USD&gcpif=8012&jurisdiction=99` y las páginas anteriores `.com`. Se rechazan URLs de juego autenticadas, parámetros ajenos y credenciales copiadas del HAR. Ver el [contrato de Coven](contracts/pragmatic/vs20coven.json).
 
 ## Descubrimiento dinámico y familias
 
@@ -76,5 +78,7 @@ El cierre puede ser una transición del cliente sin una petición nueva. Si se r
 `BetLevelV2.betLevelSettings.betLevelScale` permite enumerar uno o varios niveles de Ante Bet con su multiplicador respecto al nivel cero. Cada nivel se activa mediante el controlador real, validando disponibilidad. La verificación exige dos respuestas nuevas de giros normales con `bl` correcto y sin `pur`; activar el modo no prueba por sí solo su ejecución. Los modos no identificados permanecen pendientes.
 
 Si la última acción de Ante ya confirmó esas dos tiradas y una observación nueva sigue en base sin opciones, el cierre reutiliza la evidencia; no envía dos giros adicionales. Si una comprobación terminal de otra rama activa un bonus natural, el recorrido continúa mediante sus controles conocidos y conserva los límites. Una elección dentro de ese bonus aleatorio queda `NATURAL_BONUS_CHOICE_REQUIRED`: no se agrega como ruta fija de compra que otra sesión no podría reproducir. Tampoco se certifica una función con el bonus abierto.
+
+Las respuestas conservan `rs_c`, `rs_p`, `rs_m` y `rs_t`, además de los códigos `msg_code`/`ext_code`. Un contador activo en `rs_c`, incluidos contadores separados por comas, impide declarar base o certificar un giro ordinario aunque el cliente muestre brevemente `canSpin=true`. Esto evita falsos COMPLETE; no implica que todas las continuaciones de cascadas estén resueltas.
 
 `timeout_ms` controla el presupuesto del recorrido, entre 1.000 y 600.000 ms; por defecto 180.000. La preparación y el guardado de HAR pueden agregar tiempo. Agotar el presupuesto conserva las rutas pendientes y nunca convierte un resultado parcial en completo.
