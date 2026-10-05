@@ -1,0 +1,174 @@
+{
+  "schema": "fuzzer/provider-evidence/v1",
+  "provider": "pragmatic",
+  "game": "Alien Invaders",
+  "symbol": "vs20alieninv",
+  "publicUrl": "https://www.pragmaticplay.fun/en/slots/alien-invaders",
+  "freshDemoLauncher": "https://demogamesfree.pragmaticplay.net/hub-demo/openGame.do?gameSymbol=vs20alieninv&lang=en&cur=USD&gcpif=8012&jurisdiction=99",
+  "endpoint": "https://demogamesfree.pragmaticplay.net/hub-demo/ge/v4/gameService",
+  "source": {
+    "kind": "manual-har",
+    "filename": "www.pragmaticplay.fun_Archive [26-10-04 22-19-39].har",
+    "gameServiceExchanges": 80,
+    "fullHarPublished": false
+  },
+  "baseBet": {
+    "formula": "coin * baseLines",
+    "baseLines": 20,
+    "observedCoin": "12",
+    "observedBaseBet": 240
+  },
+  "anteBet": [
+    {
+      "index": 1,
+      "multiplier": 1.25,
+      "availability": "doInit.bls",
+      "observed": false,
+      "requestExamples": [],
+      "responseLines": []
+    }
+  ],
+  "purchases": [
+    {
+      "index": 0,
+      "multiplier": 65.0,
+      "availability": "doInit.purInit",
+      "manualRequestObserved": true,
+      "executionEvidence": {
+        "request": {
+          "action": "doSpin",
+          "symbol": "vs20alieninv",
+          "c": "12",
+          "l": "20",
+          "bl": "0",
+          "pur": "0",
+          "index": "3",
+          "counter": "5"
+        },
+        "initialFreeSpins": 7,
+        "continuationRequests": 28,
+        "continuationExample": {
+          "action": "doSpin",
+          "symbol": "vs20alieninv",
+          "c": "12",
+          "l": "20",
+          "bl": "0",
+          "index": "4",
+          "counter": "7"
+        },
+        "finalSpinResponse": {
+          "fs_total": "10",
+          "na": "c",
+          "bl": "0",
+          "c": "12.00",
+          "l": "20"
+        },
+        "collectRequest": {
+          "symbol": "vs20alieninv",
+          "action": "doCollect",
+          "index": "32",
+          "counter": "63"
+        },
+        "collectResponse": {
+          "index": "32",
+          "na": "s",
+          "counter": "64"
+        },
+        "wireCycleCompleted": true,
+        "uiChoicesVerified": false
+      }
+    },
+    {
+      "index": 1,
+      "multiplier": 400.0,
+      "availability": "doInit.purInit",
+      "manualRequestObserved": true,
+      "executionEvidence": {
+        "request": {
+          "action": "doSpin",
+          "symbol": "vs20alieninv",
+          "c": "12",
+          "l": "20",
+          "bl": "0",
+          "pur": "1",
+          "index": "33",
+          "counter": "65"
+        },
+        "initialFreeSpins": 7,
+        "continuationRequests": 43,
+        "continuationExample": {
+          "action": "doSpin",
+          "symbol": "vs20alieninv",
+          "c": "12",
+          "l": "20",
+          "bl": "0",
+          "index": "34",
+          "counter": "67"
+        },
+        "finalSpinResponse": {
+          "fs_total": "11",
+          "na": "c",
+          "bl": "0",
+          "c": "12.00",
+          "l": "20"
+        },
+        "collectRequest": {
+          "symbol": "vs20alieninv",
+          "action": "doCollect",
+          "index": "77",
+          "counter": "153"
+        },
+        "collectResponse": {
+          "index": "77",
+          "na": "s",
+          "counter": "154"
+        },
+        "wireCycleCompleted": true,
+        "uiChoicesVerified": false
+      }
+    }
+  ],
+  "choices": {
+    "status": "UNKNOWN",
+    "reason": "HAR does not inventory local UI choices"
+  },
+  "notes": [
+    "Ante 1.25x is configured by bls=20,25 but no bl=1 request occurs in this manual capture.",
+    "Purchase 0 ends with fs_total=10; purchase 1 with fs_total=11; both are collected with na=s.",
+    "fs_total can coexist with an active cascade rs_c and na=s before the final collect.",
+    "The final two doSpin requests belong to one normal round and its cascade, ending na=c without a captured collect.",
+    "Two completed ordinary rounds after each purchase are not demonstrated by this capture.",
+    "Fresh launcher creates sessions; never reuse html5Game URLs or mgckey from HAR."
+  ],
+  "automaticRecheck": {
+    "jobId": "c6b1c41b-0ed8-4d60-97a7-927ac77b20de",
+    "status": "PARTIAL",
+    "error": null,
+    "branches": [
+      {
+        "path": [
+          "buy_feature:0"
+        ],
+        "status": "PENDING",
+        "reason": "RETURN_TO_BASE_UNCONFIRMED",
+        "steps": 52
+      },
+      {
+        "path": [
+          "buy_feature:1"
+        ],
+        "status": "PENDING",
+        "reason": "RETURN_TO_BASE_UNCONFIRMED",
+        "steps": 44
+      },
+      {
+        "path": [
+          "ante_bet:1"
+        ],
+        "status": "PENDING",
+        "reason": "ACTION_FAILED",
+        "steps": 1
+      }
+    ]
+  }
+}
