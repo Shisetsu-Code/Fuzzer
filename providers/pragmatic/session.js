@@ -185,7 +185,7 @@ export class PragmaticSession{
      this.pendingMarker=await this.wireMarker();this.pendingKind='spin';
      const action=await this.provider.press(this.frame,'spin');if(action?.ok!==true||!(await this.waitForTransition(before,{deadline:Date.now()+15000})))return false;
      const until=Date.now()+15000;let ok=false;
-     while(Date.now()<until){const s=await this.provider.protocolState(this.frame),e=await this.latestExchange();if(s?.canSpin===true&&!s.logicIsFreeSpin&&!s.spinBlockingFeatureIsRunning&&!s.respinInProgress&&!(s.pickerControls||[]).some(c=>c.active!==false)&&e.na==='s'){ok=true;break;}await sleep(200);}
+     while(Date.now()<until){const s=await this.provider.protocolState(this.frame),e=await this.latestExchange();if(s?.canSpin===true&&!s.logicIsFreeSpin&&!s.spinBlockingFeatureIsRunning&&!s.respinInProgress&&!(s.pickerControls||[]).some(c=>c.active!==false)&&!activeCascade(e)&&e.na==='s'){ok=true;break;}await sleep(200);}
      if(!ok)return false;
      {
        const last=(await this.entries()).filter(e=>!previous.has(key(e))&&e.response?.status===200&&new URLSearchParams(e.request?.postData?.text||'').get('action')==='doSpin').at(-1);
