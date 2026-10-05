@@ -1,5 +1,22 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {assertDemoUrl,parseInit,PragmaticSession} from '../providers/pragmatic/session.js';
+test('a ready base result with server collect pending verifies its one closing spin through the game',async()=>{
+ const s=new PragmaticSession({entries:async()=>[],provider:{protocolState:async()=>({canSpin:true,logicIsFreeSpin:false,spinBlockingFeatureIsRunning:false,stages:[{name:'StageResult'}]}),continueProtocol:async()=>assert.fail('inactive free-spin collect must not be triggered')}});
+ s.started=true;s.purchaseMenu=async()=>({open:false});s.latestExchange=async()=>({na:'c',fs_total:'20'});let rounds=0;s.verifyBase=async options=>{rounds=options.rounds;return true;};
+ const result=await s.perform({kind:'continue'});assert.equal(result.ok,true);assert.equal(result.normalRoundsVerified,true);assert.equal(rounds,1);assert.equal(s.pendingVerified,true);
+});
+test('preparation finishes a naturally triggered feature before verifying fresh normal rounds',async()=>{
+ let checks=0,finished=0;
+ const s=new PragmaticSession({provider:{waitReady:async()=>({ok:true}),protocolState:async()=>({logicIsFreeSpin:true})}});
+ s.syncInit=async()=>{s.initial={count:0};};s.verifyBase=async()=>++checks>1;s.finishIncidentalFeature=async()=>{finished++;return true;};
+ await s.prepare();assert.equal(checks,2);assert.equal(finished,1);
+});
+test('incidental feature preparation selects the advertised choice and never starts a purchase',async()=>{
+ const choice={id:'pick:0',kind:'pick'};let picked=false;const s=new PragmaticSession({});
+ s.observe=async()=>picked?{terminal:true,options:[{id:'buy:0',kind:'buy'}]}:{terminal:false,options:[choice]};
+ s.perform=async action=>{assert.equal(action.kind,'pick');picked=true;return {ok:true};};s.waitForTransition=async()=>true;
+ assert.equal(await s.finishIncidentalFeature(),true);assert.equal(s.started,false);assert.equal(s.preparationBonus.steps.length,1);
+});
 test('base verification finishes an active stop control before requesting ordinary spins',async()=>{
  const list=[{startedDateTime:'init',request:{url:'https://demogamesfree.pragmaticplay.net/gameService',postData:{text:'action=doInit'}},response:{status:200,content:{text:'na=s'}}}];const actions=[];let stopActive=true;
  const s=new PragmaticSession({entries:async()=>list,provider:{protocolState:async()=>({canSpin:true,stopActive}),press:async(_frame,action)=>{actions.push(action);if(action==='stop')stopActive=false;else if(!stopActive)list.push({startedDateTime:String(list.length),request:{url:'https://demogamesfree.pragmaticplay.net/gameService',postData:{text:'action=doSpin&index='+list.length}},response:{status:200,content:{text:'na=s'}}});return {ok:true};}}});

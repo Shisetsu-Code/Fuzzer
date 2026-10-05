@@ -1,5 +1,33 @@
 import {PragmaticSession,assertDemoUrl} from '../../providers/pragmatic/session.js';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
+import {randomUUID} from 'node:crypto';
+import {saveOwnedHar} from './har.js';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+export async function refreshOwnedSurface(controller,scoped,tabId){
+ await controller.tabs.activate(tabId);
+ scoped._wc?.().invalidate?.();
+ const status=await scoped.status?.();
+ if(typeof status?.visible==='boolean'&&scoped.browser)await scoped.browser(status.visible?'visible':'hidden');
+ await sleep(150);
+}
+export async function dismissCatalogConsent(wc){
+ return wc.executeJavaScript(`(${(async()=>{
+   if(!['www.pragmaticplay.fun','www.pragmaticplay.com'].includes(location.hostname))return {ok:true,dismissed:false};
+   const visible=e=>e&&e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden'&&getComputedStyle(e).display!=='none';
+   const banner=document.querySelector('.cky-consent-container');
+   if(!visible(banner))return {ok:true,dismissed:false};
+   const reject=banner.querySelector('[data-cky-tag="reject-button"]');
+   if(!visible(reject)||reject.disabled)return {ok:false,reason:'COOKIE_CONSENT_BLOCKED'};
+   reject.click();
+   for(let attempt=0;attempt<20;attempt++){
+     if(!visible(banner))return {ok:true,dismissed:true};
+     await new Promise(resolve=>setTimeout(resolve,50));
+   }
+   return {ok:false,reason:'COOKIE_CONSENT_BLOCKED'};
+ }).toString()})()`);
+}
 export function frameAdapter(native){
  return {native,evaluate(fn,arg){const literal=arg===undefined?'':JSON.stringify(arg);return native.executeJavaScript(`(${fn.toString()})(${literal})`);},page(){return {waitForTimeout:sleep};}};
 }
@@ -12,7 +40,7 @@ export async function selectDemoFrame(wc){
  }
  throw new Error('Pragmatic DEMO runtime not found in this tab');
 }
-export async function createHardFireSession(controller,{gameUrl,deadline=Date.now()+45000}={}){
+export async function createHardFireSession(controller,{gameUrl,deadline=Date.now()+45000,artifactDir=path.join(os.homedir(),'.hardfire','fuzzer'),entryOnly=false}={}){
  gameUrl=assertDemoUrl(gameUrl);
  // Fork a public launcher, never an authenticated html5Game URL or copied session.
  const launcher=new URL(gameUrl);
@@ -25,11 +53,30 @@ export async function createHardFireSession(controller,{gameUrl,deadline=Date.no
  const created=await controller.tabs.new({url:'about:blank',activate:false});
  const target=controller.tabs.resolve(created.id),scoped=controller.withTab(created.id);
  if(!target.sessionIsolated){await controller.tabs.close(created.id);throw new Error('An isolated DEMO tab is required');}
- let session;
+ const saveHar=()=>saveOwnedHar(target.recorder,{artifactDir,tabId:created.id,gameUrl});
+ const captureFailure=async({reason,branch=[]}={})=>{
+   const diagnostic={tabId:created.id,reason,branch:[...branch]};
+   try{
+     let bytes;
+     try{bytes=await scoped.screenshot(65);}catch(error){
+       if(!/screenshot_empty/.test(String(error.message))||!controller.tabs.activate)throw error;
+       await refreshOwnedSurface(controller,scoped,created.id);
+       bytes=await scoped.screenshot(65);
+     }
+     if(!Buffer.isBuffer(bytes)||!bytes.length)throw new Error('Screenshot produced no image bytes');
+     await fs.mkdir(artifactDir,{recursive:true});
+     const filename=path.resolve(artifactDir,`failure-${created.id}-${randomUUID()}.jpg`);
+     await fs.writeFile(filename,bytes);
+     return {...diagnostic,path:filename,mimeType:'image/jpeg'};
+   }catch(error){return {...diagnostic,error:String(error.message||error).slice(0,200)};}
+ };
+ let session,lastPaintCheck=0;
  try{
    await scoped.recordStart();await scoped.open(gameUrl);
    let frame;
    while(Date.now()<deadline){
+     const consent=await dismissCatalogConsent(scoped._wc());
+     if(!consent.ok)throw new Error(consent.reason);
      try{frame=await selectDemoFrame(scoped._wc());break;}catch{}
      // Fixed entry control for the public Pragmatic demo launcher, no blind center click.
      await scoped._wc().executeJavaScript(`(()=>{
@@ -48,19 +95,51 @@ export async function createHardFireSession(controller,{gameUrl,deadline=Date.no
    }
    if(!frame)throw new Error('DEMO entry did not expose a supported runtime');
    session=new PragmaticSession({frame,entries:async()=>target.recorder?.toJSON().log.entries||[],
-     fork:()=>createHardFireSession(controller,{gameUrl,deadline:Date.now()+45000}),
+     fork:()=>createHardFireSession(controller,{gameUrl,deadline:Date.now()+45000,artifactDir}),captureFailure,
+     maintainSurface:async()=>{
+       await controller.tabs.activate(created.id);
+       scoped._wc().invalidate?.();
+       try{await scoped.screenshot(65);return {ok:true,kind:'surface-check',tabId:created.id};}
+       catch(error){
+         if(!/screenshot_empty/.test(String(error.message)))throw error;
+         await refreshOwnedSurface(controller,scoped,created.id);
+         return {ok:true,kind:'surface-refresh',tabId:created.id};
+       }
+     },
      clickContinue:async()=>{
+       // Canvas hit testing and overlays must be rendered in the owned view.
+       // CDP still targets this tab; activation never changes its scoped identity.
+       await controller.tabs.activate(created.id);
+       scoped._wc().invalidate?.();
+       await sleep(100);
+       // Check a stalled compositor at most once per ten seconds. Re-present
+       // the window without navigating, renewing the session or resending buy.
+       if(Date.now()-lastPaintCheck>=10000){
+         lastPaintCheck=Date.now();
+         try{await scoped.screenshot(65);}catch(error){
+           if(!/screenshot_empty/.test(String(error.message)))throw error;
+           await refreshOwnedSurface(controller,scoped,created.id);
+         }
+       }
+       const consent=await dismissCatalogConsent(scoped._wc());
+       if(!consent.ok)return consent;
        const point=await scoped._wc().executeJavaScript(`(()=>{const f=[...document.querySelectorAll('iframe')].find(e=>e.src.startsWith('https://demogamesfree.pragmaticplay.net/'));const r=f?.getBoundingClientRect();if(r&&r.width>0&&r.height>0)return {x:r.x+r.width/2,y:r.y+r.height/2};if(location.hostname==='demogamesfree.pragmaticplay.net')return {x:innerWidth/2,y:innerHeight/2};return null;})()`);
        if(!point)return {ok:false,reason:'Visible DEMO viewport not found'};
        await scoped.click(point.x,point.y);return {ok:true};
-     },saveHar:()=>scoped.recordSave(),close:async()=>{
-       if(target.recorder?.recording)session.har=await scoped.recordSave();
+     },saveHar,close:async()=>{
+       if(target.recorder?.recording)session.har=await saveHar();
        await controller.tabs.close(created.id);
      }});
-   session.tabId=created.id;await session.prepare();return session;
+   session.tabId=created.id;
+   if(entryOnly){const initDeadline=Date.now()+30000;do{await session.syncInit();if(session.initial)break;await sleep(200);}while(Date.now()<initDeadline);const ready=await session.provider.waitReady(session.frame,30000);if(!ready?.ok)throw Error('DEMO intro did not reach a ready state');}
+   else await session.prepare();return session;
  }catch(error){
+   error.screenshot=await captureFailure({reason:'SESSION_STARTUP_FAILED'});
    // Save evidence before closing; on save failure leave this owned tab available.
-   if(target.recorder?.recording)await scoped.recordSave();
-   await controller.tabs.close(created.id);throw error;
+   try{
+     if(target.recorder?.recording)error.har=await saveHar();
+     await controller.tabs.close(created.id);
+   }catch(cleanupError){error.cleanupError=String(cleanupError.message||cleanupError).slice(0,200);}
+   throw error;
  }
 }

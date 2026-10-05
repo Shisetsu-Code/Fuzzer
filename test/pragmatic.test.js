@@ -9,6 +9,12 @@ function fixture(states) {
     async forkDemo(){return fixture(states);}, async economics(){return {bet:1,options:[]};}, async changeBet(){return {ok:false};}};
 }
 const base={phase:'base',terminal:true,options:[],inventoryKnown:true};
+test('a continuation which verified its closing spin does not spin again at terminal',async()=>{
+ const buy={id:'buy:0',kind:'buy'},cont={id:'continue',kind:'continue'};let index=0;
+ const states=[{...base,options:[buy]},{terminal:false,options:[],continueAction:cont},base];
+ const child={observe:async()=>states[index],perform:async action=>{index++;return {ok:true,normalRoundsVerified:action.kind==='continue'};},capture:async()=>({}),waitForTransition:async()=>true,verifyBase:async()=>assert.fail('closing spin already verified'),close:async()=>{}};
+ const result=await runPragmatic({observe:async()=>states[0],forkDemo:async()=>child});assert.equal(result.status,'COMPLETE');assert.equal(index,2);
+});
 test('a terminal ante branch reuses its confirmed normal rounds without sending extra verification spins',async()=>{
  const ante={id:'ante:1',kind:'modifier'};let performed=false;
  const child={observe:async()=>performed?base:{...base,options:[ante]},perform:async()=>{performed=true;return {ok:true,normalRoundsVerified:true};},capture:async()=>({}),waitForTransition:async()=>true,verifyBase:async()=>{assert.fail('extra verification can start an unrelated natural bonus');},close:async()=>{}};

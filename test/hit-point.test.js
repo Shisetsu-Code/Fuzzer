@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {chooseHitPoint} from '../providers/pragmatic/hit-point.js';
+test('backdrop click avoids nested option covering its center',()=>{const b={path:'cancel',hit_rect:{x:0,y:0,width:100,height:100}},c={path:'option',hit_rect:{x:30,y:30,width:40,height:40}};const p=chooseHitPoint(b,[b,c]);assert(p);assert(!(p.x>=30&&p.x<=70&&p.y>=30&&p.y<=70));assert.deepEqual(chooseHitPoint(c,[b,c]),{x:50,y:50});});
+test('fully overlapping controls are ambiguous rather than clicked',()=>{const a={path:'a',hit_rect:{x:0,y:0,width:100,height:100}},b={...a,path:'b'};assert.equal(chooseHitPoint(a,[a,b]),null);});

@@ -1,4 +1,4 @@
-import {pragmatic} from './parser/runtime.js';
+import {pragmatic,resultCountingStopAvailable} from './parser/runtime.js';
 import {classifyImpact} from './impact.js';
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 export function assertDemoUrl(value){
@@ -20,7 +20,7 @@ const activeCascade=exchange=>String(exchange.rs_c??'').split(',').some(value=>v
 const body=e=>e.response?.content?.encoding==='base64'?Buffer.from(e.response.content.text||'','base64').toString():e.response?.content?.text||'';
 const key=e=>[e.startedDateTime,e.request?.postData?.text,body(e)].join('|');
 export class PragmaticSession{
- constructor({frame,entries,fork,close=async()=>{},saveHar=async()=>null,clickContinue,provider=pragmatic}){Object.assign(this,{frame,entries,fork,close,saveHar,clickContinue,provider});this.started=false;this.initial=null;this.frameKey=null;}
+ constructor({frame,entries,fork,close=async()=>{},saveHar=async()=>null,clickContinue,maintainSurface,captureFailure,provider=pragmatic}){Object.assign(this,{frame,entries,fork,close,saveHar,clickContinue,maintainSurface,captureFailure,provider});this.started=false;this.initial=null;this.frameKey=null;}
  async syncInit(){
    const entries=await this.entries();
    const init=entries.filter(e=>/gameService/.test(e.request?.url||'')&&new URLSearchParams(e.request?.postData?.text||'').get('action')==='doInit'&&e.response?.status===200).at(-1);
@@ -28,13 +28,34 @@ export class PragmaticSession{
    if(this.initial)await this.frame.evaluate(value=>{globalThis.__parserPragmaticPurInit=value;},this.initial);
  }
  async prepare(){
-   const until=Date.now()+10000;
+   const until=Date.now()+30000;
    do{await this.syncInit();if(this.initial)break;await sleep(200);}while(Date.now()<until);
    if(!this.initial)throw new Error('Completed doInit not captured; inventory remains UNKNOWN');
-   const ready=await this.provider.waitReady(this.frame,12000);
+   const ready=await this.provider.waitReady(this.frame,30000);
    if(!ready?.ok)throw new Error('Pragmatic entry/intro did not reach base state');
    // Validate two real terminal base rounds before considering a game operational.
-   if(!(await this.verifyBase()))throw new Error('Two ordinary rounds not confirmed');
+   for(let attempt=0;attempt<3;attempt++) {
+     if(await this.verifyBase())return;
+     const state=await this.provider.protocolState(this.frame);
+     const feature=state?.logicIsFreeSpin||state?.mustOpenBonus||(state?.pickerControls||[]).some(c=>c.active===true);
+     if(attempt===2||!feature||!(await this.finishIncidentalFeature()))break;
+   }
+   throw new Error('Two ordinary rounds not confirmed');
+ }
+ async finishIncidentalFeature(){
+   const started=this.started,deadline=Date.now()+120000;
+   this.preparationBonus={status:'PENDING',steps:[]};this.started=true;
+   try {
+     for(let step=0;step<200&&Date.now()<deadline;step++) {
+       const state=await this.observe();
+       if(state.terminal===true){this.preparationBonus.status='COMPLETE';return true;}
+       const action=(state.options||[]).find(option=>option.kind==='pick')||state.continueAction;
+       if(!action||!['pick','continue','finish','runtime_finish','result_click'].includes(action.kind))return false;
+       const result=await this.perform(action);this.preparationBonus.steps.push({action,result});
+       if(result?.needsSelection&&result.choices?.some(choice=>choice.active===true))continue;
+       if(result?.ok!==true||!(await this.waitForTransition(state,{deadline})))return false;
+     }return false;
+   }finally{this.started=started;}
  }
  async economics(){
    const options=await this.provider.listEconomicPurchases(this.frame);
@@ -107,7 +128,7 @@ export class PragmaticSession{
    return {phase:'feature',terminal:false,inventoryKnown:!!this.initial,options:[],state,exchange,continueAction:{id:'protocol:continue',kind:'continue'}};
  }
  async perform(action){
-   this.pendingMarker=await this.wireMarker();this.pendingKind=action.kind;this.waitingOnly=false;this.awaitingFinish=false;
+   this.pendingMarker=await this.wireMarker();this.pendingKind=action.kind;this.waitingOnly=false;this.awaitingFinish=false;this.pendingResult=null;
    if(action.kind==='buy'){
      if(!this.initial||!Number.isInteger(action.index)||action.index<0||action.index>=this.initial.count)return {ok:false,reason:'Purchase not enabled by doInit'};
      this.started=true;const selected=await this.provider.purchase(this.frame,action.index);
@@ -163,38 +184,98 @@ export class PragmaticSession{
    }
    if(action.kind==='continue'){
      const exchange=await this.latestExchange(),state=await this.provider.protocolState(this.frame);
-     if(exchange.na==='c'&&state?.logicIsFreeSpin===true&&!state.stages?.some(s=>s.name==='StageSpin')){this.waitingOnly=true;this.awaitingFinish=true;return {ok:true,waiting:true,kind:'collect-ui-wait',state};}
+     if(this.started&&exchange.na==='c'&&state?.canSpin===true&&!state.logicIsFreeSpin&&!state.spinBlockingFeatureIsRunning&&!state.respinInProgress&&!state.stopActive&&!state.lastWinIsCounting&&!state.waitInResultForBigWin&&
+        state.stages?.some(stage=>stage.name==='StageResult')&&!(state.pickerControls||[]).some(c=>c.active!==false)&&!(await this.purchaseMenu()).open){
+       // The game's ordinary spin path collects this ready result before spinning.
+       // An inactive free-spin window event would submit nothing here.
+       const ok=await this.verifyBase({rounds:1});this.pendingVerified=ok;
+       return {ok,kind:'ready-result-closing-spin',normalRoundsVerified:ok,...(!ok?{reason:'CLOSING_SPIN_NOT_CONFIRMED',verification:this.lastVerification}:{})};
+     }
+     if(exchange.na==='c'&&state?.logicIsFreeSpin===true&&!state.stages?.some(s=>s.name==='StageSpin')&&!resultCountingStopAvailable(state)){this.waitingOnly=true;this.awaitingFinish=true;return {ok:true,waiting:true,kind:'collect-ui-wait',state};}
      this.awaitingFinish=false;
      const r=await this.provider.continueProtocol(this.frame,exchange);
      if(r?.ok===false&&r.kind==='spin'&&r.state?.logicIsFreeSpin===true){this.waitingOnly=true;return {...r,ok:true,waiting:true,kind:'feature-end-wait'};}
+     if(r?.ok===false&&((r.kind==='unknown'&&exchange.na==='fso')||r.needsBonusInit===true||
+        (r.kind==='bonus-pick'&&r.needsSelection===true&&!(r.choices||[]).some(c=>c.active===true)))&&
+        !(state?.pickerControls||[]).some(c=>c.active!==false)&&!(await this.purchaseMenu()).open){
+       this.waitingOnly=true;return {...r,ok:true,waiting:true,kind:'control-availability-wait'};
+     }
      this.waitingOnly=!!r?.waiting||['confirm-fs-start','cascade-stop'].includes(r?.kind);
-     return r?.waiting?{...r,ok:true}:r;
+     const result=r?.waiting?{...r,ok:true}:r;this.pendingResult=result;return result;
    }
    return {ok:false,reason:'Unknown Pragmatic action'};
  }
  async waitForTransition(before,{deadline=Date.now()+15000,signal}={}){
    if(this.pendingVerified){this.pendingVerified=false;return true;}
    const marker=this.pendingMarker??await this.wireMarker();const protocol=JSON.stringify(before.state||{});
-   const until=Math.min(deadline,Date.now()+15000);
+   const startedAt=Date.now(),until=Math.min(deadline,startedAt+(this.clickContinue?60000:15000));
+   let recoveryAttempted=false,nextSurfaceCheck=startedAt+10000,nextIntroClick=startedAt+5000;
+   let nextCenterClick=Date.now()+2000;
    while(Date.now()<until&&!signal?.aborted){
      await sleep(200);const e=await this.latestExchange(),s=await this.provider.protocolState(this.frame);
-     if(await this.wireMarker()!==marker)return true;
+     if(this.pendingKind==='pick'&&(before.options||[]).some(o=>o.kind==='pick')){
+       const signature=controls=>JSON.stringify(controls.map(c=>[c.root,c.name,c.event,c.index]).sort());
+       const previous=(before.options||[]).filter(o=>o.kind==='pick').map(o=>o.control);
+       const current=(s?.pickerControls||[]).filter(c=>c.active!==false);
+       // A reply can arrive before the old choice panel closes. It is not a new menu.
+       if(current.length&&signature(current)===signature(previous))continue;
+     }
+     if(await this.wireMarker()!==marker){
+       if(this.pendingKind==='buy'&&(await this.latestRequest()).pur!==undefined)this.purchaseAccepted=true;
+       return true;
+     }
+     // Hold & Spinner and other introductions do not necessarily expose a
+     // Result stage. A confirmed purchase stalled for five seconds still
+     // receives the user's center continuation, never another purchase.
+     if(this.started&&this.purchaseAccepted&&this.clickContinue&&Date.now()>=nextIntroClick&&
+        ['buy','pick','continue'].includes(this.pendingKind)&&
+        !(s?.pickerControls||[]).some(c=>c.active!==false)&&!(await this.purchaseMenu()).open){
+       const clicked=await this.clickContinue();if(clicked?.ok!==true)return false;
+       if(this.pendingResult)this.pendingResult.centerFallbackClicks=(this.pendingResult.centerFallbackClicks||0)+1;
+       nextIntroClick=Date.now()+2000;nextCenterClick=nextIntroClick;
+     }
+     // StageSpin has no safe center action. Keep its renderer alive separately
+     // from UI continuation, without sending another game command.
+     if(this.maintainSurface&&Date.now()>=nextSurfaceCheck){
+       const refreshed=await this.maintainSurface();
+       nextSurfaceCheck=Date.now()+10000;
+       if(this.pendingResult)(this.pendingResult.surfaceChecks??=[]).push(refreshed);
+     }
+     if(this.pendingKind==='continue'&&this.waitingOnly&&!recoveryAttempted&&Date.now()-startedAt>=8000&&this.provider.recoverFeatureStart){
+       recoveryAttempted=true;
+       const recovery=await this.provider.recoverFeatureStart(this.frame);
+       if(this.pendingResult)this.pendingResult.recovery=recovery;
+       if(recovery?.ok===true)continue;
+     }
      if(this.pendingKind==='nested_buy'&&before.menuSignature&&JSON.stringify(await this.purchaseMenu())!==before.menuSignature)return true;
      if(this.pendingKind==='result_click'){
        if((s?.pickerControls||[]).some(c=>c.active!==false)||(await this.purchaseMenu()).open)return true;
        if(s?.canSpin===true&&!s.logicIsFreeSpin&&!s.spinBlockingFeatureIsRunning&&!s.respinInProgress)return true;
-       if(Date.now()>=this.resultClickNextAt&&this.resultClickAttempts<8&&e.na==='s'&&!activeCascade(e)&&(await this.latestRequest()).action==='doCollect'&&!s?.respinInProgress&&s?.stages?.some(stage=>stage.name==='StageResult'||stage.name==='StageResultFreeSpin')){
+       if(Date.now()>=this.resultClickNextAt&&e.na==='s'&&!activeCascade(e)&&(await this.latestRequest()).action==='doCollect'&&!s?.respinInProgress&&s?.stages?.some(stage=>stage.name==='StageResult'||stage.name==='StageResultFreeSpin')){
          const clicked=await this.clickContinue();if(clicked?.ok!==true)return false;this.resultClickAttempts++;this.resultClickResult.clicks=this.resultClickAttempts;this.resultClickNextAt=Date.now()+2000;
        }continue;
      }
-     if(this.awaitingFinish){if(s&&(!s.logicIsFreeSpin&&s.canSpin===true||(s.bonusControls||[]).some(c=>c.active===true&&/FreeSpinsWindow(?:Win|Lose)CollectPressed|BonusRoundsOnContinuePressed/.test(c.event))))return true;continue;}
+     if(this.awaitingFinish){
+       if(s&&(!s.logicIsFreeSpin&&s.canSpin===true||(s.bonusControls||[]).some(c=>c.active===true&&/FreeSpinsWindow(?:Win|Lose)CollectPressed|BonusRoundsOnContinuePressed/.test(c.event))))return true;
+       if(this.clickContinue&&Date.now()>=nextCenterClick&&!(s?.pickerControls||[]).some(c=>c.active!==false)&&
+          !(await this.purchaseMenu()).open&&s?.stages?.some(stage=>stage.name==='StageResult'||stage.name==='StageResultFreeSpin')){
+         const clicked=await this.clickContinue();if(clicked?.ok!==true)return false;nextCenterClick=Date.now()+2000;
+       }continue;
+     }
      if(this.pendingKind==='modifier'&&s&&JSON.stringify(s)!==protocol)return true;
      if(this.pendingKind==='continue'&&this.waitingOnly&&s&&JSON.stringify(s)!==protocol&&
        (s.canSpin===true||s.confirmFSActive===true||(s.pickerControls||[]).some(c=>c.active!==false)||(s.bonusControls||[]).some(c=>c.active===true)))return true;
+     if(['buy','spin','continue'].includes(this.pendingKind)&&this.clickContinue&&Date.now()>=nextCenterClick&&
+        !(s?.pickerControls||[]).some(c=>c.active!==false)&&!(await this.purchaseMenu()).open&&
+        s?.stages?.some(stage=>stage.name==='StageResult'||stage.name==='StageResultFreeSpin')){
+       const clicked=await this.clickContinue();if(clicked?.ok!==true)return false;nextCenterClick=Date.now()+2000;
+     }
    }return false;
  }
- async verifyBase({expectedBetLevel}={}){
-   for(let i=0;i<2;i++){
+ async verifyBase({expectedBetLevel,rounds=2}={}){
+   const closed=await this.provider.closeBetMenu?.(this.frame);
+   if(closed?.ok===false){this.lastVerification={reason:closed.reason};return false;}
+   for(let i=0;i<rounds;i++){
      let ready=await this.provider.protocolState(this.frame);
      if(ready?.stopActive===true){
        const exchange=await this.latestExchange();
@@ -209,9 +290,21 @@ export class PragmaticSession{
      const before={exchange:await this.latestExchange(),state:await this.provider.protocolState(this.frame)};
      this.pendingMarker=await this.wireMarker();this.pendingKind='spin';
      const action=await this.provider.press(this.frame,'spin');this.lastVerification={round:i+1,action,before:before.state};if(action?.ok!==true||!(await this.waitForTransition(before,{deadline:Date.now()+15000}))){this.lastVerification.reason=action?.ok===true?'SPIN_NOT_TRANSITIONED':'SPIN_CONTROL_FAILED';this.lastVerification.after=await this.provider.protocolState(this.frame);return false;}
-     const until=Date.now()+15000;let ok=false;
-     while(Date.now()<until){const s=await this.provider.protocolState(this.frame),e=await this.latestExchange();if(s?.canSpin===true&&!s.logicIsFreeSpin&&!s.spinBlockingFeatureIsRunning&&!s.respinInProgress&&!(s.pickerControls||[]).some(c=>c.active!==false)&&!activeCascade(e)&&e.na==='s'){ok=true;break;}await sleep(200);}
-     if(!ok)return false;
+     const until=Date.now()+(this.clickContinue?60000:15000);let ok=false,nextCenterClick=Date.now()+2000;
+     while(Date.now()<until){
+       const s=await this.provider.protocolState(this.frame),e=await this.latestExchange();
+       if(s?.logicIsFreeSpin||s?.mustOpenBonus||(s?.pickerControls||[]).some(c=>c.active===true)) {
+         this.lastVerification.reason='INCIDENTAL_FEATURE';this.lastVerification.after=s;return false;
+       }
+       if(s?.canSpin===true&&!s.logicIsFreeSpin&&!s.spinBlockingFeatureIsRunning&&!s.respinInProgress&&!(s.pickerControls||[]).some(c=>c.active!==false)&&!activeCascade(e)&&e.na==='s'){ok=true;break;}
+       if(this.clickContinue&&Date.now()>=nextCenterClick&&!s?.logicIsFreeSpin&&!s?.respinInProgress&&
+          !(s?.pickerControls||[]).some(c=>c.active!==false)&&!activeCascade(e)&&
+          s?.stages?.some(stage=>stage.name==='StageResult')&&!(await this.purchaseMenu()).open){
+         const clicked=await this.clickContinue();if(clicked?.ok!==true){this.lastVerification.reason=clicked?.reason||'CENTER_CONTINUE_FAILED';return false;}nextCenterClick=Date.now()+2000;
+       }
+       await sleep(200);
+     }
+     if(!ok){this.lastVerification.reason='BASE_WAIT_TIMEOUT';this.lastVerification.after=await this.provider.protocolState(this.frame);return false;}
      {
        const last=(await this.entries()).filter(e=>!previous.has(key(e))&&e.response?.status===200&&new URLSearchParams(e.request?.postData?.text||'').get('action')==='doSpin').at(-1);
        const payload=new URLSearchParams(last?.request?.postData?.text||'');
@@ -225,6 +318,8 @@ export class PragmaticSession{
  async capture(mode,mark){const entries=(await this.entries()).filter(e=>/gameService/.test(e.request?.url||''));if(mode==='mark')return new Set(entries.map(key));return {exchanges:entries.filter(e=>!(mark instanceof Set)||!mark.has(key(e))).map(e=>({endpoint:new URL(e.request.url).origin+new URL(e.request.url).pathname,request:form(e.request?.postData?.text||''),status:e.response?.status,response:form(body(e))}))};}
  async forkDemo(){return this.fork();}
  async probeBet(){
+   const closed=await this.provider.closeBetMenu?.(this.frame);
+   if(closed?.ok===false)return {status:'PENDING',reason:closed.reason,restored:false};
    const before=await this.economics(),snapshots=[before],actions=[];let reason=null,wire=null;
    const settle=async()=>{let previous=null;for(let n=0;n<15;n++){await sleep(200);const current=await this.economics();const signature=JSON.stringify({bet:current.bet,options:current.options});if(signature===previous)return current;previous=signature;}throw new Error('Economic state did not stabilize');};
    try{
@@ -249,6 +344,8 @@ export class PragmaticSession{
      }
    }
    const impact=classifyImpact(snapshots);
+   const menuClosed=await this.provider.closeBetMenu?.(this.frame);
+   if(menuClosed?.ok===false)reason=menuClosed.reason;
    let finalBet=null;try{finalBet=(await this.economics()).bet;}catch{reason='BET_FINAL_STATE_UNKNOWN';}
    return {status:!reason&&impact.roundTripVerified?'OBSERVED':'PENDING',reason,before,after:snapshots[1]||null,actions,snapshots,wire,impact,
      finalBet,restored:before.bet>0&&before.bet===finalBet};

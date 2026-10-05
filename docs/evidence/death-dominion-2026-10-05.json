@@ -1,0 +1,887 @@
+{
+  "provider": "pragmatic",
+  "game": "Death Dominion",
+  "sourceJob": "4d3db4cc-5cfb-4e2c-a667-1da0fdc56638",
+  "status": "PARTIAL",
+  "completeGame": false,
+  "nodes": [
+    {
+      "id": "2e680655430d0b3001a1",
+      "route": [],
+      "controls": [
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/MainButton/content/Colliders/Collider0",
+          "labels": [
+            "SPECIAL BETS",
+            "4",
+            "OPTIONS"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/MainButton/content/ColliderHolder/ColliderBuy",
+          "labels": [
+            "BUY\nFEATURE",
+            "4",
+            "OPTIONS"
+          ]
+        }
+      ],
+      "unresolvedCount": 0
+    },
+    {
+      "id": "491e3dfaf36550897fe9",
+      "route": [
+        {
+          "from": "2e680655430d0b3001a1",
+          "to": "491e3dfaf36550897fe9",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/MainButton/content/Colliders/Collider0"
+        }
+      ],
+      "controls": [
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/WindowOptions/content/CloseButton/Collider",
+          "labels": []
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/WindowOptions/content/Options/Pivot/Level1/content/ColliderHolder/Collider",
+          "labels": [
+            "ANTE BET 1",
+            "$4.00",
+            "4X CHANCE \nOF ANY FREE SPINS"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/WindowOptions/content/Options/Pivot/Level2/content/ColliderHolder/Collider",
+          "labels": [
+            "ANTE BET 2",
+            "$20.00",
+            "500X CHANCE OF\nDOMINION IMMORTAL FREE SPINS"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/WindowOptions/content/Options/Pivot/Level3/content/ColliderHolder/Collider",
+          "labels": [
+            "SUPER SPIN 1",
+            "$30.00",
+            "GUARANTEED DOOM\nAND MULTIPLIER EVERY SPIN"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/WindowOptions/content/Options/Pivot/Level4/content/ColliderHolder/Collider",
+          "labels": [
+            "SUPER SPIN 2",
+            "$500.00",
+            "GUARANTEED MULTIPLIER\nMINIMUM 50X EVERY SPIN"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/WindowOptions/content/CancelCollider",
+          "labels": [
+            "SPECIAL BETS",
+            "ANTE BET 1",
+            "$4.00",
+            "4X CHANCE \nOF ANY FREE SPINS",
+            "ANTE BET 2",
+            "$20.00",
+            "500X CHANCE OF\nDOMINION IMMORTAL FREE SPINS",
+            "SUPER SPIN 1",
+            "$30.00",
+            "GUARANTEED DOOM\nAND MULTIPLIER EVERY SPIN",
+            "SUPER SPIN 2",
+            "$500.00",
+            "GUARANTEED MULTIPLIER\nMINIMUM 50X EVERY SPIN",
+            "BASE BET",
+            "$2.00"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/MainButton/content/ColliderHolder/ColliderBuy",
+          "labels": [
+            "BUY\nFEATURE",
+            "4",
+            "OPTIONS"
+          ]
+        }
+      ],
+      "unresolvedCount": 0
+    },
+    {
+      "id": "a84fea53a1795bb930ce",
+      "route": [
+        {
+          "from": "2e680655430d0b3001a1",
+          "to": "a84fea53a1795bb930ce",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/MainButton/content/ColliderHolder/ColliderBuy"
+        }
+      ],
+      "controls": [
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/CloseButton/Collider",
+          "labels": []
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option1/content/Pivot/ColliderHolder/Collider",
+          "labels": [
+            "FREE SPINS",
+            "$200.00",
+            "STANDARD FREE SPINS"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option2/content/Pivot/ColliderHolder/Collider",
+          "labels": [
+            "DOMINION FREE SPINS",
+            "$400.00",
+            "DOOM CAN ADD\nMORE MULTIPLIERS"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option3/content/Pivot/ColliderHolder/Collider",
+          "labels": [
+            "IMMORTAL FREE SPINS",
+            "$600.00",
+            "DOOM ALWAYS\nBECOMES MULTIPLIER"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option4/content/Pivot/ColliderHolder/Collider",
+          "labels": [
+            "DOMINION IMMORTAL FREE SPINS",
+            "$1,500.00",
+            "DOOM ALWAYS\nADDS MORE MULTIPLIERS"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/CancelCollider",
+          "labels": [
+            "BUY FEATURE",
+            "FREE SPINS",
+            "$200.00",
+            "STANDARD FREE SPINS",
+            "DOMINION FREE SPINS",
+            "$400.00",
+            "DOOM CAN ADD\nMORE MULTIPLIERS",
+            "IMMORTAL FREE SPINS",
+            "$600.00",
+            "DOOM ALWAYS\nBECOMES MULTIPLIER",
+            "DOMINION IMMORTAL FREE SPINS",
+            "$1,500.00",
+            "DOOM ALWAYS\nADDS MORE MULTIPLIERS",
+            "BASE BET",
+            "$2.00"
+          ]
+        }
+      ],
+      "unresolvedCount": 0
+    },
+    {
+      "id": "3b85147415ce527b503b",
+      "route": [
+        {
+          "from": "2e680655430d0b3001a1",
+          "to": "a84fea53a1795bb930ce",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/MainButton/content/ColliderHolder/ColliderBuy"
+        },
+        {
+          "from": "a84fea53a1795bb930ce",
+          "to": "3b85147415ce527b503b",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option1/content/Pivot/ColliderHolder/Collider"
+        }
+      ],
+      "controls": [
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/MainButton/content/Colliders/Collider0",
+          "labels": [
+            "SPECIAL BETS",
+            "4",
+            "OPTIONS"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CloseButton/Collider",
+          "labels": []
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/BackButton/Collider",
+          "labels": []
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CancelButton/Collider",
+          "labels": [
+            "CANCEL"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/AcceptButton/Colliders/ColliderOption1",
+          "labels": [
+            "YES"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CancelCollider",
+          "labels": [
+            "CONFIRM BUY",
+            "FREE SPINS",
+            "$200.00",
+            "STANDARD FREE SPINS",
+            "CANCEL",
+            "YES"
+          ]
+        }
+      ],
+      "unresolvedCount": 0
+    },
+    {
+      "id": "2c051919535a4aa917b4",
+      "route": [
+        {
+          "from": "2e680655430d0b3001a1",
+          "to": "a84fea53a1795bb930ce",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/MainButton/content/ColliderHolder/ColliderBuy"
+        },
+        {
+          "from": "a84fea53a1795bb930ce",
+          "to": "2c051919535a4aa917b4",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option2/content/Pivot/ColliderHolder/Collider"
+        }
+      ],
+      "controls": [
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/MainButton/content/Colliders/Collider0",
+          "labels": [
+            "SPECIAL BETS",
+            "4",
+            "OPTIONS"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CloseButton/Collider",
+          "labels": []
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/BackButton/Collider",
+          "labels": []
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CancelButton/Collider",
+          "labels": [
+            "CANCEL"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/AcceptButton/Colliders/ColliderOption2",
+          "labels": [
+            "YES"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CancelCollider",
+          "labels": [
+            "CONFIRM BUY",
+            "DOMINION FREE SPINS",
+            "$400.00",
+            "DOOM CAN ADD\nMORE MULTIPLIERS",
+            "CANCEL",
+            "YES"
+          ]
+        }
+      ],
+      "unresolvedCount": 0
+    },
+    {
+      "id": "c2dee58b1d3cf76145d4",
+      "route": [
+        {
+          "from": "2e680655430d0b3001a1",
+          "to": "a84fea53a1795bb930ce",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/MainButton/content/ColliderHolder/ColliderBuy"
+        },
+        {
+          "from": "a84fea53a1795bb930ce",
+          "to": "c2dee58b1d3cf76145d4",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option3/content/Pivot/ColliderHolder/Collider"
+        }
+      ],
+      "controls": [
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/MainButton/content/Colliders/Collider0",
+          "labels": [
+            "SPECIAL BETS",
+            "4",
+            "OPTIONS"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CloseButton/Collider",
+          "labels": []
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/BackButton/Collider",
+          "labels": []
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CancelButton/Collider",
+          "labels": [
+            "CANCEL"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/AcceptButton/Colliders/ColliderOption3",
+          "labels": [
+            "YES"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CancelCollider",
+          "labels": [
+            "CONFIRM BUY",
+            "IMMORTAL FREE SPINS",
+            "$600.00",
+            "DOOM ALWAYS\nBECOMES MULTIPLIER",
+            "CANCEL",
+            "YES"
+          ]
+        }
+      ],
+      "unresolvedCount": 0
+    },
+    {
+      "id": "9f1165bce1d6484c9bf1",
+      "route": [
+        {
+          "from": "2e680655430d0b3001a1",
+          "to": "a84fea53a1795bb930ce",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/MainButton/content/ColliderHolder/ColliderBuy"
+        },
+        {
+          "from": "a84fea53a1795bb930ce",
+          "to": "9f1165bce1d6484c9bf1",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option4/content/Pivot/ColliderHolder/Collider"
+        }
+      ],
+      "controls": [
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/MainButton/content/Colliders/Collider0",
+          "labels": [
+            "SPECIAL BETS",
+            "4",
+            "OPTIONS"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CloseButton/Collider",
+          "labels": []
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/BackButton/Collider",
+          "labels": []
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CancelButton/Collider",
+          "labels": [
+            "CANCEL"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/AcceptButton/Colliders/ColliderOption4",
+          "labels": [
+            "YES"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CancelCollider",
+          "labels": [
+            "CONFIRM BUY",
+            "DOMINION IMMORTAL FREE SPINS",
+            "$1,500.00",
+            "DOOM ALWAYS ADDS\nMORE MULTIPLIERS",
+            "CANCEL",
+            "YES"
+          ]
+        }
+      ],
+      "unresolvedCount": 0
+    },
+    {
+      "id": "58491abd20830c171c9e",
+      "route": [
+        {
+          "from": "2e680655430d0b3001a1",
+          "to": "a84fea53a1795bb930ce",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/MainButton/content/ColliderHolder/ColliderBuy"
+        },
+        {
+          "from": "a84fea53a1795bb930ce",
+          "to": "3b85147415ce527b503b",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option1/content/Pivot/ColliderHolder/Collider"
+        },
+        {
+          "from": "3b85147415ce527b503b",
+          "to": "58491abd20830c171c9e",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/BackButton/Collider"
+        }
+      ],
+      "controls": [
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/MainButton/content/Colliders/Collider0",
+          "labels": [
+            "SPECIAL BETS",
+            "4",
+            "OPTIONS"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/CloseButton/Collider",
+          "labels": []
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option1/content/Pivot/ColliderHolder/Collider",
+          "labels": [
+            "FREE SPINS",
+            "$200.00",
+            "STANDARD FREE SPINS"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option2/content/Pivot/ColliderHolder/Collider",
+          "labels": [
+            "DOMINION FREE SPINS",
+            "$400.00",
+            "DOOM CAN ADD\nMORE MULTIPLIERS"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option3/content/Pivot/ColliderHolder/Collider",
+          "labels": [
+            "IMMORTAL FREE SPINS",
+            "$600.00",
+            "DOOM ALWAYS\nBECOMES MULTIPLIER"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option4/content/Pivot/ColliderHolder/Collider",
+          "labels": [
+            "DOMINION IMMORTAL FREE SPINS",
+            "$1,500.00",
+            "DOOM ALWAYS\nADDS MORE MULTIPLIERS"
+          ]
+        },
+        {
+          "path": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/CancelCollider",
+          "labels": [
+            "BUY FEATURE",
+            "FREE SPINS",
+            "$200.00",
+            "STANDARD FREE SPINS",
+            "DOMINION FREE SPINS",
+            "$400.00",
+            "DOOM CAN ADD\nMORE MULTIPLIERS",
+            "IMMORTAL FREE SPINS",
+            "$600.00",
+            "DOOM ALWAYS\nBECOMES MULTIPLIER",
+            "DOMINION IMMORTAL FREE SPINS",
+            "$1,500.00",
+            "DOOM ALWAYS\nADDS MORE MULTIPLIERS",
+            "BASE BET",
+            "$2.00"
+          ]
+        }
+      ],
+      "unresolvedCount": 0
+    }
+  ],
+  "edges": [
+    {
+      "from": "2e680655430d0b3001a1",
+      "to": "491e3dfaf36550897fe9",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/MainButton/content/Colliders/Collider0",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "2e680655430d0b3001a1",
+      "to": "a84fea53a1795bb930ce",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/MainButton/content/ColliderHolder/ColliderBuy",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "491e3dfaf36550897fe9",
+      "to": "2e680655430d0b3001a1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/WindowOptions/content/CloseButton/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "491e3dfaf36550897fe9",
+      "to": null,
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/WindowOptions/content/Options/Pivot/Level1/content/ColliderHolder/Collider",
+      "reason": "OPERATION_COMPLETE",
+      "operation": {
+        "kind": "spin",
+        "ok": true,
+        "payload": {
+          "action": "doSpin",
+          "symbol": "vs20ddominion",
+          "c": "0.1",
+          "l": "20",
+          "sInfo": "n",
+          "bl": "1",
+          "repeat": "0"
+        },
+        "normalSpinVerified": true
+      }
+    },
+    {
+      "from": "491e3dfaf36550897fe9",
+      "to": null,
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/WindowOptions/content/Options/Pivot/Level2/content/ColliderHolder/Collider",
+      "reason": "OPERATION_COMPLETE",
+      "operation": {
+        "kind": "spin",
+        "ok": true,
+        "payload": {
+          "action": "doSpin",
+          "symbol": "vs20ddominion",
+          "c": "0.1",
+          "l": "20",
+          "sInfo": "n",
+          "bl": "2",
+          "repeat": "0"
+        },
+        "normalSpinVerified": true
+      }
+    },
+    {
+      "from": "491e3dfaf36550897fe9",
+      "to": null,
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/WindowOptions/content/Options/Pivot/Level3/content/ColliderHolder/Collider",
+      "reason": "OPERATION_COMPLETE",
+      "operation": {
+        "kind": "spin",
+        "ok": true,
+        "payload": {
+          "action": "doSpin",
+          "symbol": "vs20ddominion",
+          "c": "0.1",
+          "l": "20",
+          "sInfo": "n",
+          "bl": "3",
+          "repeat": "0"
+        },
+        "normalSpinVerified": true
+      }
+    },
+    {
+      "from": "491e3dfaf36550897fe9",
+      "to": null,
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/WindowOptions/content/Options/Pivot/Level4/content/ColliderHolder/Collider",
+      "reason": "OPERATION_COMPLETE",
+      "operation": {
+        "kind": "spin",
+        "ok": true,
+        "payload": {
+          "action": "doSpin",
+          "symbol": "vs20ddominion",
+          "c": "0.1",
+          "l": "20",
+          "sInfo": "n",
+          "bl": "4",
+          "repeat": "0"
+        },
+        "normalSpinVerified": true
+      }
+    },
+    {
+      "from": "491e3dfaf36550897fe9",
+      "to": "491e3dfaf36550897fe9",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/WindowOptions/content/CancelCollider",
+      "reason": "QUIET_TIMEOUT"
+    },
+    {
+      "from": "491e3dfaf36550897fe9",
+      "to": "491e3dfaf36550897fe9",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/MainButton/content/ColliderHolder/ColliderBuy",
+      "reason": "QUIET_TIMEOUT"
+    },
+    {
+      "from": "a84fea53a1795bb930ce",
+      "to": "2e680655430d0b3001a1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/CloseButton/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "a84fea53a1795bb930ce",
+      "to": "3b85147415ce527b503b",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option1/content/Pivot/ColliderHolder/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "a84fea53a1795bb930ce",
+      "to": "2c051919535a4aa917b4",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option2/content/Pivot/ColliderHolder/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "a84fea53a1795bb930ce",
+      "to": "c2dee58b1d3cf76145d4",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option3/content/Pivot/ColliderHolder/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "a84fea53a1795bb930ce",
+      "to": "9f1165bce1d6484c9bf1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option4/content/Pivot/ColliderHolder/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "a84fea53a1795bb930ce",
+      "to": "a84fea53a1795bb930ce",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/CancelCollider",
+      "reason": "QUIET_TIMEOUT"
+    },
+    {
+      "from": "3b85147415ce527b503b",
+      "to": "2e680655430d0b3001a1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/MainButton/content/Colliders/Collider0",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "3b85147415ce527b503b",
+      "to": "2e680655430d0b3001a1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CloseButton/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "3b85147415ce527b503b",
+      "to": "58491abd20830c171c9e",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/BackButton/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "3b85147415ce527b503b",
+      "to": "2e680655430d0b3001a1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CancelButton/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "3b85147415ce527b503b",
+      "to": null,
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/AcceptButton/Colliders/ColliderOption1",
+      "reason": "OPERATION_COMPLETE",
+      "operation": {
+        "kind": "purchase",
+        "ok": true,
+        "payload": {
+          "action": "doSpin",
+          "symbol": "vs20ddominion",
+          "c": "0.1",
+          "l": "20",
+          "sInfo": "n",
+          "bl": "0",
+          "pur": "0",
+          "repeat": "0"
+        },
+        "normalSpinVerified": true
+      }
+    },
+    {
+      "from": "3b85147415ce527b503b",
+      "to": "3b85147415ce527b503b",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CancelCollider",
+      "reason": "QUIET_TIMEOUT"
+    },
+    {
+      "from": "2c051919535a4aa917b4",
+      "to": "2e680655430d0b3001a1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/MainButton/content/Colliders/Collider0",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "2c051919535a4aa917b4",
+      "to": "2e680655430d0b3001a1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CloseButton/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "2c051919535a4aa917b4",
+      "to": "58491abd20830c171c9e",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/BackButton/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "2c051919535a4aa917b4",
+      "to": "2e680655430d0b3001a1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CancelButton/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "2c051919535a4aa917b4",
+      "to": null,
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/AcceptButton/Colliders/ColliderOption2",
+      "reason": "OPERATION_COMPLETE",
+      "operation": {
+        "kind": "purchase",
+        "ok": true,
+        "payload": {
+          "action": "doSpin",
+          "symbol": "vs20ddominion",
+          "c": "0.1",
+          "l": "20",
+          "sInfo": "n",
+          "bl": "0",
+          "pur": "1",
+          "repeat": "0"
+        },
+        "normalSpinVerified": true
+      }
+    },
+    {
+      "from": "2c051919535a4aa917b4",
+      "to": "2c051919535a4aa917b4",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CancelCollider",
+      "reason": "QUIET_TIMEOUT"
+    },
+    {
+      "from": "c2dee58b1d3cf76145d4",
+      "to": "2e680655430d0b3001a1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/MainButton/content/Colliders/Collider0",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "c2dee58b1d3cf76145d4",
+      "to": "2e680655430d0b3001a1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CloseButton/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "c2dee58b1d3cf76145d4",
+      "to": "58491abd20830c171c9e",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/BackButton/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "c2dee58b1d3cf76145d4",
+      "to": "2e680655430d0b3001a1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CancelButton/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "c2dee58b1d3cf76145d4",
+      "to": null,
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/AcceptButton/Colliders/ColliderOption3",
+      "reason": "OPERATION_COMPLETE",
+      "operation": {
+        "kind": "purchase",
+        "ok": true,
+        "payload": {
+          "action": "doSpin",
+          "symbol": "vs20ddominion",
+          "c": "0.1",
+          "l": "20",
+          "sInfo": "n",
+          "bl": "0",
+          "pur": "2",
+          "repeat": "0"
+        },
+        "normalSpinVerified": true
+      }
+    },
+    {
+      "from": "c2dee58b1d3cf76145d4",
+      "to": "c2dee58b1d3cf76145d4",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CancelCollider",
+      "reason": "QUIET_TIMEOUT"
+    },
+    {
+      "from": "9f1165bce1d6484c9bf1",
+      "to": "2e680655430d0b3001a1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/MainButton/content/Colliders/Collider0",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "9f1165bce1d6484c9bf1",
+      "to": "2e680655430d0b3001a1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CloseButton/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "9f1165bce1d6484c9bf1",
+      "to": "58491abd20830c171c9e",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/BackButton/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "9f1165bce1d6484c9bf1",
+      "to": "2e680655430d0b3001a1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CancelButton/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "9f1165bce1d6484c9bf1",
+      "to": null,
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/AcceptButton/Colliders/ColliderOption4",
+      "reason": "OPERATION_COMPLETE",
+      "operation": {
+        "kind": "purchase",
+        "ok": true,
+        "payload": {
+          "action": "doSpin",
+          "symbol": "vs20ddominion",
+          "c": "0.1",
+          "l": "20",
+          "sInfo": "n",
+          "bl": "0",
+          "pur": "3",
+          "repeat": "0"
+        },
+        "normalSpinVerified": true
+      }
+    },
+    {
+      "from": "9f1165bce1d6484c9bf1",
+      "to": "9f1165bce1d6484c9bf1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/CancelCollider",
+      "reason": "QUIET_TIMEOUT"
+    },
+    {
+      "from": "58491abd20830c171c9e",
+      "to": "2e680655430d0b3001a1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/MainButton/content/Colliders/Collider0",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "58491abd20830c171c9e",
+      "to": "2e680655430d0b3001a1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/CloseButton/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "58491abd20830c171c9e",
+      "to": "3b85147415ce527b503b",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option1/content/Pivot/ColliderHolder/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "58491abd20830c171c9e",
+      "to": "2c051919535a4aa917b4",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option2/content/Pivot/ColliderHolder/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "58491abd20830c171c9e",
+      "to": "c2dee58b1d3cf76145d4",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option3/content/Pivot/ColliderHolder/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "58491abd20830c171c9e",
+      "to": "9f1165bce1d6484c9bf1",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option4/content/Pivot/ColliderHolder/Collider",
+      "reason": "STATE_CHANGED"
+    },
+    {
+      "from": "58491abd20830c171c9e",
+      "to": "58491abd20830c171c9e",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/CancelCollider",
+      "reason": "QUIET_TIMEOUT"
+    }
+  ]
+}

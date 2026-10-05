@@ -38,8 +38,8 @@ export async function runPragmatic(session,{maxBranches,maxSteps=100,maxDepth=6,
        if(!prefix.length)for(const option of state.options||[])if(!result.inventory.some(o=>o.id===option.id))result.inventory.push(option);
        if(cursor===path.length&&state.terminal===true&&!(state.options||[]).length){
          const last=branch.steps.at(-1);
-         const verifiedModifier=last?.action.kind==='modifier'&&last.result?.ok===true&&last.result?.normalRoundsVerified===true;
-         if(child.verifyBase&&!verifiedModifier&&!(await child.verifyBase())){
+         const verifiedModifier=['modifier','continue'].includes(last?.action.kind)&&last.result?.ok===true&&last.result?.normalRoundsVerified===true;
+         if(child.verifyBase&&!verifiedModifier&&!(await child.verifyBase({rounds:1}))){
            if(child.lastVerification)branch.verification=child.lastVerification;
            const current=await child.observe();
            // A verification spin can trigger a natural bonus. Traverse its actual
@@ -57,20 +57,33 @@ export async function runPragmatic(session,{maxBranches,maxSteps=100,maxDepth=6,
          if(path.length>=maxDepth){branch.reason='DEPTH_LIMIT';break;}
          branch.status='EXPANDED';break;
        }
-       const action=cursor<path.length?choices.find(o=>o.id===path[cursor]):state.continueAction;
+       const planned=cursor<path.length?choices.find(o=>o.id===path[cursor]):null;
+       const action=cursor<path.length?(planned||(!choices.length?state.continueAction:null)):state.continueAction;
        if(!action){branch.reason=cursor<path.length?'CONTROL_UNAVAILABLE':'UNKNOWN_TRANSITION';break;}
        const mark=await child.capture('mark');const executed=await child.perform(action);
        branch.steps.push({action,result:executed});
+       // A picker can become active after observation. A declined continuation
+       // submits nothing; observe its advertised controls through normal discovery.
+       if(action.kind==='continue'&&executed?.ok===false&&executed.needsSelection===true&&
+          (executed.choices||[]).some(choice=>choice.active===true)){
+         state=await child.observe();continue;
+       }
        if(executed?.ok!==true){branch.reason='ACTION_FAILED';break;}
        // A submitted action is never resent, including after a transport timeout.
        if(!(await child.waitForTransition(state,{deadline,signal}))){branch.reason='TRANSITION_TIMEOUT';break;}
        branch.steps.at(-1).evidence=await child.capture('read',mark);
-       if(cursor<path.length)cursor++;
+       if(planned)cursor++;
        state=await child.observe();
      }
      if(branch.status==='PENDING'&&!branch.reason)branch.reason=active()?'STEP_LIMIT':'TIME_LIMIT_OR_CANCEL';
-   }catch(error){branch.reason='EXECUTION_ERROR';branch.error=String(error.message).slice(0,300);}
-   finally{try{await child?.close?.();if(child?.har)branch.har=child.har;}catch(error){branch.status='PENDING';branch.cleanupError=String(error.message).slice(0,200);}graph.mark(path,branch.status,branch.reason);}
+   }catch(error){branch.reason='EXECUTION_ERROR';branch.error=String(error.message).slice(0,300);if(error.screenshot)branch.screenshot={...error.screenshot,branch:[...path]};}
+   finally{
+     if(branch.status==='PENDING'&&child?.captureFailure&&!branch.screenshot){
+       try{branch.screenshot=await child.captureFailure({reason:branch.reason,branch:path});}
+       catch(error){branch.screenshot={tabId:child.tabId,reason:branch.reason,branch:[...path],error:String(error.message||error).slice(0,200)};}
+     }
+     try{await child?.close?.();if(child?.har)branch.har=child.har;}catch(error){branch.status='PENDING';branch.cleanupError=String(error.message).slice(0,200);}graph.mark(path,branch.status,branch.reason);
+   }
  }
  result.pendingPaths=queue;
  result.status=known&&!queue.length&&result.tree.every(b=>['COMPLETE','EXPANDED'].includes(b.status))?'COMPLETE':'PARTIAL';

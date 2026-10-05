@@ -1,5 +1,12 @@
 import { normalizeAction } from '../../../lib/parser-common.js';
 
+export function resultCountingStopAvailable(state){
+  return state?.stages?.some(stage=>['StageResult','StageResultFreeSpin'].includes(stage.name))&&
+    !(state.canSpin===true&&state.stages.some(stage=>stage.mustSpin===true))&&
+    (state.stopControls||[]).some(control=>control.active===true&&control.event==='Evt_DataToCode_Pressed_Stop')&&
+    !(state.pickerControls||[]).some(control=>control.active!==false);
+}
+
 const EVENT_MAP = {
   spin: 'Evt_DataToCode_Pressed_Spin',
   stop: 'Evt_DataToCode_Pressed_Stop',
@@ -18,6 +25,34 @@ const EVENT_MAP = {
 
 export const pragmatic = {
   id: 'pragmatic',
+
+  async closeBetMenu(frame) {
+    return frame.evaluate(async()=>{
+      const controls=[];
+      for(const root of globalThis.globalRuntime?.sceneRoots||[]){
+        if(!globalThis.XTButton)continue;
+        for(const button of root.GetComponentsInChildren(XTButton,true)||[]){
+          if(button.gameObject?.activeInHierarchy!==true||button.xtEnabled===false)continue;
+          const name=String(button.gameObject.name||'');
+          const event=String(button.eventToCode?.name||'');
+          let ancestry=name,node=button.gameObject;
+          for(let i=0;node&&i<12;i++,node=node.parent||node.transform?.parent?.gameObject)ancestry+=' '+String(node.name||'');
+          if(/close|cancel/i.test(name+' '+event)&&/bet/i.test(ancestry+' '+event)&&!/ante|feature|purchase|bonus/i.test(ancestry+' '+event))controls.push(button);
+        }
+      }
+      if(!controls.length)return {ok:true,closed:false};
+      for(const button of controls){
+        if(typeof button.OnClick==='function')button.OnClick();
+        else if(typeof button.OnPress==='function'){button.OnPress(true);button.OnPress(false);}
+        else return {ok:false,reason:'BET_MENU_CLOSE_UNAVAILABLE'};
+      }
+      for(let i=0;i<20;i++){
+        if(controls.every(b=>b.gameObject?.activeInHierarchy!==true))return {ok:true,closed:true};
+        await new Promise(resolve=>setTimeout(resolve,100));
+      }
+      return {ok:false,reason:'BET_MENU_STILL_OPEN'};
+    });
+  },
 
   async detect(frame) {
     return frame.evaluate(() => Boolean(window.globalRuntime && window.XT && window.Vars)).catch(() => false);
@@ -727,6 +762,11 @@ export const pragmatic = {
       const wantedEventName = eventMap[normalized] || null;
       const wantedEvent = wantedEventName && Vars[wantedEventName] ? Vars[wantedEventName] : wantedEventName;
 
+      if(/^bet_(?:inc|increase|dec|decrease)$/.test(normalized)&&Vars[wantedEventName]&&typeof XT.TriggerEvent==='function'){
+        try{XT.TriggerEvent(Vars[wantedEventName]);return {ok:true,control:null,event:wantedEventName,strategy:'direct bet runtime event'};}
+        catch(error){return {ok:false,reason:String(error?.message||error)};}
+      }
+
       const allButtons = [];
       if (window.XTButton) {
         for (let ri = 0; ri < roots.length; ri++) {
@@ -824,7 +864,7 @@ export const pragmatic = {
             try {
               const name = String(button.gameObject?.name || '');
               const event = String(button.eventToCode?.name || '');
-              const active = button.gameObject?.activeInHierarchy !== false;
+              const active = button.gameObject?.activeInHierarchy === true && button.xtEnabled !== false;
               const text = (name + ' ' + event).toLowerCase();
 
               const descriptor = {
@@ -991,6 +1031,44 @@ export const pragmatic = {
   async continueProtocol(frame, exchange) {
     const state = await this.protocolState(frame);
     const na = String(exchange?.na || '').toLowerCase();
+    if(state?.logicIsFreeSpin===true&&state.spinBlockingFeatureIsRunning===true&&
+       state.stages?.some(stage=>stage.name==='StageResultFreeSpin')&&
+       !(state.pickerControls||[]).some(control=>control.active!==false)) {
+      const continued=await frame.evaluate(()=>{
+        if(!globalThis.CATButton)return null;
+        const candidates=[];
+        for(const [rootIndex,root]of (globalThis.globalRuntime?.sceneRoots||[]).entries()) {
+          for(const [index,button]of (root.GetComponentsInChildren(CATButton,true)||[]).entries()) {
+            if(button.gameObject?.activeInHierarchy!==true||button.xtEnabled===false||button.enabled===false)continue;
+            const name=String(button.gameObject.name||'');
+            if(!/^(?:ButtonContinue|ContinueButton|FreeSpinsContinueButton)$/i.test(name))continue;
+            const release=button.catEventRelease,click=button.catEventClick;
+            const link=release?.cat&&typeof button.OnPress==='function'?release:click?.cat&&typeof button.OnClick==='function'?click:null;
+            if(link)candidates.push({button,link,name,root:rootIndex,index,release:link===release});
+          }
+        }
+        // Ambiguous controls remain pending; never guess between choice buttons.
+        if(candidates.length!==1)return null;
+        const item=candidates[0];
+        if(item.link.cat.IsEventRunning?.(item.link.id))return {ok:true,waiting:true,kind:'feature-cat-running'};
+        if(item.release){item.button.OnPress(true);item.button.OnPress(false);}else item.button.OnClick();
+        return {ok:true,waiting:true,kind:'feature-cat-continue',controller:{kind:'CATButton',name:item.name,root:item.root,index:item.index,eventId:item.link.id,method:item.release?'OnPress(true/false)':'OnClick'}};
+      });
+      if(continued)return {...continued,state};
+    }
+
+    // Result counting also precedes bonus menus and collection, not only na=s.
+    // Use the advertised active Stop; observe the next stage before any request.
+    if(resultCountingStopAvailable(state)){
+      const stopped=await frame.evaluate(()=>{
+        try{
+          const event=globalThis.Vars?.Evt_DataToCode_Pressed_Stop;
+          if(!event||typeof globalThis.XT?.TriggerEvent!=='function')return {ok:false,kind:'result-counting-stop',reason:'Active Stop event unavailable'};
+          XT.TriggerEvent(event);return {ok:true,waiting:true,kind:'result-counting-stop'};
+        }catch(error){return {ok:false,kind:'result-counting-stop',reason:String(error.message||error)};}
+      });
+      return {...stopped,state};
+    }
 
     // A successful response can arrive before the reels finish. Advance the
     // active visual stage through its registered Stop handler, not the server.
@@ -1224,12 +1302,37 @@ export const pragmatic = {
       };
     }
 
+    const lateChoices=(state?.pickerControls||[]).filter(control=>control.active===true);
+    if(lateChoices.length)return {ok:false,kind:'bonus-pick',needsSelection:true,choices:lateChoices,state};
     return {
       ok: false,
       kind: 'unknown',
       reason: 'No protocol continuation for na=' + na,
       state
     };
+  },
+
+  async recoverFeatureStart(frame){
+    return frame.evaluate(()=>{
+      const unavailable={ok:false,reason:'No stalled first free-spin transition'};
+      if(!globalThis.SpinBlockEnabler||!globalThis.XT||!globalThis.Vars)return unavailable;
+      if(!XT.GetBool(Vars.CanSpin)||!XT.GetBool(Vars.Logic_IsFreeSpin)||!XT.GetBool(Vars.SpinBlockingFeatureIsRunning))return unavailable;
+      if(Vars.FeaturePurchaseWindowIsOpen&&XT.GetBool(Vars.FeaturePurchaseWindowIsOpen))return unavailable;
+      const fsr=XT.GetObject(Vars.ReceivedFreeSpinsResponse);
+      if(!fsr||!Number.isFinite(fsr.MaxSpins)||fsr.MaxSpins<=0||!Number.isFinite(fsr.CurrentSpin)||fsr.CurrentSpin<0||fsr.CurrentSpin>1||fsr.IsLastFreeSpin||fsr.IsFreeSpinsCollected||fsr.IsFreeSpin===false)return unavailable;
+      const handlers=(XT.variablesEvent?.[Vars.Evt_DataToCode_Pressed_Stop]||[]).flatMap(holder=>holder.OnValueChanged||[]);
+      if(!handlers.some(h=>h.isEnabled!==false&&h.object?.xtEnabled!==false&&h.object?.constructor?.name==='StageResultFreeSpin'&&h.object.shouldEnterFS===true&&h.object.mustSpin===true))return unavailable;
+      const candidates=[];
+      for(const [rootIndex,root]of (globalThis.globalRuntime?.sceneRoots||[]).entries()){
+        if(globalThis.XTButton&&(root.GetComponentsInChildren(XTButton,true)||[]).some(button=>button.gameObject?.activeInHierarchy===true&&/Pick/.test(button.eventToCode?.name||'')))return unavailable;
+        for(const [index,utility]of (root.GetComponentsInChildren(SpinBlockEnabler,true)||[]).entries()){
+          if(utility.gameObject?.name==='SpinUtils'&&utility.gameObject.activeInHierarchy===true&&utility.xtEnabled!==false&&typeof utility.UnblockSpin==='function')candidates.push({utility,root:rootIndex,index});
+        }
+      }
+      if(candidates.length!==1)return unavailable;
+      const candidate=candidates[0];candidate.utility.UnblockSpin();
+      return {ok:true,kind:'feature-entry-recovery',controller:{kind:'SpinBlockEnabler',name:'SpinUtils',method:'UnblockSpin',root:candidate.root,index:candidate.index}};
+    });
   },
 
   async pressProtocolChoice(frame, choice) {
@@ -1247,7 +1350,7 @@ export const pragmatic = {
         const candidates = buttons.filter(button => {
           try {
             return (
-              button.gameObject?.activeInHierarchy !== false &&
+              button.gameObject?.activeInHierarchy === true && button.xtEnabled !== false &&
               String(button.gameObject?.name || '') === String(choice?.name || '') &&
               String(button.eventToCode?.name || '') === String(choice?.event || '')
             );
@@ -1263,10 +1366,23 @@ export const pragmatic = {
         if (!target) return { ok: false, reason: 'picker control unavailable' };
 
         if (typeof target.OnClick === 'function') {
+          // A real click also reaches sibling components on the same collider.
+          // XTButton submits the choice; CATButton closes its panel/animation.
+          let companion=null;
+          const cat=globalThis.CATButton?target.gameObject?.GetComponent?.(CATButton):null;
+          if(cat&&cat.xtEnabled!==false&&cat.enabled!==false) {
+            const methods=[];
+            if((cat.catEventPress?.cat||cat.catEventRelease?.cat)&&typeof cat.OnPress==='function') {
+              cat.OnPress(true);cat.OnPress(false);methods.push('OnPress(true/false)');
+            }
+            if(cat.catEventClick?.cat&&typeof cat.OnClick==='function') {cat.OnClick();methods.push('OnClick');}
+            if(methods.length)companion={kind:'CATButton',methods};
+          }
           target.OnClick();
           return {
             ok: true,
             strategy: 'picker XTButton.OnClick()',
+            companion,
             name: choice?.name ?? null,
             event: choice?.event ?? null
           };
@@ -1609,6 +1725,37 @@ export const pragmatic = {
     },control);
   },
 
+  async purchaseDirect(frame,index) {
+    return frame.evaluate(async index=>{
+      if(!Number.isInteger(index)||index<0)return {available:false,ok:false,reason:'Invalid purchase index'};
+      const roots=globalThis.globalRuntime?.sceneRoots||[];
+      const selected=()=>{try{return Number(XT.GetObject(Vars.FeaturePurchase)?.purchaseIndex);}catch{return null;}};
+      for(const [rootIndex,root] of roots.entries()){
+        for(const kind of ['FeaturePurchaseManager','FeaturePurchaseV2']){
+          const Type=globalThis[kind];if(!Type)continue;
+          const managers=root.GetComponentsInChildren(Type,true)||[];
+          for(const [managerIndex,manager] of managers.entries()){
+            if(manager.xtEnabled===false||typeof manager.PurchaseFeature!=='function')continue;
+            const count=manager.purchaseCosts?.length??manager.purchaseOptions?.length;
+            if(!Number.isInteger(count)||index>=count)continue;
+            const controller={kind,root:rootIndex,managerIndex,index,method:'PurchaseFeature'};
+            const before=selected();
+            try{manager.PurchaseFeature(index);}catch(error){return {available:true,ok:false,controller,reason:String(error?.message||error)};}
+            for(let attempt=0;attempt<20;attempt++){
+              const selection=selected();
+              let canSpin=null,open=false;
+              try{canSpin=Vars.CanSpin?XT.GetBool(Vars.CanSpin):null;open=!!(Vars.FeaturePurchaseWindowIsOpen&&XT.GetBool(Vars.FeaturePurchaseWindowIsOpen));}catch{}
+              if(selection===index&&before!==index&&!open)return {available:true,ok:true,index,selectedIndex:selection,controller,strategy:'direct runtime controller',needsSpin:canSpin!==false};
+              await new Promise(resolve=>setTimeout(resolve,100));
+            }
+            return {available:true,ok:false,index,controller,reason:'DIRECT_PURCHASE_NOT_CONFIRMED'};
+          }
+        }
+      }
+      return {available:false,ok:false,reason:'Direct purchase controller unavailable'};
+    },index);
+  },
+
   async purchase(frame, index) {
     const ready = await this.waitReady(frame, 10_000).catch(error => ({
       ok:false,
@@ -1623,6 +1770,9 @@ export const pragmatic = {
         ready
       };
     }
+
+    const direct=await this.purchaseDirect(frame,index);
+    if(direct.available)return direct;
 
     return frame.evaluate(async ({ index }) => {
       if (!window.globalRuntime || !window.XT || !window.Vars) return { ok: false, reason: 'Pragmatic runtime unavailable', index };
@@ -1758,8 +1908,18 @@ export const pragmatic = {
           } catch { return false; }
         });
         if (opener) {
+          const previousPurchaseIndex=getPendingPurchaseIndex();
           invokeButton(opener);
-          await wait(450);
+          await wait(1000);
+          // The first click can merely dismiss the bet panel. Repeat only the
+          // opener, never a confirmation or a submitted purchase.
+          let purchaseOpened=false,canSpin=null;
+          try { purchaseOpened=!!(Vars.FeaturePurchaseWindowIsOpen&&XT.GetBool(Vars.FeaturePurchaseWindowIsOpen)); } catch {}
+          try { canSpin=Vars.CanSpin?XT.GetBool(Vars.CanSpin):null; } catch {}
+          if(!purchaseOpened&&canSpin!==false&&getPendingPurchaseIndex()===previousPurchaseIndex&&opener.gameObject?.activeInHierarchy===true&&opener.xtEnabled!==false){
+            invokeButton(opener);
+            await wait(450);
+          }
         }
       }
 

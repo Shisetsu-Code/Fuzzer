@@ -1,0 +1,425 @@
+{
+  "schema": "fuzzer/provider-evidence/v1",
+  "provider": "pragmatic",
+  "game": "Death Dominion",
+  "symbol": "vs20ddominion",
+  "publicUrl": "https://www.pragmaticplay.fun/en/slots/death-dominion/",
+  "source": {
+    "kind": "automated-state-explorer",
+    "date": "2026-10-05",
+    "jobId": "4d3db4cc-5cfb-4e2c-a667-1da0fdc56638",
+    "fullHarPublished": false
+  },
+  "baseBet": {
+    "formula": "c*l",
+    "observedCoin": "0.1",
+    "baseLines": 20,
+    "observedBaseBet": 2
+  },
+  "groups": [
+    {
+      "id": "purchases",
+      "label": "Feature Purchase",
+      "options": [
+        "purchase-0",
+        "purchase-1",
+        "purchase-2",
+        "purchase-3"
+      ]
+    },
+    {
+      "id": "ante-bet",
+      "label": "Ante Bet / Super Spin",
+      "options": [
+        "ante-1",
+        "ante-2",
+        "ante-3",
+        "ante-4"
+      ]
+    }
+  ],
+  "options": [
+    {
+      "id": "ante-1",
+      "parent": "ante-bet",
+      "kind": "ante-bet",
+      "index": 1,
+      "label": "ANTE BET 1",
+      "labels": [
+        "ANTE BET 1",
+        "$4.00",
+        "4X CHANCE \nOF ANY FREE SPINS"
+      ],
+      "observedBaseBet": 2,
+      "observedCost": 4,
+      "observedMultiplier": 2,
+      "multiplierScope": "initial response debit divided by c*l at the tested value",
+      "endpoint": "https://demogamesfree.pragmaticplay.net/hub-demo/ge/v5/gameService",
+      "payload": {
+        "action": "doSpin",
+        "symbol": "vs20ddominion",
+        "c": "0.1",
+        "l": "20",
+        "sInfo": "n",
+        "bl": "1",
+        "repeat": "0"
+      },
+      "verification": {
+        "complete": true,
+        "normalSpinVerified": true,
+        "status": 200,
+        "elapsedMs": 859
+      },
+      "menuRoute": [
+        "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/MainButton/content/Colliders/Collider0"
+      ],
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/WindowOptions/content/Options/Pivot/Level1/content/ColliderHolder/Collider"
+    },
+    {
+      "id": "ante-2",
+      "parent": "ante-bet",
+      "kind": "ante-bet",
+      "index": 2,
+      "label": "ANTE BET 2",
+      "labels": [
+        "ANTE BET 2",
+        "$20.00",
+        "500X CHANCE OF\nDOMINION IMMORTAL FREE SPINS"
+      ],
+      "observedBaseBet": 2,
+      "observedCost": 20,
+      "observedMultiplier": 10,
+      "multiplierScope": "initial response debit divided by c*l at the tested value",
+      "endpoint": "https://demogamesfree.pragmaticplay.net/hub-demo/ge/v5/gameService",
+      "payload": {
+        "action": "doSpin",
+        "symbol": "vs20ddominion",
+        "c": "0.1",
+        "l": "20",
+        "sInfo": "n",
+        "bl": "2",
+        "repeat": "0"
+      },
+      "verification": {
+        "complete": true,
+        "normalSpinVerified": true,
+        "status": 200,
+        "elapsedMs": 44930
+      },
+      "menuRoute": [
+        "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/MainButton/content/Colliders/Collider0"
+      ],
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/WindowOptions/content/Options/Pivot/Level2/content/ColliderHolder/Collider"
+    },
+    {
+      "id": "ante-3",
+      "parent": "ante-bet",
+      "kind": "ante-bet",
+      "index": 3,
+      "label": "SUPER SPIN 1",
+      "labels": [
+        "SUPER SPIN 1",
+        "$30.00",
+        "GUARANTEED DOOM\nAND MULTIPLIER EVERY SPIN"
+      ],
+      "observedBaseBet": 2,
+      "observedCost": 30,
+      "observedMultiplier": 15,
+      "multiplierScope": "initial response debit divided by c*l at the tested value",
+      "endpoint": "https://demogamesfree.pragmaticplay.net/hub-demo/ge/v5/gameService",
+      "payload": {
+        "action": "doSpin",
+        "symbol": "vs20ddominion",
+        "c": "0.1",
+        "l": "20",
+        "sInfo": "n",
+        "bl": "3",
+        "repeat": "0"
+      },
+      "verification": {
+        "complete": true,
+        "normalSpinVerified": true,
+        "status": 200,
+        "elapsedMs": 847
+      },
+      "menuRoute": [
+        "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/MainButton/content/Colliders/Collider0"
+      ],
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/WindowOptions/content/Options/Pivot/Level3/content/ColliderHolder/Collider"
+    },
+    {
+      "id": "ante-4",
+      "parent": "ante-bet",
+      "kind": "ante-bet",
+      "index": 4,
+      "label": "SUPER SPIN 2",
+      "labels": [
+        "SUPER SPIN 2",
+        "$500.00",
+        "GUARANTEED MULTIPLIER\nMINIMUM 50X EVERY SPIN"
+      ],
+      "observedBaseBet": 2,
+      "observedCost": 500,
+      "observedMultiplier": 250,
+      "multiplierScope": "initial response debit divided by c*l at the tested value",
+      "endpoint": "https://demogamesfree.pragmaticplay.net/hub-demo/ge/v5/gameService",
+      "payload": {
+        "action": "doSpin",
+        "symbol": "vs20ddominion",
+        "c": "0.1",
+        "l": "20",
+        "sInfo": "n",
+        "bl": "4",
+        "repeat": "0"
+      },
+      "verification": {
+        "complete": true,
+        "normalSpinVerified": true,
+        "status": 200,
+        "elapsedMs": 858
+      },
+      "menuRoute": [
+        "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/MainButton/content/Colliders/Collider0"
+      ],
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/AnteBet/WindowOptions/content/Options/Pivot/Level4/content/ColliderHolder/Collider"
+    },
+    {
+      "id": "purchase-0",
+      "parent": "purchases",
+      "kind": "purchase",
+      "index": 0,
+      "label": "FREE SPINS",
+      "labels": [
+        "FREE SPINS",
+        "$200.00",
+        "STANDARD FREE SPINS"
+      ],
+      "observedBaseBet": 2,
+      "observedCost": 200,
+      "observedMultiplier": 100,
+      "multiplierScope": "UI price divided by base bet at the tested value; not a multi-bet causal probe",
+      "endpoint": "https://demogamesfree.pragmaticplay.net/hub-demo/ge/v5/gameService",
+      "payload": {
+        "action": "doSpin",
+        "symbol": "vs20ddominion",
+        "c": "0.1",
+        "l": "20",
+        "sInfo": "n",
+        "bl": "0",
+        "pur": "0",
+        "repeat": "0"
+      },
+      "verification": {
+        "complete": true,
+        "normalSpinVerified": true,
+        "status": 200,
+        "elapsedMs": 39218,
+        "postPurchaseSpin": {
+          "endpoint": "https://demogamesfree.pragmaticplay.net/hub-demo/ge/v5/gameService",
+          "payload": {
+            "action": "doSpin",
+            "symbol": "vs20ddominion",
+            "c": "0.1",
+            "l": "20",
+            "sInfo": "n",
+            "bl": "0",
+            "repeat": "0"
+          },
+          "status": 200
+        }
+      },
+      "menuRoute": [
+        "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/MainButton/content/ColliderHolder/ColliderBuy",
+        "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option1/content/Pivot/ColliderHolder/Collider"
+      ],
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/AcceptButton/Colliders/ColliderOption1"
+    },
+    {
+      "id": "purchase-1",
+      "parent": "purchases",
+      "kind": "purchase",
+      "index": 1,
+      "label": "DOMINION FREE SPINS",
+      "labels": [
+        "DOMINION FREE SPINS",
+        "$400.00",
+        "DOOM CAN ADD\nMORE MULTIPLIERS"
+      ],
+      "observedBaseBet": 2,
+      "observedCost": 400,
+      "observedMultiplier": 200,
+      "multiplierScope": "UI price divided by base bet at the tested value; not a multi-bet causal probe",
+      "endpoint": "https://demogamesfree.pragmaticplay.net/hub-demo/ge/v5/gameService",
+      "payload": {
+        "action": "doSpin",
+        "symbol": "vs20ddominion",
+        "c": "0.1",
+        "l": "20",
+        "sInfo": "n",
+        "bl": "0",
+        "pur": "1",
+        "repeat": "0"
+      },
+      "verification": {
+        "complete": true,
+        "normalSpinVerified": true,
+        "status": 200,
+        "elapsedMs": 26321,
+        "postPurchaseSpin": {
+          "endpoint": "https://demogamesfree.pragmaticplay.net/hub-demo/ge/v5/gameService",
+          "payload": {
+            "action": "doSpin",
+            "symbol": "vs20ddominion",
+            "c": "0.1",
+            "l": "20",
+            "sInfo": "n",
+            "bl": "0",
+            "repeat": "0"
+          },
+          "status": 200
+        }
+      },
+      "menuRoute": [
+        "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/MainButton/content/ColliderHolder/ColliderBuy",
+        "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option2/content/Pivot/ColliderHolder/Collider"
+      ],
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/AcceptButton/Colliders/ColliderOption2"
+    },
+    {
+      "id": "purchase-2",
+      "parent": "purchases",
+      "kind": "purchase",
+      "index": 2,
+      "label": "IMMORTAL FREE SPINS",
+      "labels": [
+        "IMMORTAL FREE SPINS",
+        "$600.00",
+        "DOOM ALWAYS\nBECOMES MULTIPLIER"
+      ],
+      "observedBaseBet": 2,
+      "observedCost": 600,
+      "observedMultiplier": 300,
+      "multiplierScope": "UI price divided by base bet at the tested value; not a multi-bet causal probe",
+      "endpoint": "https://demogamesfree.pragmaticplay.net/hub-demo/ge/v5/gameService",
+      "payload": {
+        "action": "doSpin",
+        "symbol": "vs20ddominion",
+        "c": "0.1",
+        "l": "20",
+        "sInfo": "n",
+        "bl": "0",
+        "pur": "2",
+        "repeat": "0"
+      },
+      "verification": {
+        "complete": true,
+        "normalSpinVerified": true,
+        "status": 200,
+        "elapsedMs": 35712,
+        "postPurchaseSpin": {
+          "endpoint": "https://demogamesfree.pragmaticplay.net/hub-demo/ge/v5/gameService",
+          "payload": {
+            "action": "doSpin",
+            "symbol": "vs20ddominion",
+            "c": "0.1",
+            "l": "20",
+            "sInfo": "n",
+            "bl": "0",
+            "repeat": "0"
+          },
+          "status": 200
+        }
+      },
+      "menuRoute": [
+        "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/MainButton/content/ColliderHolder/ColliderBuy",
+        "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option3/content/Pivot/ColliderHolder/Collider"
+      ],
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/AcceptButton/Colliders/ColliderOption3"
+    },
+    {
+      "id": "purchase-3",
+      "parent": "purchases",
+      "kind": "purchase",
+      "index": 3,
+      "label": "DOMINION IMMORTAL FREE SPINS",
+      "labels": [
+        "DOMINION IMMORTAL FREE SPINS",
+        "$1,500.00",
+        "DOOM ALWAYS\nADDS MORE MULTIPLIERS"
+      ],
+      "observedBaseBet": 2,
+      "observedCost": 1500,
+      "observedMultiplier": 750,
+      "multiplierScope": "UI price divided by base bet at the tested value; not a multi-bet causal probe",
+      "endpoint": "https://demogamesfree.pragmaticplay.net/hub-demo/ge/v5/gameService",
+      "payload": {
+        "action": "doSpin",
+        "symbol": "vs20ddominion",
+        "c": "0.1",
+        "l": "20",
+        "sInfo": "n",
+        "bl": "0",
+        "pur": "3",
+        "repeat": "0"
+      },
+      "verification": {
+        "complete": true,
+        "normalSpinVerified": true,
+        "status": 200,
+        "elapsedMs": 62205,
+        "postPurchaseSpin": {
+          "endpoint": "https://demogamesfree.pragmaticplay.net/hub-demo/ge/v5/gameService",
+          "payload": {
+            "action": "doSpin",
+            "symbol": "vs20ddominion",
+            "c": "0.1",
+            "l": "20",
+            "sInfo": "n",
+            "bl": "0",
+            "repeat": "0"
+          },
+          "status": 200
+        }
+      },
+      "menuRoute": [
+        "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/MainButton/content/ColliderHolder/ColliderBuy",
+        "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/PurchaseWindow/content/Options/Pivot/Option4/content/Pivot/ColliderHolder/Collider"
+      ],
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/Main/GameFeatures/FeaturePurchase/ConfirmPurchaseWindow/content/AcceptButton/Colliders/ColliderOption4"
+    }
+  ],
+  "coverage": {
+    "purchasesVerified": 4,
+    "anteBetVerified": 4,
+    "targetVerified": true,
+    "explorerStatus": "PARTIAL",
+    "completeGame": false,
+    "pending": {
+      "QUIET_TIMEOUT": 8
+    }
+  },
+  "limits": {
+    "runtimeSpeed": 4,
+    "maxActions": 200,
+    "maxDepth": 8,
+    "timeoutMs": 1800000,
+    "operationTimeoutMs": 180000
+  },
+  "result": {
+    "actions": 46,
+    "menuStates": 8,
+    "totalMinutes": 24.9,
+    "purchaseSeconds": [
+      39.218,
+      26.321,
+      35.712,
+      62.205
+    ]
+  },
+  "limitations": [
+    "Known eight-option target verified; not exhaustive proof of hidden controls",
+    "Eight nonresponsive menu actions remain pending",
+    "No automatic graph resume across jobs",
+    "Full HAR and session credentials stay local"
+  ]
+}

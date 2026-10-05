@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {pragmatic} from '../providers/pragmatic/parser/runtime.js';
+test('a late fso selection returns its newly active choices instead of failing the continuation',async()=>{
+ const choice={active:true,name:'Collider',event:'Evt_DataToCode_ItemPickedFSBGPick',index:6,root:1};
+ const provider={...pragmatic,protocolState:async()=>({canSpin:true,logicIsFreeSpin:true,stages:[],pickerControls:[choice]})};
+ const result=await provider.continueProtocol({evaluate:async()=>assert.fail('selection must be left to the graph')},{na:'fso'});
+ assert.equal(result.needsSelection,true);assert.deepEqual(result.choices,[choice]);assert.equal(result.kind,'bonus-pick');
+});
 test('spin never matches the active stop-spin button by substring',async()=>{
  const events=[];globalThis.window=globalThis;globalThis.XTButton=class {};globalThis.Vars={Evt_DataToCode_Pressed_Spin:'Evt_DataToCode_Pressed_Spin'};globalThis.XT={TriggerEvent:e=>events.push(e)};globalThis.globalRuntime={sceneRoots:[{GetComponentsInChildren:()=>[{gameObject:{name:'StopSpin_Button',activeInHierarchy:true},eventToCode:{name:'Evt_DataToCode_Pressed_Stop'},OnClick:()=>events.push('stop')}]}]};
  try{const result=await pragmatic.press({evaluate:async(fn,arg)=>fn(arg)},'spin');assert.equal(result.ok,true);assert.deepEqual(events,['Evt_DataToCode_Pressed_Spin']);}

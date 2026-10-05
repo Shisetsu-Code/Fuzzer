@@ -1,0 +1,70 @@
+[
+  {
+    "game": "Golden Retriever",
+    "status": "EXHAUSTED_OBSERVED_CONTROLS",
+    "minutes": 4.7,
+    "actions": 9,
+    "menus": 3,
+    "purchasesVerified": 2,
+    "purchasesFailed": 0,
+    "spinsVerified": 1,
+    "pending": {}
+  },
+  {
+    "game": "Harvest Moon Grave Profits",
+    "status": "PARTIAL",
+    "minutes": 14.4,
+    "actions": 16,
+    "menus": 4,
+    "purchasesVerified": 0,
+    "purchasesFailed": 2,
+    "spinsVerified": 1,
+    "pending": {
+      "QUIET_TIMEOUT": 3,
+      "OPERATION_TIMEOUT": 2
+    }
+  },
+  {
+    "game": "Death Dominion",
+    "status": "PARTIAL",
+    "minutes": 20.8,
+    "actions": 33,
+    "menus": 8,
+    "purchasesVerified": 3,
+    "purchasesFailed": 0,
+    "spinsVerified": 4,
+    "pending": {
+      "QUIET_TIMEOUT": 6,
+      "DEADLINE": 13
+    }
+  },
+  {
+    "game": "Sunnydaze Asylum",
+    "status": "PARTIAL",
+    "minutes": 19.6,
+    "actions": 27,
+    "menus": 6,
+    "purchasesVerified": 2,
+    "purchasesFailed": 1,
+    "spinsVerified": 2,
+    "pending": {
+      "QUIET_TIMEOUT": 5,
+      "OPERATION_TIMEOUT": 1
+    }
+  },
+  {
+    "game": "Sleeping Dragon Ultra Dark",
+    "status": "PARTIAL",
+    "minutes": 16.7,
+    "actions": 27,
+    "menus": 6,
+    "purchasesVerified": 0,
+    "purchasesFailed": 4,
+    "spinsVerified": 0,
+    "pending": {
+      "QUIET_TIMEOUT": 4,
+      "NORMAL_SPIN_CONTROL_UNAVAILABLE": 3,
+      "OPERATION_TIMEOUT": 1
+    }
+  }
+]

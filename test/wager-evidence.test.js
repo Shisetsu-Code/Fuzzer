@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {wagerEvidence} from '../providers/pragmatic/wager-evidence.js';
+const base={balance:100,balanceSource:'runtime:Credit',betLevelIndex:0,canSpin:true,menuOpen:false,serverMarker:'a'};
+test('unchanged balance plus newly enabled modifier permits exactly a normal spin',()=>{assert.equal(wagerEvidence(base,{...base,betLevelIndex:1}).needsSpin,true);});
+test('no spin after payload, debit, cancel, unknown balance, disabled modifier or blocking menu',()=>{for(const next of [{serverMarker:'b',betLevelIndex:1},{balance:99,betLevelIndex:1},{},{balance:null,betLevelIndex:1},{betLevelIndex:0},{betLevelIndex:1,menuOpen:true},{betLevelIndex:1,canSpin:false},{betLevelIndex:1,balanceSource:'server'}])assert.equal(wagerEvidence(base,{...base,...next}).needsSpin,false);});
+test('equal final balance does not disprove a wager when a payload was sent',()=>{const r=wagerEvidence(base,{...base,serverMarker:'b'});assert.equal(r.payloadObserved,true);assert.equal(r.needsSpin,false);assert.equal(r.debitObserved,false);});

@@ -2,7 +2,25 @@
 
 Scripts independientes por proveedor para ejecutar demos mediante el MCP local HardFire. No depende de Firetrace. La primera implementación corresponde a Pragmatic; otros proveedores no están implementados todavía.
 
-## Uso desde el chat conectado al MCP local
+## Estado actual y recorrido recomendado
+
+El recorrido actual por botones observados usa `pragmatic_explore_start/result`. El flujo económico anterior `pragmatic_fuzz_start/result` sigue disponible; sus límites y verificaciones son distintos. El extractor `pragmatic_drawn_buttons` permite inspeccionar los botones sin hacer clics.
+
+```json
+{"game_url":"https://www.pragmaticplay.fun/en/slots/death-dominion/","max_actions":200,"max_depth":8,"timeout_ms":1800000}
+```
+
+Enviar esos argumentos a `pragmatic_explore_start`, guardar el `job_id` y consultar `pragmatic_explore_result`. No volver a iniciar para consultar progreso. Para una primera muestra acotada se pueden usar 100 acciones y 20 minutos; el máximo admitido es 200 acciones, diez niveles y 30 minutos. Una compra tiene hasta tres minutos dentro del tiempo restante. La preparación, el guardado y el cierre pueden añadir tiempo al presupuesto de exploración.
+
+HardFire proporciona `hardfire_browser({mode:"visible"})`, `hardfire_tabs` y `hardfire_set_speed({tab_id,speed:4})`. La velocidad corresponde a cada pestaña; hay que verificar también las pestañas nuevas. La instalación local usada en las pruebas tenía 4× por defecto. El explorador no tiene un argumento `speed` ni instala esa configuración del navegador: acelerar animaciones no acelera red, recargas ni esperas de observación.
+
+La [repetición de Death Dominion del 5 de octubre](docs/validation-death-dominion-2026-10-05.md) verificó las cuatro compras y los cuatro Ante Bet/Super Spin, con payload y respuesta por opción. El recorrido global quedó `PARTIAL` por ocho acciones de menú sin cambio observable; no falló ninguna de las ocho operaciones objetivo. El [contrato individual sanitizado](contracts/pragmatic/vs20ddominion.json) y el [grafo observado](docs/evidence/death-dominion-2026-10-05.json) están versionados. La [muestra de cinco juegos nuevos](docs/validation-pragmatic-new5-2026-10-05.md) documenta también los fallos que siguen abiertos.
+
+El grafo se guarda por trabajo, pero todavía no se reanuda automáticamente en otro trabajo. Los resultados aleatorios de un bonus no se comparan ni se convierten en rutas de compra. Después de cada compra el explorador exige una tirada normal y el regreso a controles disponibles. Consulte [estados, continuaciones, límites y formato HAR](docs/state-explorer.md), [extracción de botones](docs/drawn-buttons.md) y [controles internos del proveedor](docs/pragmatic-direct-controls.md).
+
+Como máximo dos trabajos simultáneos y cuatro pestañas DEMO cargadas en total, incluidas las auxiliares. Guardar evidencia y cerrar las pestañas propias antes del siguiente trabajo; no reiniciar HardFire con trabajos activos. Conservar un HAR automático por juego después de guardar su evidencia estructurada; los HAR manuales no se eliminan.
+
+## Flujo económico anterior desde el chat conectado al MCP local
 
 1. Consultar `hardfire_tabs` y elegir un `tab_id` existente.
 2. Llamar `pragmatic_fuzz_start` con ese ID y la URL pública del juego. `execute=false` descubre funciones y compara variables/apuestas; `execute=true` recorre las compras y elecciones descubiertas.
@@ -37,7 +55,7 @@ La segunda fase con 4–6 apuestas distintas, detección automática de la varia
 
 Los contratos exportados contienen payloads permitidos sin tokens de sesión ni credenciales. Los HAR completos siguen siendo archivos privados locales y pueden contener datos sensibles; no se versionan. El contrato se guarda en `.hardfire/fuzzer` bajo el perfil que ejecuta Electron. Los trabajos consultables en memoria se pierden al reiniciar el proceso; el archivo conserva la evidencia.
 
-Si falta una respuesta, cambia un control, aparece una elección no reconocida o se alcanza un límite, la rama queda pendiente. No se improvisan clics centrales ni se reenvía una compra después de un timeout.
+Si falta una respuesta, cambia un control, aparece una elección no reconocida o se alcanza un límite, la rama queda pendiente. El explorador nuevo tiene una regla explícita de clic central cada cinco segundos para continuaciones, condicionada al tráfico y a las elecciones visibles; no reenvía una compra dentro de la misma operación por un timeout. Una alternativa se prueba reconstruyendo su ruta en una sesión nueva.
 
 ## Instalación y comprobación
 
@@ -81,4 +99,4 @@ Si la última acción de Ante ya confirmó esas dos tiradas y una observación n
 
 Las respuestas conservan `rs_c`, `rs_p`, `rs_m` y `rs_t`, además de los códigos `msg_code`/`ext_code`. Un contador activo en `rs_c`, incluidos contadores separados por comas, impide declarar base o certificar un giro ordinario aunque el cliente muestre brevemente `canSpin=true`. Esto evita falsos COMPLETE; no implica que todas las continuaciones de cascadas estén resueltas.
 
-`timeout_ms` controla el presupuesto del recorrido, entre 1.000 y 600.000 ms; por defecto 180.000. La preparación y el guardado de HAR pueden agregar tiempo. Agotar el presupuesto conserva las rutas pendientes y nunca convierte un resultado parcial en completo.
+En `pragmatic_fuzz_start`, `timeout_ms` controla el presupuesto entre 1.000 y 600.000 ms; por defecto 180.000. En `pragmatic_explore_start`, admite entre 10.000 y 1.800.000 ms; por defecto 600.000. La preparación y el guardado de HAR pueden agregar tiempo. Agotar el presupuesto conserva las rutas pendientes y nunca convierte un resultado parcial en completo.
