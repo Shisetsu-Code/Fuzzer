@@ -14,8 +14,14 @@ export async function selectDemoFrame(wc){
 }
 export async function createHardFireSession(controller,{gameUrl,deadline=Date.now()+45000}={}){
  gameUrl=assertDemoUrl(gameUrl);
- // Fork only the public launcher: a reused authenticated game URL is not a fresh session.
- if(new URL(gameUrl).hostname!=='www.pragmaticplay.com')throw new Error('A public game_url is required to fork independent DEMO sessions');
+ // Fork a public launcher, never an authenticated html5Game URL or copied session.
+ const launcher=new URL(gameUrl);
+ if(launcher.hostname!=='www.pragmaticplay.com'){
+   const allowed=new Set(['gameSymbol','lang','cur','websiteUrl','gcpif','jurisdiction']);
+   const keys=[...launcher.searchParams.keys()];
+   const symbol=launcher.searchParams.get('gameSymbol');
+   if(launcher.hostname!=='demogamesfree.pragmaticplay.net'||launcher.pathname!=='/hub-demo/openGame.do'||launcher.hash||!symbol||!/^vs[a-zA-Z0-9]+$/.test(symbol)||keys.some(k=>!allowed.has(k))||new Set(keys).size!==keys.length||launcher.searchParams.has('websiteUrl')&&launcher.searchParams.get('websiteUrl')!=='https://clienthub.pragmaticplay.com/')throw new Error('A public DEMO launcher without session credentials is required');
+ }
  const created=await controller.tabs.new({url:'about:blank',activate:false});
  const target=controller.tabs.resolve(created.id),scoped=controller.withTab(created.id);
  if(!target.sessionIsolated){await controller.tabs.close(created.id);throw new Error('An isolated DEMO tab is required');}
