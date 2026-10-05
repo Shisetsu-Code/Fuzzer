@@ -743,7 +743,7 @@ export const pragmatic = {
           try { return b.eventToCode?.name === wantedEvent || b.eventToCode?.name === wantedEventName; } catch { return false; }
         });
       }
-      if (!button) {
+      if (!button && !wantedEventName) {
         button = allButtons.find(b => {
           try {
             const name = String(b.gameObject?.name || '').toLowerCase().replaceAll('_', '');
