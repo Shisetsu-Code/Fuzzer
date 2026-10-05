@@ -1,0 +1,106 @@
+{
+  "schema": "fuzzer/provider-evidence/v1",
+  "provider": "pragmatic",
+  "game": "Loki's Riches",
+  "symbol": "vs20loksriches",
+  "publicUrl": "https://www.pragmaticplay.fun/en/slots/loki-s-riches/",
+  "endpoint": "https://demogamesfree.pragmaticplay.net/gs2c/ge/v4/gameService",
+  "source": {
+    "kind": "manual-har",
+    "filename": "www.pragmaticplay.com_Archive [26-10-04 22-38-34].har",
+    "gameServiceExchanges": 37,
+    "fullHarPublished": false
+  },
+  "baseBet": {
+    "formula": "coin * lines",
+    "observedCoin": 12,
+    "observedLines": 20,
+    "observedBaseBet": 240
+  },
+  "inventoryStatus": "UNKNOWN",
+  "anteBetStatus": "UNKNOWN",
+  "purchases": [
+    {
+      "index": 0,
+      "multiplier": null,
+      "manualRequestObserved": true,
+      "executionEvidence": {
+        "request": {
+          "action": "doSpin",
+          "symbol": "vs20loksriches",
+          "c": "12",
+          "l": "20",
+          "pur": "0",
+          "index": "23",
+          "counter": "45"
+        },
+        "initialResponse": {
+          "index": "23",
+          "reel_set": "8",
+          "na": "s",
+          "rs_p": "0",
+          "rs_c": "1",
+          "rs_m": "1",
+          "c": "12.00",
+          "counter": "46",
+          "l": "20"
+        },
+        "preFreeSpinContinuationRequests": 2,
+        "freeSpinStartResponse": {
+          "trail": "exf~11",
+          "fsmax": "10",
+          "index": "25",
+          "reel_set": "0",
+          "na": "s",
+          "fswin": "0.00",
+          "rs_t": "2",
+          "fs": "1",
+          "c": "12.00",
+          "counter": "50",
+          "l": "20"
+        },
+        "continuationRequests": 16,
+        "finalSpinResponse": {
+          "fs_total": "10",
+          "trail": "exf~11",
+          "index": "39",
+          "reel_set": "7",
+          "na": "c",
+          "c": "12.00",
+          "counter": "78",
+          "l": "20"
+        },
+        "collectRequest": {
+          "symbol": "vs20loksriches",
+          "action": "doCollect",
+          "index": "40",
+          "counter": "79"
+        },
+        "collectResponse": {
+          "index": "40",
+          "na": "s",
+          "counter": "80"
+        },
+        "wireCycleCompleted": true,
+        "uiChoicesVerified": false
+      }
+    }
+  ],
+  "choices": {
+    "status": "UNKNOWN",
+    "reason": "HAR does not inventory local UI choices"
+  },
+  "notes": [
+    "No doInit captured: purchase count, multiplier and Ante availability cannot be established.",
+    "Purchase starts with cascades rs_c=1 then rs_c=2; fs=1/fsmax=10 appears on the second continuation.",
+    "The capture starts during another bonus whose trigger is absent; it does not prove whether that bonus was natural or purchased.",
+    "No ordinary rounds captured after the final collect.",
+    "Manual success does not certify automatic execution."
+  ],
+  "automaticRecheck": {
+    "jobId": "119b8d18-7399-4d4f-a1c5-85cc022267c3",
+    "status": "ERROR",
+    "reason": "Two ordinary rounds not confirmed",
+    "purchaseExecutionReached": false
+  }
+}
