@@ -17,9 +17,10 @@ test('a terminal ante branch reuses its confirmed normal rounds without sending 
 });
 test('an unverified modifier still requires terminal verification',async()=>{
  const ante={id:'ante:1',kind:'modifier'};let performed=false;
- const child={observe:async()=>performed?base:{...base,options:[ante]},perform:async()=>{performed=true;return {ok:true,normalRoundsVerified:false};},capture:async()=>({}),waitForTransition:async()=>true,verifyBase:async()=>false,close:async()=>{}};
+ const child={observe:async()=>performed?base:{...base,options:[ante]},perform:async()=>{performed=true;return {ok:true,normalRoundsVerified:false};},capture:async()=>({}),waitForTransition:async()=>true,verifyBase:async()=>false,lastVerification:{reason:'SPIN_NOT_TRANSITIONED',round:1},close:async()=>{}};
  const result=await runPragmatic({observe:async()=>({...base,options:[ante]}),forkDemo:async()=>child});
  assert.equal(result.status,'PARTIAL');assert.equal(result.tree[0].reason,'RETURN_TO_BASE_UNCONFIRMED');
+ assert.deepEqual(result.tree[0].verification,{reason:'SPIN_NOT_TRANSITIONED',round:1});
 });
 test('a natural bonus started by terminal verification is continued before the branch is certified',async()=>{
  const buy={id:'buy:0',kind:'buy'};let stage='entry',checks=0;

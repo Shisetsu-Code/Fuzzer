@@ -731,7 +731,7 @@ export const pragmatic = {
         for (let ri = 0; ri < roots.length; ri++) {
           try {
             const items = roots[ri].GetComponentsInChildren(XTButton, true) || [];
-            for (const b of items) allButtons.push(b);
+            for (const b of items) if (b.gameObject?.activeInHierarchy === true && b.xtEnabled !== false) allButtons.push(b);
           } catch {}
         }
       }
@@ -743,7 +743,7 @@ export const pragmatic = {
           try { return b.eventToCode?.name === wantedEvent || b.eventToCode?.name === wantedEventName; } catch { return false; }
         });
       }
-      if (!button) {
+      if (!button && !wantedEventName) {
         button = allButtons.find(b => {
           try {
             const name = String(b.gameObject?.name || '').toLowerCase().replaceAll('_', '');

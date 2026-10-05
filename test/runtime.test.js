@@ -1,6 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {pragmatic} from '../providers/pragmatic/parser/runtime.js';
+test('spin never matches the active stop-spin button by substring',async()=>{
+ const events=[];globalThis.window=globalThis;globalThis.XTButton=class {};globalThis.Vars={Evt_DataToCode_Pressed_Spin:'Evt_DataToCode_Pressed_Spin'};globalThis.XT={TriggerEvent:e=>events.push(e)};globalThis.globalRuntime={sceneRoots:[{GetComponentsInChildren:()=>[{gameObject:{name:'StopSpin_Button',activeInHierarchy:true},eventToCode:{name:'Evt_DataToCode_Pressed_Stop'},OnClick:()=>events.push('stop')}]}]};
+ try{const result=await pragmatic.press({evaluate:async(fn,arg)=>fn(arg)},'spin');assert.equal(result.ok,true);assert.deepEqual(events,['Evt_DataToCode_Pressed_Spin']);}
+ finally{delete globalThis.window;delete globalThis.XTButton;delete globalThis.Vars;delete globalThis.XT;delete globalThis.globalRuntime;}
+});
+test('spin targets the active button instead of an earlier hidden copy of the same event',async()=>{
+ const clicked=[];globalThis.window=globalThis;globalThis.XTButton=class {};globalThis.Vars={Evt_DataToCode_Pressed_Spin:'Evt_DataToCode_Pressed_Spin'};globalThis.XT={};globalThis.globalRuntime={sceneRoots:[{GetComponentsInChildren:()=>[false,true].map((active,index)=>({gameObject:{name:'Spin_Button',activeInHierarchy:active},eventToCode:{name:'Evt_DataToCode_Pressed_Spin'},OnClick:()=>clicked.push(index)}))}]};
+ try{const result=await pragmatic.press({evaluate:async(fn,arg)=>fn(arg)},'spin');assert.equal(result.ok,true);assert.deepEqual(clicked,[1]);}
+ finally{delete globalThis.window;delete globalThis.XTButton;delete globalThis.Vars;delete globalThis.XT;delete globalThis.globalRuntime;}
+});
 test('a purchased cascade can advance before free spins are awarded',async()=>{
  const events=[];globalThis.Vars={Evt_ToServer_RequestSpin:'spin'};globalThis.XT={TriggerEvent:e=>events.push(e)};
  try{const provider={...pragmatic,protocolState:async()=>({canSpin:true})};const result=await provider.continueProtocol({evaluate:async(fn,arg)=>fn(arg)},{na:'s',rs_c:'1',rs_p:'0',rs_m:'1'});assert.equal(result.ok,true);assert.deepEqual(events,['spin']);}

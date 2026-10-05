@@ -198,7 +198,7 @@ export class PragmaticSession{
      const previous=new Set((await this.entries()).map(key));
      const before={exchange:await this.latestExchange(),state:await this.provider.protocolState(this.frame)};
      this.pendingMarker=await this.wireMarker();this.pendingKind='spin';
-     const action=await this.provider.press(this.frame,'spin');if(action?.ok!==true||!(await this.waitForTransition(before,{deadline:Date.now()+15000})))return false;
+     const action=await this.provider.press(this.frame,'spin');this.lastVerification={round:i+1,action,before:before.state};if(action?.ok!==true||!(await this.waitForTransition(before,{deadline:Date.now()+15000}))){this.lastVerification.reason=action?.ok===true?'SPIN_NOT_TRANSITIONED':'SPIN_CONTROL_FAILED';this.lastVerification.after=await this.provider.protocolState(this.frame);return false;}
      const until=Date.now()+15000;let ok=false;
      while(Date.now()<until){const s=await this.provider.protocolState(this.frame),e=await this.latestExchange();if(s?.canSpin===true&&!s.logicIsFreeSpin&&!s.spinBlockingFeatureIsRunning&&!s.respinInProgress&&!(s.pickerControls||[]).some(c=>c.active!==false)&&!activeCascade(e)&&e.na==='s'){ok=true;break;}await sleep(200);}
      if(!ok)return false;
