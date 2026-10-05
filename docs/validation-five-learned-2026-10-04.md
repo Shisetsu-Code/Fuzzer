@@ -15,3 +15,9 @@ Pruebas locales por MCP, navegador Electron oculto a 4×, saldo DEMO y sesión a
 Se auditaron los HAR de las ramas ejecutadas: ningún error de aplicación no cero ni HTTP fallido en gameService. Un bonus cobrado no certifica por sí solo una rama COMPLETE. En Dragon King el último estado tiene canSpin=true, logicIsFreeSpin=false y spinBlockingFeatureIsRunning=true, con StageResult; no se fuerza otra compra ni se ignora el bloqueo. La clasificación automática se conserva como parcial.
 
 La muestra ejercita tres compras y tres niveles Ante; no cubre todas las familias ni demuestra todavía que todas las pantallas de continuación puedan resolverse automáticamente.
+
+## Gatot: reintento con lanzador oficial
+
+El lanzador oficial hub-demo abrió una sesión nueva para vs20gatotfury y permitió completar el experimento de apuesta 2 → 3 → 4 → 3 → 2. Descubrió tres compras de 100×, 200× y 300× sin un límite fijo de opciones. Las tres se ejecutaron y cobraron: terminaron con fs_total=12, 17 y 24 respectivamente, na=c y luego doCollect → na=s. Ninguna tiene dos rondas normales posteriores capturadas, por lo que las tres quedan RETURN_TO_BASE_UNCONFIRMED, no COMPLETE. El runtime declara Ante, pero su control no fue identificado: queda UNKNOWN/PENDING y no se inventa ausencia ni ejecución.
+
+Resultado final de los cinco juegos, conservando separados los errores de entrada .fun: dos COMPLETE y tres PARTIAL. Se ejecutaron seis compras hasta su cobro y tres niveles Ante hasta dos rondas normales. No hubo errores gameService en los HAR auditados. Todas las pestañas creadas por las pruebas quedaron cerradas al terminar; el MCP conserva solo la pestaña fuente about:blank aislada.
