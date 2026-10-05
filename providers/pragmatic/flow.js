@@ -15,7 +15,8 @@ export async function runPragmatic(session,{maxBranches,maxSteps=100,maxDepth=6,
    if(!Number.isInteger(value)||value<1||value>max)throw new Error(`Invalid ${key}`);
  }
  const deadline=Date.now()+timeoutMs;
- const active=()=>!signal?.aborted&&Date.now()<deadline;
+ let cleanupFailed=false;
+ const active=()=>!cleanupFailed&&!signal?.aborted&&Date.now()<deadline;
  const root=await session.observe();
  const graph=createDecisionGraph();graph.observe([],root);
  const known=root.inventoryKnown===true;
@@ -76,13 +77,18 @@ export async function runPragmatic(session,{maxBranches,maxSteps=100,maxDepth=6,
        state=await child.observe();
      }
      if(branch.status==='PENDING'&&!branch.reason)branch.reason=active()?'STEP_LIMIT':'TIME_LIMIT_OR_CANCEL';
-   }catch(error){branch.reason='EXECUTION_ERROR';branch.error=String(error.message).slice(0,300);if(error.screenshot)branch.screenshot={...error.screenshot,branch:[...path]};}
+   }catch(error){branch.reason='EXECUTION_ERROR';branch.error=String(error.message).slice(0,300);if(error.screenshot)branch.screenshot={...error.screenshot,branch:[...path]};
+     if(error.cleanupError||error.retainedTabIds?.length){cleanupFailed=true;branch.cleanupError=error.cleanupError||branch.error;branch.retainedTabIds=error.retainedTabIds||[];result.reason='CLEANUP_FAILED';result.cleanupError=branch.cleanupError;result.cleanupPending=true;result.retainedTabIds=branch.retainedTabIds;}}
    finally{
      if(branch.status==='PENDING'&&child?.captureFailure&&!branch.screenshot){
        try{branch.screenshot=await child.captureFailure({reason:branch.reason,branch:path});}
        catch(error){branch.screenshot={tabId:child.tabId,reason:branch.reason,branch:[...path],error:String(error.message||error).slice(0,200)};}
      }
-     try{await child?.close?.();if(child?.har)branch.har=child.har;}catch(error){branch.status='PENDING';branch.cleanupError=String(error.message).slice(0,200);}graph.mark(path,branch.status,branch.reason);
+     try{await child?.close?.();}catch(error){
+       cleanupFailed=true;branch.status='PENDING';branch.cleanupError=String(error.message).slice(0,200);
+       branch.retainedTabIds=error.retainedTabIds||(child.tabId===undefined?[]:[child.tabId]);
+       result.reason='CLEANUP_FAILED';result.cleanupError=branch.cleanupError;result.cleanupPending=true;result.retainedTabIds=branch.retainedTabIds;
+     }if(child?.har)branch.har=child.har;graph.mark(path,branch.status,branch.reason);
    }
  }
  result.pendingPaths=queue;

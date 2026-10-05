@@ -15,8 +15,13 @@ export function knownControlKind(control){
  if(/MoneyAndCoinsSwitcher|BalanceDisplay|CreditDisplay/i.test(text))return 'balance_display';
  return null;
 }
-export function filterKnownControls(controls){
- const keep=[],discarded=[];
- for(const control of controls){const kind=knownControlKind(control);if(kind)discarded.push({...control,discard_reason:kind});else keep.push(control);}
- return {keep,discarded};
+export function filterKnownControls(controls,{requireHitRect=false}={}){
+ const keep=[],discarded=[],unresolved=[];
+ for(const control of controls){
+  const kind=knownControlKind(control),rect=control.hit_rect;
+  if(kind)discarded.push({...control,discard_reason:kind});
+  else if(requireHitRect&&(!rect||![rect.x,rect.y,rect.width,rect.height].every(Number.isFinite)||rect.width<=0||rect.height<=0))unresolved.push({...control,reason:'NO_PROJECTED_HIT_RECT'});
+  else keep.push(control);
+ }
+ return {keep,discarded,unresolved};
 }

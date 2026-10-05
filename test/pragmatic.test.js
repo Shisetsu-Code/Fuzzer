@@ -9,6 +9,26 @@ function fixture(states) {
     async forkDemo(){return fixture(states);}, async economics(){return {bet:1,options:[]};}, async changeBet(){return {ok:false};}};
 }
 const base={phase:'base',terminal:true,options:[],inventoryKnown:true};
+test('rejected branch cleanup halts replay and retains all remaining paths',async()=>{
+ const options=Array.from({length:5},(_,index)=>({id:`buy:${index}`,kind:'buy',index}));let forks=0;
+ const result=await runPragmatic({observe:async()=>({...base,options}),forkDemo:async()=>{
+  forks++;let performed=false;const child={tabId:101,observe:async()=>performed?base:{...base,options},
+   perform:async()=>{performed=true;return {ok:true};},capture:async()=>({}),waitForTransition:async()=>true,
+   close:async()=>{child.har={path:'saved-before-close.har'};throw new Error('tab close failed');}};return child;
+ }});
+ assert.equal(forks,1);assert.equal(result.status,'PARTIAL');assert.equal(result.reason,'CLEANUP_FAILED');
+ assert.equal(result.cleanupPending,true);
+ assert.deepEqual(result.retainedTabIds,[101]);assert.deepEqual(result.pendingPaths,[['buy:1'],['buy:2'],['buy:3'],['buy:4']]);
+ assert.match(result.tree[0].cleanupError,/tab close failed/);assert.deepEqual(result.tree[0].har,{path:'saved-before-close.har'});assert.equal(result.coverage.graphComplete,false);
+});
+test('startup failure retaining a branch tab halts replay before another session is created',async()=>{
+ let forks=0;const options=[{id:'buy:0',kind:'buy'},{id:'buy:1',kind:'buy'}];
+ const result=await runPragmatic({observe:async()=>({...base,options}),forkDemo:async()=>{
+  forks++;throw Object.assign(new Error('entry failed'),{cleanupError:'HAR write failed',retainedTabIds:[102]});
+ }});
+ assert.equal(forks,1);assert.equal(result.reason,'CLEANUP_FAILED');assert.deepEqual(result.retainedTabIds,[102]);
+ assert.deepEqual(result.pendingPaths,[['buy:1']]);assert.equal(result.tree[0].error,'entry failed');
+});
 test('a continuation which verified its closing spin does not spin again at terminal',async()=>{
  const buy={id:'buy:0',kind:'buy'},cont={id:'continue',kind:'continue'};let index=0;
  const states=[{...base,options:[buy]},{terminal:false,options:[],continueAction:cont},base];
@@ -100,4 +120,3 @@ test('purchase presence follows the updated root inventory rather than its initi
  const s={observe:async()=>({phase:'base',inventoryKnown:true,options:options.slice(0,1)}),forkDemo:async()=>fixture([{phase:'base',inventoryKnown:true,options},base])};
  const r=await runPragmatic(s);assert.equal(r.buyFeaturePresence,'PRESENT');assert.equal(r.coverage.rootPurchasesDiscovered,1);
 });
-

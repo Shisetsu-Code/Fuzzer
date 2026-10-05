@@ -40,7 +40,7 @@ export async function selectDemoFrame(wc){
  }
  throw new Error('Pragmatic DEMO runtime not found in this tab');
 }
-export async function createHardFireSession(controller,{gameUrl,deadline=Date.now()+45000,artifactDir=path.join(os.homedir(),'.hardfire','fuzzer'),entryOnly=false}={}){
+export async function createHardFireSession(controller,{gameUrl,deadline=Date.now()+45000,artifactDir=path.join(os.homedir(),'.hardfire','fuzzer'),entryOnly=false,onOwnedTab,onClosedTab}={}){
  gameUrl=assertDemoUrl(gameUrl);
  // Fork a public launcher, never an authenticated html5Game URL or copied session.
  const launcher=new URL(gameUrl);
@@ -51,9 +51,26 @@ export async function createHardFireSession(controller,{gameUrl,deadline=Date.no
    if(launcher.hostname!=='demogamesfree.pragmaticplay.net'||launcher.pathname!=='/hub-demo/openGame.do'||launcher.hash||!symbol||!/^vs[a-zA-Z0-9]+$/.test(symbol)||keys.some(k=>!allowed.has(k))||new Set(keys).size!==keys.length||launcher.searchParams.has('websiteUrl')&&launcher.searchParams.get('websiteUrl')!=='https://clienthub.pragmaticplay.com/')throw new Error('A public DEMO launcher without session credentials is required');
  }
  const created=await controller.tabs.new({url:'about:blank',activate:false});
- const target=controller.tabs.resolve(created.id),scoped=controller.withTab(created.id);
- if(!target.sessionIsolated){await controller.tabs.close(created.id);throw new Error('An isolated DEMO tab is required');}
- const saveHar=()=>saveOwnedHar(target.recorder,{artifactDir,tabId:created.id,gameUrl});
+ let target,scoped,session,closed=false,lastPaintCheck=0,harSnapshot,savedHar,cleanupAttempt,saveRequired=false;
+ const closeOwnedTab=async()=>{if(closed)return;await controller.tabs.close(created.id);closed=true;onClosedTab?.(created.id);};
+ const saveHar=async()=>{
+   saveRequired=true;
+   savedHar=await saveOwnedHar(target.recorder,{artifactDir,tabId:created.id,gameUrl,snapshot:harSnapshot,onCaptured:value=>{harSnapshot=value;}});
+   saveRequired=false;
+   if(session)session.har=savedHar;return savedHar;
+ };
+ const cleanupOwned=async()=>{
+   if(cleanupAttempt)return cleanupAttempt;
+   cleanupAttempt=(async()=>{
+     if(closed)return savedHar;
+     try{
+       if(target?.recorder&&(target.recorder.recording||harSnapshot||saveRequired)&&!savedHar)await saveHar();
+       await closeOwnedTab();return savedHar;
+     }catch(error){error.cleanupError=String(error.message||error).slice(0,200);error.retainedTabIds=closed?[]:[created.id];throw error;}
+   })();
+   try{return await cleanupAttempt;}finally{cleanupAttempt=undefined;}
+ };
+ onOwnedTab?.(created.id,cleanupOwned);
  const captureFailure=async({reason,branch=[]}={})=>{
    const diagnostic={tabId:created.id,reason,branch:[...branch]};
    try{
@@ -70,8 +87,9 @@ export async function createHardFireSession(controller,{gameUrl,deadline=Date.no
      return {...diagnostic,path:filename,mimeType:'image/jpeg'};
    }catch(error){return {...diagnostic,error:String(error.message||error).slice(0,200)};}
  };
- let session,lastPaintCheck=0;
  try{
+   target=controller.tabs.resolve(created.id);scoped=controller.withTab(created.id);
+   if(!target.sessionIsolated){await closeOwnedTab();throw new Error('An isolated DEMO tab is required');}
    await scoped.recordStart();await scoped.open(gameUrl);
    let frame;
    while(Date.now()<deadline){
@@ -95,7 +113,7 @@ export async function createHardFireSession(controller,{gameUrl,deadline=Date.no
    }
    if(!frame)throw new Error('DEMO entry did not expose a supported runtime');
    session=new PragmaticSession({frame,entries:async()=>target.recorder?.toJSON().log.entries||[],
-     fork:()=>createHardFireSession(controller,{gameUrl,deadline:Date.now()+45000,artifactDir}),captureFailure,
+     fork:()=>createHardFireSession(controller,{gameUrl,deadline:Date.now()+45000,artifactDir,onOwnedTab,onClosedTab}),captureFailure,
      maintainSurface:async()=>{
        await controller.tabs.activate(created.id);
        scoped._wc().invalidate?.();
@@ -126,10 +144,7 @@ export async function createHardFireSession(controller,{gameUrl,deadline=Date.no
        const point=await scoped._wc().executeJavaScript(`(()=>{const f=[...document.querySelectorAll('iframe')].find(e=>e.src.startsWith('https://demogamesfree.pragmaticplay.net/'));const r=f?.getBoundingClientRect();if(r&&r.width>0&&r.height>0)return {x:r.x+r.width/2,y:r.y+r.height/2};if(location.hostname==='demogamesfree.pragmaticplay.net')return {x:innerWidth/2,y:innerHeight/2};return null;})()`);
        if(!point)return {ok:false,reason:'Visible DEMO viewport not found'};
        await scoped.click(point.x,point.y);return {ok:true};
-     },saveHar,close:async()=>{
-       if(target.recorder?.recording)session.har=await saveHar();
-       await controller.tabs.close(created.id);
-     }});
+     },saveHar,close:cleanupOwned});
    session.tabId=created.id;
    if(entryOnly){const initDeadline=Date.now()+30000;do{await session.syncInit();if(session.initial)break;await sleep(200);}while(Date.now()<initDeadline);const ready=await session.provider.waitReady(session.frame,30000);if(!ready?.ok)throw Error('DEMO intro did not reach a ready state');}
    else await session.prepare();return session;
@@ -137,9 +152,8 @@ export async function createHardFireSession(controller,{gameUrl,deadline=Date.no
    error.screenshot=await captureFailure({reason:'SESSION_STARTUP_FAILED'});
    // Save evidence before closing; on save failure leave this owned tab available.
    try{
-     if(target.recorder?.recording)error.har=await saveHar();
-     await controller.tabs.close(created.id);
-   }catch(cleanupError){error.cleanupError=String(cleanupError.message||cleanupError).slice(0,200);}
+     error.har=await cleanupOwned();
+   }catch(cleanupError){error.cleanupError=String(cleanupError.message||cleanupError).slice(0,200);error.retainedTabIds=closed?[]:[created.id];}
    throw error;
  }
 }

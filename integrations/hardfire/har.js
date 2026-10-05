@@ -2,11 +2,12 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 
-export async function saveOwnedHar(recorder,{artifactDir,tabId,gameUrl,timeoutMs=10000}){
- let timer,complete=true;
+export async function saveOwnedHar(recorder,{artifactDir,tabId,gameUrl,timeoutMs=10000,snapshot,onCaptured}){
+ let timer,complete=snapshot?.complete??true;
  const timeout=Symbol('HAR_STOP_TIMEOUT');
  let har;
- try{har=await Promise.race([recorder.stop(),new Promise(resolve=>{timer=setTimeout(()=>resolve(timeout),timeoutMs);})]);}finally{clearTimeout(timer);}
+ if(snapshot)har=snapshot.har;
+ else try{har=await Promise.race([recorder.stop(),new Promise(resolve=>{timer=setTimeout(()=>resolve(timeout),timeoutMs);})]);}finally{clearTimeout(timer);}
  if(har===timeout){
    // Preserve available requests/responses, then let the owner close its tab.
    // Missing response bodies remain explicitly incomplete, never silently complete.
@@ -14,6 +15,8 @@ export async function saveOwnedHar(recorder,{artifactDir,tabId,gameUrl,timeoutMs
    recorder.recording=false;har=recorder.toJSON();complete=false;
    har.log._captureIncomplete={reason:'PENDING_BODIES_TIMEOUT',pendingBodies:recorder.pendingBodies?.size??null};
  }
+ // Retain the captured snapshot even if disk persistence fails after stop().
+ onCaptured?.({har,complete});
  const directory=path.join(artifactDir,'HARs');
  await fs.mkdir(directory,{recursive:true});
  const host=new URL(gameUrl).hostname.replace(/[^a-z0-9.-]/gi,'_');

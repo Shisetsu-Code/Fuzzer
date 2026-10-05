@@ -1,17 +1,20 @@
 import {sanitizeTransportUrl,sanitizeTransportText} from '../../lib/parser-common.js';
 
 /** Protocol evidence marks the submission boundary. Random bonus values are not graph keys. */
-export function operationStateFromEntries(entries){
+export function operationStateFromEntries(entries,{afterSequence}={}){
  const protocol=entries.filter(e=>/\/gameService(?:\?|$)/.test(e.request?.url||'')&&new URLSearchParams(e.request?.postData?.text||'').has('action'));
  const spins=protocol.filter(e=>new URLSearchParams(e.request.postData.text).get('action')==='doSpin');
  const latest=spins.at(-1),last=protocol.at(-1);
  const response=e=>{const c=e?.response?.content;return c?.encoding==='base64'?Buffer.from(c.text||'','base64').toString():c?.text||'';};
  const body=response(last),fields=new URLSearchParams(body);
- const request=latest?new URLSearchParams(latest.request.postData.text):null;
- const purchase=request?.has('pur')&&Number(request.get('pur'))>=0;
- const kind=latest?(purchase?'purchase':'spin'):null;
+ const kindOf=e=>{const request=new URLSearchParams(e.request.postData.text);return request.has('pur')&&Number(request.get('pur'))>=0?'purchase':'spin';};
+ const transaction=e=>e?{kind:kindOf(e),status:e.response?.status||0,complete:e.response?.status===200&&!!response(e),endpoint:sanitizeTransportUrl(e.request.url),payload:Object.fromEntries(new URLSearchParams(sanitizeTransportText(e.request.postData.text)))}:null;
+ const kind=latest?kindOf(latest):null;
+ // The boundary is the spin count before the action, not the latest bonus spin.
+ const submitted=Number.isInteger(afterSequence)&&afterSequence>=0?spins[afterSequence]:null;
  return {sequence:spins.length,protocolSequence:protocol.length,kind,
-   transaction:latest?{kind,status:latest.response?.status||0,complete:latest.response?.status===200&&!!response(latest),endpoint:sanitizeTransportUrl(latest.request.url),payload:Object.fromEntries(new URLSearchParams(sanitizeTransportText(latest.request.postData.text)))}:null,
+   transaction:transaction(latest),
+   ...(afterSequence===undefined?{}:{submission:submitted?{sequence:afterSequence+1,...transaction(submitted)}:null}),
    protocolComplete:last?.response?.status===200&&!!body,nextAction:fields.get('na'),
    cascadeActive:String(fields.get('rs_c')??'').split(',').some(v=>v.trim()!==''&&Number.isFinite(Number(v))&&Number(v)>=0)};
 }
@@ -31,15 +34,25 @@ export function visibleOperationChoices(pickers,drawings){
 
 /** Complete one submitted operation. Only choice alternatives form a family; reels/results do not. */
 export async function finishOperation(a,before,initial,{choicePlan=[],deadline=Infinity,timeoutMs=180000,pollMs=500}={}){
- const started=a.now(),until=Math.min(started+timeoutMs,deadline),kind=initial.operation?.kind||'spin';
+ const started=a.now(),until=Math.min(started+timeoutMs,deadline),sequenceBefore=before?.operation?.sequence||0;
+ const initialOperation=initial.operation||{},anchored=Object.hasOwn(initialOperation,'submission');
+ const original=anchored?initialOperation.submission:initialOperation.sequence===sequenceBefore+1&&initialOperation.transaction?{sequence:initialOperation.sequence,...initialOperation.transaction}:null;
+ const submission=original?{...original,payload:original.payload?{...original.payload}:undefined}:null;
+ const kind=submission?.kind||initialOperation.kind||'spin';
  const decisions=[],verificationChoices=[],continuations=[];
  let current=initial,traffic=initial.traffic,lastTraffic=started,lastCenter=started,lastAdvance=started,choiceMarker=null,readyTicks=0,verificationSequence=null;
- const result=(ok,reason)=>({ok,reason,kind,normalSpinVerified:ok,verificationRequired:kind==='purchase',decisions,verificationChoices,continuations,elapsedMs:a.now()-started,snapshot:current,submission:initial.operation?.transaction,verification:verificationSequence===null?null:current.operation?.transaction});
+ const result=(ok,reason)=>({ok,reason,kind,normalSpinVerified:ok,verificationRequired:kind==='purchase',decisions,verificationChoices,continuations,elapsedMs:a.now()-started,snapshot:current,submission,verification:verificationSequence===null?null:current.operation?.transaction});
+ if(!submission||submission.sequence!==sequenceBefore+1)return result(false,'OPERATION_SUBMISSION_UNAVAILABLE');
  while(a.now()<until){
    const now=a.now();if(current.traffic!==traffic){traffic=current.traffic;lastTraffic=now;readyTicks=0;}
    const op=current.operation||{},choices=current.choices||[],busy=current.flags?.stages?.includes('StageSpin');
-   if(op.transaction?.status>=400)return result(false,'OPERATION_SERVER_ERROR');
-   const normalReady=normalControlsReady(current);
+   const liveSubmission=anchored?op.submission:op.sequence===submission.sequence?op.transaction:null;
+   if(liveSubmission&&(!anchored||liveSubmission.sequence===submission.sequence)){
+     submission.status=liveSubmission.status;submission.complete=liveSubmission.complete;
+   }
+   if(submission.status>=400||op.transaction?.status>=400)return result(false,'OPERATION_SERVER_ERROR');
+   const submissionAvailable=!anchored||liveSubmission?.sequence===submission.sequence;
+   const normalReady=submissionAvailable&&submission.complete===true&&normalControlsReady(current);
    readyTicks=normalReady?readyTicks+1:0;
    if(readyTicks>=2){
      if(verificationSequence===null){

@@ -55,3 +55,53 @@ test('HAR write failure keeps the owned tab and existing file available',async()
   assert.equal(closed,false);assert.equal(await fs.readFile(path.join(dir,'HARs'),'utf8'),'existing evidence');
  }finally{await fs.rm(dir,{recursive:true,force:true});}
 });
+test('startup HAR failure retains ownership until a successful owned tab closure',async()=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-owned-har-error-'));await fs.writeFile(path.join(dir,'HARs'),'existing evidence');
+ const owned=new Set();let closed=false;
+ const controller={tabs:{new:async()=>({id:211}),resolve:()=>({sessionIsolated:true,recorder:{recording:true,stop:async()=>({log:{entries:[]}})}}),close:async()=>{closed=true;}},
+  withTab:()=>({recordStart:async()=>{throw new Error('startup failed');},screenshot:async()=>{throw new Error('no pixels');}})};
+ try{
+  await assert.rejects(createHardFireSession(controller,{gameUrl,artifactDir:dir,onOwnedTab:id=>owned.add(id),onClosedTab:id=>owned.delete(id)}),error=>{
+   assert.deepEqual(error.retainedTabIds,[211]);assert.ok(error.cleanupError);return true;
+  });
+  assert.deepEqual([...owned],[211]);assert.equal(closed,false);
+ }finally{await fs.rm(dir,{recursive:true,force:true});}
+});
+test('successful startup cleanup releases only its owned tab after HAR saving',async()=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-owned-har-success-'));const events=[];
+ const controller={tabs:{new:async()=>({id:212}),resolve:()=>({sessionIsolated:true,recorder:{recording:true,stop:async()=>{events.push('save');return {log:{entries:[]}};}}}),close:async id=>events.push(['close',id])},
+  withTab:()=>({recordStart:async()=>{throw new Error('startup failed');},screenshot:async()=>{throw new Error('no pixels');}})};
+ try{
+  await assert.rejects(createHardFireSession(controller,{gameUrl,artifactDir:dir,onOwnedTab:id=>events.push(['owned',id]),onClosedTab:id=>events.push(['released',id])}),/startup failed/);
+  assert.deepEqual(events,[['owned',212],'save',['close',212],['released',212]]);
+ }finally{await fs.rm(dir,{recursive:true,force:true});}
+});
+test('retained startup cleanup saves the stopped recorder snapshot before closing and is idempotent',async()=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-har-retry-'));await fs.writeFile(path.join(dir,'HARs'),'blocked');
+ let cleanup,stops=0,closes=0;const owned=new Set();
+ const recorder={recording:true,stop:async()=>{stops++;recorder.recording=false;return {log:{entries:[{fixture:'retained-response'}]}};}};
+ const controller={tabs:{new:async()=>({id:221}),resolve:()=>({sessionIsolated:true,recorder}),close:async()=>{closes++;}},
+  withTab:()=>({recordStart:async()=>{throw new Error('startup failed');},screenshot:async()=>{throw new Error('no pixels');}})};
+ try{
+  await assert.rejects(createHardFireSession(controller,{gameUrl,artifactDir:dir,onOwnedTab:(id,retry)=>{owned.add(id);cleanup=retry;},onClosedTab:id=>owned.delete(id)}),/startup failed/);
+  assert.equal(typeof cleanup,'function');assert.equal(closes,0);assert.equal(stops,1);
+  await assert.rejects(cleanup());assert.deepEqual([...owned],[221]);assert.equal(closes,0);
+  await fs.unlink(path.join(dir,'HARs'));const [har,sameHar]=await Promise.all([cleanup(),cleanup()]);
+  assert.equal(sameHar.path,har.path);
+  assert.equal(JSON.parse(await fs.readFile(har.path,'utf8')).log.entries[0].fixture,'retained-response');
+  assert.equal(stops,1);assert.equal(closes,1);assert.deepEqual([...owned],[]);
+  await cleanup();assert.equal(stops,1);assert.equal(closes,1);
+ }finally{await fs.rm(dir,{recursive:true,force:true});}
+});
+test('a recorder stop failure cannot authorize closing unsaved evidence after recording becomes false',async()=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-stop-retry-'));let cleanup,stops=0,closes=0,stopSucceeds=false;
+ const recorder={recording:true,stop:async()=>{stops++;recorder.recording=false;if(!stopSucceeds)throw new Error('response capture failed');return {log:{entries:[{fixture:'recoverable'}]}};}};
+ const controller={tabs:{new:async()=>({id:222}),resolve:()=>({sessionIsolated:true,recorder}),close:async()=>{closes++;}},
+  withTab:()=>({recordStart:async()=>{throw new Error('startup failed');},screenshot:async()=>{throw new Error('no pixels');}})};
+ try{
+  await assert.rejects(createHardFireSession(controller,{gameUrl,artifactDir:dir,onOwnedTab:(id,retry)=>{cleanup=retry;}}),/startup failed/);
+  await assert.rejects(cleanup(),/response capture failed/);assert.equal(closes,0);assert.equal(stops,2);
+  stopSucceeds=true;const har=await cleanup();assert.equal(closes,1);assert.equal(stops,3);
+  assert.equal(JSON.parse(await fs.readFile(har.path,'utf8')).log.entries[0].fixture,'recoverable');
+ }finally{await fs.rm(dir,{recursive:true,force:true});}
+});
