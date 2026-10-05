@@ -1,0 +1,15 @@
+# Clic real para salir de resultados cobrados
+
+Se agregó un clic físico por CDP en el centro del viewport DEMO. Se habilita únicamente después de doCollect → na=s, en un resultado cobrado reconocido, sin cascada activa, menú de compras abierto ni elecciones activas. Se limita a un intento por respuesta del servidor y se espera hasta 15 segundos por canSpin=true, logicIsFreeSpin=false y ausencia de bloqueos/respin. Las dos rondas posteriores siguen siendo obligatorias. No se fuerza un nuevo request de compra ni se borra un bloqueo del runtime.
+
+La primera implementación cubrió StageResult con spinBlockingFeatureIsRunning=true. Una segunda modificación cubre también la ruta runtime_finish de StageResultFreeSpin, que antes usaba exclusivamente un evento interno. Ambas tienen regresiones que fallaron antes del cambio. Suite final: 65 pruebas, cero fallos. Instalación final verificada por SHA256.
+
+Dragon King Hot Pots, job 55276569-f56f-4c79-a4e3-6bacfe9504e9: COMPLETE con la primera implementación. Compra 100× ejecutada y cobrada, acción physical-result-continue registrada, y dos nuevas rondas normales al final del HAR (index=24 e index=25, na=s, sin fs ni rs_c). Ante 2× COMPLETE. Esta prueba demuestra que el clic resuelve al menos este caso; no garantiza el cierre de otros juegos.
+
+Out of the Woods tuvo un primer fallo de preparación antes de compras. El reintento con la primera implementación quedó PARTIAL: todavía pasó por el evento interno. Con la versión final, job dc3cb7e9-40be-4e23-a5f1-04de75318ccb, compra 100× cobrada con fs_total=10 y doCollect → na=s, seguida de physical-result-continue y TRANSITION_TIMEOUT. El HAR termina en ese collect, sin rondas normales posteriores. La compra 500× no llegó a ejecutarse en su sesión nueva: Two ordinary rounds not confirmed. Ante 5× y 10× COMPLETE con dos rondas por nivel. No se afirma que un solo clic central resuelva Out of the Woods.
+
+Gatot, job 69350712-01e4-4f27-9f2f-d4ce34b99c5a, quedó PARTIAL con la primera implementación porque las tres compras todavía tomaron la ruta del evento interno. El primer arranque con la versión final falló en preparación (job da531ab3-9dae-4acc-aca3-4072239c554f), antes de probar el cierre. Se conserva separado del reintento posterior. El control Ante no fue corregido por este cambio.
+
+Los HAR completos permanecen locales. El clic de salida es una hipótesis de UI distinta de la aceptación/cobro de la compra por el servidor. Si el clic no lleva a base, la rama permanece pendiente; no se certifica usando solo na=s.
+
+Reintento final de Gatot, job 57a71a1a-324c-4321-ad0c-52c5d599e11f: las tres compras 100×/200×/300× se cobraron, con fs_total=16/14/19 respectivamente y doCollect → na=s. Cada rama registró physical-result-continue y terminó TRANSITION_TIMEOUT, sin requests normales posteriores. No hubo errores HTTP ni de aplicación en gameService. Esto descarta afirmar que un solo clic central basta en Gatot; todavía falta observar la pantalla y la transición posterior para establecer el control y momento correctos. Ante sigue unresolved y no se probó. Al finalizar no quedaron pestañas de prueba abiertas.
