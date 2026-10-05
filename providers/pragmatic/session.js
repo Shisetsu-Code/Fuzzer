@@ -144,7 +144,7 @@ export class PragmaticSession{
      const state=await this.provider.protocolState(this.frame),exchange=await this.latestExchange();
      if(!this.clickContinue||!this.started||exchange.na!=='s'||activeCascade(exchange)||(await this.latestRequest()).action!=='doCollect'||state?.spinBlockingFeatureIsRunning!==true||state.respinInProgress||(state.pickerControls||[]).some(c=>c.active!==false)||!state.stages?.some(s=>s.name==='StageResult'||s.name==='StageResultFreeSpin')||(await this.purchaseMenu()).open)return {ok:false,reason:'Collected result click is no longer safe'};
      const marker=await this.wireMarker();if(this.resultClickMarker===marker)return {ok:false,reason:'Result click already attempted; state did not return to base'};
-     this.resultClickMarker=marker;this.pendingKind='result_click';return {...await this.clickContinue(),kind:'physical-result-continue'};
+     this.resultClickMarker=marker;this.pendingKind='result_click';this.resultClickAttempts=1;this.resultClickNextAt=Date.now()+2000;this.resultClickResult={...await this.clickContinue(),kind:'physical-result-continue',clicks:1};return this.resultClickResult;
    }
    if(action.kind==='finish'){this.pendingKind='continue';this.waitingOnly=true;return this.provider.pressProtocolChoice(this.frame,action.control);}
    if(action.kind==='runtime_finish'){
@@ -159,7 +159,7 @@ export class PragmaticSession{
        if(!registered)return {ok:false,reason:'Active free spin result handler missing'};
        if(!physical)XT.TriggerEvent(event);return {ok:true,kind:'free-spin-result-close',waiting:true};
      },{serverCollected,physical:!!this.clickContinue});
-     if(result.ok&&this.clickContinue){const state=await this.provider.protocolState(this.frame);if((state?.pickerControls||[]).some(c=>c.active!==false)||(await this.purchaseMenu()).open)return {ok:false,reason:'Result has choices or an open purchase menu'};const marker=await this.wireMarker();if(this.resultClickMarker===marker)return {ok:false,reason:'Result click already attempted'};this.resultClickMarker=marker;this.pendingKind='result_click';return {...await this.clickContinue(),kind:'physical-result-continue'};}return result;
+     if(result.ok&&this.clickContinue){const state=await this.provider.protocolState(this.frame);if((state?.pickerControls||[]).some(c=>c.active!==false)||(await this.purchaseMenu()).open)return {ok:false,reason:'Result has choices or an open purchase menu'};const marker=await this.wireMarker();if(this.resultClickMarker===marker)return {ok:false,reason:'Result click already attempted'};this.resultClickMarker=marker;this.pendingKind='result_click';this.resultClickAttempts=1;this.resultClickNextAt=Date.now()+2000;this.resultClickResult={...await this.clickContinue(),kind:'physical-result-continue',clicks:1};return this.resultClickResult;}return result;
    }
    if(action.kind==='continue'){
      const exchange=await this.latestExchange(),state=await this.provider.protocolState(this.frame);
@@ -180,7 +180,13 @@ export class PragmaticSession{
      await sleep(200);const e=await this.latestExchange(),s=await this.provider.protocolState(this.frame);
      if(await this.wireMarker()!==marker)return true;
      if(this.pendingKind==='nested_buy'&&before.menuSignature&&JSON.stringify(await this.purchaseMenu())!==before.menuSignature)return true;
-     if(this.pendingKind==='result_click'){if(s?.canSpin===true&&!s.logicIsFreeSpin&&!s.spinBlockingFeatureIsRunning&&!s.respinInProgress)return true;continue;}
+     if(this.pendingKind==='result_click'){
+       if((s?.pickerControls||[]).some(c=>c.active!==false)||(await this.purchaseMenu()).open)return true;
+       if(s?.canSpin===true&&!s.logicIsFreeSpin&&!s.spinBlockingFeatureIsRunning&&!s.respinInProgress)return true;
+       if(Date.now()>=this.resultClickNextAt&&this.resultClickAttempts<8&&e.na==='s'&&!activeCascade(e)&&(await this.latestRequest()).action==='doCollect'&&!s?.respinInProgress&&s?.stages?.some(stage=>stage.name==='StageResult'||stage.name==='StageResultFreeSpin')){
+         const clicked=await this.clickContinue();if(clicked?.ok!==true)return false;this.resultClickAttempts++;this.resultClickResult.clicks=this.resultClickAttempts;this.resultClickNextAt=Date.now()+2000;
+       }continue;
+     }
      if(this.awaitingFinish){if(s&&(!s.logicIsFreeSpin&&s.canSpin===true||(s.bonusControls||[]).some(c=>c.active===true&&/FreeSpinsWindow(?:Win|Lose)CollectPressed|BonusRoundsOnContinuePressed/.test(c.event))))return true;continue;}
      if(this.pendingKind==='modifier'&&s&&JSON.stringify(s)!==protocol)return true;
      if(this.pendingKind==='continue'&&this.waitingOnly&&s&&JSON.stringify(s)!==protocol&&

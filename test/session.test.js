@@ -1,5 +1,13 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {assertDemoUrl,parseInit,PragmaticSession} from '../providers/pragmatic/session.js';
+test('result dismissal retries spaced clicks until base and stops before a fourth click',async()=>{
+ let clicks=0;const state={canSpin:true,logicIsFreeSpin:false,spinBlockingFeatureIsRunning:true,stages:[{name:'StageResult'}]};
+ const s=new PragmaticSession({entries:async()=>[],clickContinue:async()=>{clicks++;if(clicks===3)state.spinBlockingFeatureIsRunning=false;return {ok:true};},provider:{protocolState:async()=>state}});s.started=true;s.latestExchange=async()=>({na:'s'});s.latestRequest=async()=>({action:'doCollect'});s.purchaseMenu=async()=>({open:false});
+ const before={state:structuredClone(state)};await s.perform({kind:'result_click'});assert.equal(await s.waitForTransition(before,{deadline:Date.now()+7000}),true);assert.equal(clicks,3);
+});
+test('result dismissal stops retries when a picker appears',async()=>{
+ let clicks=0;const state={canSpin:true,spinBlockingFeatureIsRunning:true,stages:[{name:'StageResult'}]};const s=new PragmaticSession({entries:async()=>[],clickContinue:async()=>{clicks++;state.pickerControls=[{active:true}];return {ok:true};},provider:{protocolState:async()=>state}});s.started=true;s.latestExchange=async()=>({na:'s'});s.latestRequest=async()=>({action:'doCollect'});s.purchaseMenu=async()=>({open:false});await s.perform({kind:'result_click'});assert.equal(await s.waitForTransition({state},{deadline:Date.now()+1000}),true);assert.equal(clicks,1);
+});
 test('a proven collected free-spin result prefers a physical click over an internal event',async()=>{
  let clicks=0;const events=[];globalThis.Vars={ReceivedFreeSpinsResponse:'fs',Logic_IsFreeSpin:'logic',Evt_DataToCode_FreeSpinsWindowWinCollectPressed:'close'};
  globalThis.XT={GetObject:()=>({IsLastFreeSpin:true,TotalWin:1}),GetBool:()=>true,TriggerEvent:e=>events.push(e),variablesEvent:{close:[{OnValueChanged:[{object:{constructor:{name:'StageResultFreeSpin'}}}]}]}};
