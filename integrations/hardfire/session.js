@@ -16,7 +16,7 @@ export async function createHardFireSession(controller,{gameUrl,deadline=Date.no
  gameUrl=assertDemoUrl(gameUrl);
  // Fork a public launcher, never an authenticated html5Game URL or copied session.
  const launcher=new URL(gameUrl);
- if(launcher.hostname!=='www.pragmaticplay.com'){
+ if(!['www.pragmaticplay.com','www.pragmaticplay.fun'].includes(launcher.hostname)){
    const allowed=new Set(['gameSymbol','lang','cur','websiteUrl','gcpif','jurisdiction']);
    const keys=[...launcher.searchParams.keys()];
    const symbol=launcher.searchParams.get('gameSymbol');
@@ -32,7 +32,18 @@ export async function createHardFireSession(controller,{gameUrl,deadline=Date.no
    while(Date.now()<deadline){
      try{frame=await selectDemoFrame(scoped._wc());break;}catch{}
      // Fixed entry control for the public Pragmatic demo launcher, no blind center click.
-     await scoped._wc().executeJavaScript(`(()=>{const selectors=['.play-demo','.play-demo-button','a[href*="demogamesfree.pragmaticplay.net"]'];for(const selector of selectors){const e=document.querySelector(selector);if(e&&e.getClientRects().length){e.click();return true;}}return false;})()`).catch(()=>{});
+     await scoped._wc().executeJavaScript(`(()=>{
+       const visible=e=>e&&!e.disabled&&e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden';
+       if(location.hostname==='www.pragmaticplay.fun'){
+         const age=document.querySelector('[data-age-gate-confirm]');
+         if(visible(age)){age.click();return true;}
+         const iframe=document.querySelector('[data-play-demo-modal-iframe]');
+         if(iframe?.src?.startsWith('https://demogamesfree.pragmaticplay.net/'))return false;
+         const play=document.querySelector('.slide-item__actions [data-play-demo-open], .slots-inner-release-modal [data-play-demo-open]');
+         if(visible(play)){play.click();return true;}return false;
+       }
+       const selectors=['.play-demo','.play-demo-button','a[href*="demogamesfree.pragmaticplay.net"]'];for(const selector of selectors){const e=document.querySelector(selector);if(visible(e)){e.click();return true;}}return false;
+     })()`).catch(()=>{});
      await sleep(500);
    }
    if(!frame)throw new Error('DEMO entry did not expose a supported runtime');

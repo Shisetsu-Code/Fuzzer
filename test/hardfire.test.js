@@ -1,6 +1,16 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {frameAdapter,selectDemoFrame,createHardFireSession} from '../integrations/hardfire/session.js';
 const hubDemo='https://demogamesfree.pragmaticplay.net/hub-demo/openGame.do?gameSymbol=vs20coven&lang=en&cur=USD&gcpif=8012&jurisdiction=99';
+test('the fun game catalog page can create an independent demo session',async()=>{
+ const sentinel=new Error('test tab creation boundary');
+ await assert.rejects(createHardFireSession({tabs:{new:async()=>{throw sentinel;}}},{gameUrl:'https://www.pragmaticplay.fun/en/slots/coven-rising/'}),error=>error===sentinel);
+});
+test('fun catalog entry rejects unrelated pages and copied credentials',async()=>{
+ let created=0;
+ const controller={tabs:{new:async()=>{created++;throw new Error('invalid launcher reached tab creation');}}};
+ for(const url of ['https://www.pragmaticplay.fun/en/slots/','https://www.pragmaticplay.fun/en/slots/coven-rising/?mgckey=private','https://www.pragmaticplay.fun/en/live-casino/foo','https://www.pragmaticplay.fun.evil.test/en/slots/coven-rising/'])await assert.rejects(createHardFireSession(controller,{gameUrl:url}));
+ assert.equal(created,0);
+});
 test('a fresh hub demo launcher reaches tab creation instead of being rejected as an authenticated session',async()=>{
  const sentinel=new Error('test tab creation boundary');
  await assert.rejects(createHardFireSession({tabs:{new:async()=>{throw sentinel;}}},{gameUrl:hubDemo}),error=>error===sentinel);

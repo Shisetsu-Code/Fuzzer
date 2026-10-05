@@ -3,7 +3,8 @@ import {classifyImpact} from './impact.js';
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 export function assertDemoUrl(value){
  const u=new URL(value);
- if(u.protocol!=='https:'||!(u.hostname==='demogamesfree.pragmaticplay.net'||u.hostname.endsWith('.demogamesfree.pragmaticplay.net')||u.hostname==='www.pragmaticplay.com'&&u.pathname.startsWith('/en/games/')))throw new Error('Official Pragmatic DEMO URL required');
+ const fun=u.hostname==='www.pragmaticplay.fun'&&/^\/en\/slots\/[a-z0-9]+(?:-[a-z0-9]+)*\/?$/.test(u.pathname)&&!u.search&&!u.hash;
+ if(u.protocol!=='https:'||!(fun||u.hostname==='demogamesfree.pragmaticplay.net'||u.hostname.endsWith('.demogamesfree.pragmaticplay.net')||u.hostname==='www.pragmaticplay.com'&&u.pathname.startsWith('/en/games/')))throw new Error('Official Pragmatic DEMO URL required');
  return u.href;
 }
 export function parseInit(text){
@@ -14,7 +15,8 @@ export function parseInit(text){
  const options=Array.isArray(value)?value:value?.options;
  return Array.isArray(options)?{count:options.length,options,source:'doInit'}:null;
 }
-function form(text){const p=new URLSearchParams(text);return Object.fromEntries([...p].filter(([k])=>/^(action|symbol|c|l|bl|pur|bgid|ind|end|na|fs|fsmax|fs_total|reel_set|s|sh|sw|sc|rs|trail|index|counter|total_bet_min|total_bet_max)$/.test(k)));}
+function form(text){const p=new URLSearchParams(text);return Object.fromEntries([...p].filter(([k])=>/^(action|symbol|c|l|bl|pur|bgid|ind|end|na|fs|fsmax|fs_total|reel_set|s|sh|sw|sc|rs|rs_c|rs_p|rs_m|rs_t|msg_code|ext_code|trail|index|counter|total_bet_min|total_bet_max)$/.test(k)));}
+const activeCascade=exchange=>String(exchange.rs_c??'').split(',').some(value=>value.trim()!==''&&Number.isFinite(Number(value))&&Number(value)>=0);
 const body=e=>e.response?.content?.encoding==='base64'?Buffer.from(e.response.content.text||'','base64').toString():e.response?.content?.text||'';
 const key=e=>[e.startedDateTime,e.request?.postData?.text,body(e)].join('|');
 export class PragmaticSession{
@@ -89,7 +91,7 @@ export class PragmaticSession{
        options:menu.options.map(c=>({id:`nested:${c.kind}:${c.root}:${c.managerIndex??0}:${c.index}:${c.name}`,kind:'nested_buy',index:c.purchaseIndex,control:c}))};}
      if(this.pendingKind==='nested_buy'&&Number.isInteger(menu.selected)&&menu.selected>=0)return {phase:'purchase-selected',terminal:false,inventoryKnown:!!this.initial,options:[],state,exchange,reason:'Nested purchase selected; submission/confirmation not yet proven'};
    }
-   const base=state.canSpin===true&&!state.logicIsFreeSpin&&!state.spinBlockingFeatureIsRunning&&!state.respinInProgress&&exchange.na==='s';
+   const base=state.canSpin===true&&!state.logicIsFreeSpin&&!state.spinBlockingFeatureIsRunning&&!state.respinInProgress&&!activeCascade(exchange)&&exchange.na==='s';
    if(base&&!this.started){
      const economic=await this.provider.listEconomicPurchases(this.frame);
      const options=economic.map(o=>({id:o.id,kind:o.subtype==='buy_feature'?'buy':'modifier',index:o.index,control:o.control,cost:o.cost??null}));
@@ -189,7 +191,7 @@ export class PragmaticSession{
        const last=(await this.entries()).filter(e=>!previous.has(key(e))&&e.response?.status===200&&new URLSearchParams(e.request?.postData?.text||'').get('action')==='doSpin').at(-1);
        const payload=new URLSearchParams(last?.request?.postData?.text||'');
        const response=form(last?body(last):'');
-       if(!last||payload.has('pur')||!['s','c'].includes(response.na)||response.fs!==undefined||response.fsmax!==undefined||response.fs_total!==undefined)return false;
+       if(!last||payload.has('pur')||!['s','c'].includes(response.na)||activeCascade(response)||response.fs!==undefined||response.fsmax!==undefined||response.fs_total!==undefined)return false;
        if(expectedBetLevel!==undefined&&(!payload.has('bl')||Number(payload.get('bl'))!==expectedBetLevel))return false;
      }
    }return true;

@@ -1,5 +1,15 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {assertDemoUrl,parseInit,PragmaticSession} from '../providers/pragmatic/session.js';
+test('a response with an active cascade cannot certify a normal round despite a ready runtime flag',async()=>{
+ let count=0;
+ const list=[{startedDateTime:'0',request:{url:'https://demogamesfree.pragmaticplay.net/gameService',postData:{text:'action=doInit'}},response:{status:200,content:{text:'na=s'}}}];
+ const s=new PragmaticSession({entries:async()=>list,provider:{protocolState:async()=>({canSpin:true}),press:async()=>{count++;list.push({startedDateTime:String(count),request:{url:'https://demogamesfree.pragmaticplay.net/gameService',postData:{text:'action=doSpin&index='+(count+1)}},response:{status:200,content:{text:'na=s&rs_c=,1&rs_m=,1'}}});return {ok:true};}}});
+ assert.equal(await s.verifyBase(),false);assert.equal((await s.latestExchange()).rs_c,',1');
+});
+test('an active server cascade blocks base discovery even when the client briefly reports canSpin',async()=>{
+ const s=new PragmaticSession({entries:async()=>[{request:{url:'https://demogamesfree.pragmaticplay.net/gameService'},response:{status:200,content:{text:'na=s&rs_c=1&rs_m=1'}}}],provider:{protocolState:async()=>({canSpin:true})}});s.started=true;s.purchaseMenu=async()=>({open:false});
+ assert.equal((await s.observe()).terminal,false);
+});
 test('a visible picker cannot bypass an unfinished spin stage',async()=>{
  const s=new PragmaticSession({entries:async()=>[],provider:{protocolState:async()=>({stages:[{name:'StageSpin'}],pickerControls:[{active:true,name:'Pick'}]})}});s.started=true;
  const state=await s.observe();assert.deepEqual(state.options,[]);assert.equal(state.continueAction.kind,'continue');
