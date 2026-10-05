@@ -2,6 +2,7 @@ import { normalizeAction } from '../../../lib/parser-common.js';
 
 const EVENT_MAP = {
   spin: 'Evt_DataToCode_Pressed_Spin',
+  stop: 'Evt_DataToCode_Pressed_Stop',
   confirm_fs_start: 'Evt_DataToCode_ConfirmFSStart',
   bonus_rounds_on_continue_pressed: 'Evt_DataToCode_BonusRoundsOnContinuePressed',
   intro_close_pressed: 'Evt_DataToCode_IntroClosePressed',

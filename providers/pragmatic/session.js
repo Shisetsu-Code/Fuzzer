@@ -195,6 +195,16 @@ export class PragmaticSession{
  }
  async verifyBase({expectedBetLevel}={}){
    for(let i=0;i<2;i++){
+     let ready=await this.provider.protocolState(this.frame);
+     if(ready?.stopActive===true){
+       const exchange=await this.latestExchange();
+       if(exchange.na!=='s'||activeCascade(exchange)||ready.logicIsFreeSpin||ready.spinBlockingFeatureIsRunning||ready.respinInProgress||(ready.pickerControls||[]).some(c=>c.active!==false))return false;
+       const stopped=await this.provider.press(this.frame,'stop');
+       if(stopped?.ok!==true)return false;
+       const until=Date.now()+15000;
+       while(Date.now()<until){ready=await this.provider.protocolState(this.frame);if(ready?.stopActive!==true)break;await sleep(200);}
+       if(ready?.stopActive===true||ready?.canSpin!==true||ready.logicIsFreeSpin||ready.spinBlockingFeatureIsRunning||ready.respinInProgress||(ready.pickerControls||[]).some(c=>c.active!==false))return false;
+     }
      const previous=new Set((await this.entries()).map(key));
      const before={exchange:await this.latestExchange(),state:await this.provider.protocolState(this.frame)};
      this.pendingMarker=await this.wireMarker();this.pendingKind='spin';
