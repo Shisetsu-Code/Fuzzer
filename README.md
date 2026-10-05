@@ -47,6 +47,8 @@ Node.js 22 o posterior. `node --test test/*.test.js` ejecuta las pruebas sin ins
 
 El catálogo comprobado es el MCP local de HardFire. No se publican estas funciones mediante Firetrace ni se despliega un servicio Cloudflare nuevo.
 
+También se admite como `game_url` el lanzador DEMO público usado por el catálogo `.fun`: `https://demogamesfree.pragmaticplay.net/hub-demo/openGame.do?gameSymbol=vs20coven&lang=en&cur=USD&gcpif=8012&jurisdiction=99`. Cada rama abre ese lanzador y obtiene su propia sesión. Se rechazan URLs de juego autenticadas, parámetros ajenos y credenciales copiadas del HAR. La página `.fun` completa no se acepta directamente como lanzador del Fuzzer; se utiliza su entrada oficial DEMO. Ver el [contrato de Coven](contracts/pragmatic/vs20coven.json).
+
 ## Descubrimiento dinámico y familias
 
 No se presupone que un juego tenga dos compras. `purInit` anuncia la lista actual del servidor, y el recorrido registra las opciones de los estados/menús observados. El grafo conserva cada opción con su padre, clase de control, costo disponible y estado UNTESTED/PENDING/EXPANDED/COMPLETE. Incluye opciones no ejecutadas. Los menús de compras activos que aparecen después de empezar también se inspeccionan; no se consideran un regreso terminal a base si aún tienen opciones.

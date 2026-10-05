@@ -1,0 +1,193 @@
+{
+  "schema": "fuzzer/provider-evidence/v1",
+  "provider": "pragmatic",
+  "game": "Coven Rising",
+  "symbol": "vs20coven",
+  "publicUrl": "https://www.pragmaticplay.fun/en/slots/coven-rising",
+  "freshDemoLauncher": "https://demogamesfree.pragmaticplay.net/hub-demo/openGame.do?gameSymbol=vs20coven&lang=en&cur=USD&gcpif=8012&jurisdiction=99",
+  "endpoint": "https://demogamesfree.pragmaticplay.net/hub-demo/ge/v5/gameService",
+  "source": {
+    "kind": "manual-har",
+    "filename": "www.pragmaticplay.fun_Archive [26-10-04 21-24-31].har",
+    "gameServiceExchanges": 53,
+    "fullHarPublished": false
+  },
+  "baseBet": {
+    "formula": "coin * baseLines",
+    "baseLines": 20,
+    "observedCoin": "12",
+    "observedBaseBet": 240
+  },
+  "anteBet": [
+    {
+      "index": 1,
+      "multiplier": 3,
+      "availability": "doInit.bls",
+      "observed": true,
+      "requestExamples": [
+        {
+          "action": "doSpin",
+          "symbol": "vs20coven",
+          "c": "12",
+          "l": "20",
+          "bl": "1",
+          "index": "2",
+          "counter": "3"
+        },
+        {
+          "action": "doSpin",
+          "symbol": "vs20coven",
+          "c": "12",
+          "l": "20",
+          "bl": "1",
+          "index": "3",
+          "counter": "5"
+        }
+      ],
+      "responseLines": [
+        "60"
+      ]
+    }
+  ],
+  "purchases": [
+    {
+      "index": 0,
+      "multiplier": 100.0,
+      "availability": "doInit.purInit",
+      "manualRequestObserved": true,
+      "executionEvidence": {
+        "request": {
+          "action": "doSpin",
+          "symbol": "vs20coven",
+          "c": "12",
+          "l": "20",
+          "bl": "0",
+          "pur": "0",
+          "index": "32",
+          "counter": "63"
+        },
+        "initialFreeSpins": 12,
+        "continuationRequests": 18,
+        "continuationExample": {
+          "action": "doSpin",
+          "symbol": "vs20coven",
+          "c": "12",
+          "l": "20",
+          "bl": "0",
+          "index": "33",
+          "counter": "65"
+        },
+        "finalSpinResponse": {
+          "fs_total": "12",
+          "na": "c",
+          "bl": "0",
+          "c": "12.00",
+          "l": "20"
+        },
+        "collectRequest": {
+          "symbol": "vs20coven",
+          "action": "doCollect",
+          "index": "51",
+          "counter": "101"
+        },
+        "collectResponse": {
+          "index": "51",
+          "na": "s",
+          "counter": "102"
+        },
+        "wireCycleCompleted": true,
+        "uiChoicesVerified": false
+      }
+    },
+    {
+      "index": 1,
+      "multiplier": 200.0,
+      "availability": "doInit.purInit",
+      "manualRequestObserved": true,
+      "executionEvidence": {
+        "request": {
+          "action": "doSpin",
+          "symbol": "vs20coven",
+          "c": "12",
+          "l": "20",
+          "bl": "0",
+          "pur": "1",
+          "index": "10",
+          "counter": "19"
+        },
+        "initialFreeSpins": 12,
+        "continuationRequests": 20,
+        "continuationExample": {
+          "action": "doSpin",
+          "symbol": "vs20coven",
+          "c": "12",
+          "l": "20",
+          "bl": "0",
+          "index": "11",
+          "counter": "21"
+        },
+        "finalSpinResponse": {
+          "fs_total": "12",
+          "na": "c",
+          "bl": "0",
+          "c": "12.00",
+          "l": "20"
+        },
+        "collectRequest": {
+          "symbol": "vs20coven",
+          "action": "doCollect",
+          "index": "31",
+          "counter": "61"
+        },
+        "collectResponse": {
+          "index": "31",
+          "na": "s",
+          "counter": "62"
+        },
+        "wireCycleCompleted": true,
+        "uiChoicesVerified": false
+      }
+    }
+  ],
+  "choices": {
+    "status": "UNKNOWN",
+    "reason": "HAR does not inventory local UI choices"
+  },
+  "notes": [
+    "Request l remains 20 in Ante mode; response l is 60.",
+    "Both purchases reached fs_total=12 followed by collect na=s.",
+    "Wire completion does not prove two ordinary rounds after each purchase.",
+    "Fresh launcher creates sessions; never reuse html5Game URLs or mgckey from HAR."
+  ],
+  "automaticRecheck": {
+    "jobId": "cadd51fb-36f3-44b3-9e7e-fb8faa5552a6",
+    "status": "PARTIAL",
+    "error": null,
+    "branches": [
+      {
+        "path": [
+          "buy_feature:0"
+        ],
+        "status": "COMPLETE",
+        "reason": null,
+        "steps": 42
+      },
+      {
+        "path": [
+          "buy_feature:1"
+        ],
+        "status": "COMPLETE",
+        "reason": null,
+        "steps": 44
+      },
+      {
+        "path": [
+          "ante_bet:1"
+        ],
+        "status": "PENDING",
+        "reason": "RETURN_TO_BASE_UNCONFIRMED",
+        "steps": 1
+      }
+    ]
+  }
+}
