@@ -30,13 +30,25 @@ export async function runPragmatic(session,{maxBranches,maxSteps=100,maxDepth=6,
    const branch={path:[...path],status:'PENDING',steps:[]};result.tree.push(branch);
    let child;
    try{
-     child=await session.forkDemo();let state=await child.observe(),cursor=0;
+     child=await session.forkDemo();let state=await child.observe(),cursor=0,verificationBonus=false;
      for(let step=0;step<maxSteps&&active();step++){
+       if(verificationBonus&&(state.options||[]).length){branch.reason='NATURAL_BONUS_CHOICE_REQUIRED';break;}
        const prefix=path.slice(0,cursor);
        for(const discovered of graph.observe(prefix,state)){if(discovered.length>maxDepth){graph.mark(discovered,'PENDING','DEPTH_LIMIT');continue;}if(!seen.has(JSON.stringify(discovered))&&!queue.some(p=>JSON.stringify(p)===JSON.stringify(discovered)))queue.push(discovered);}
        if(!prefix.length)for(const option of state.options||[])if(!result.inventory.some(o=>o.id===option.id))result.inventory.push(option);
        if(cursor===path.length&&state.terminal===true&&!(state.options||[]).length){
-         if(child.verifyBase&&!(await child.verifyBase())){branch.reason='RETURN_TO_BASE_UNCONFIRMED';break;}
+         const last=branch.steps.at(-1);
+         const verifiedModifier=last?.action.kind==='modifier'&&last.result?.ok===true&&last.result?.normalRoundsVerified===true;
+         if(child.verifyBase&&!verifiedModifier&&!(await child.verifyBase())){
+           const current=await child.observe();
+           // A verification spin can trigger a natural bonus. Traverse its actual
+           // controls instead of declaring a return failure or buying again.
+           if(current.terminal!==true&&(current.options||[]).length){branch.reason='NATURAL_BONUS_CHOICE_REQUIRED';break;}
+           if(current.terminal!==true&&current.continueAction){
+             branch.verificationBonuses=(branch.verificationBonuses||0)+1;verificationBonus=true;state=current;continue;
+           }
+           branch.reason='RETURN_TO_BASE_UNCONFIRMED';break;
+         }
          branch.status='COMPLETE';break;
        }
        const choices=state.options||[];

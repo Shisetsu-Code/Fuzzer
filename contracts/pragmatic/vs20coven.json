@@ -189,5 +189,44 @@
         "steps": 1
       }
     ]
-  }
+  },
+  "automaticFollowups": [
+    {
+      "error": "Completed doInit not captured; inventory remains UNKNOWN",
+      "status": "ERROR",
+      "jobId": "354b4b18-d83c-42a0-8d40-7920dfd9d420",
+      "branches": []
+    },
+    {
+      "error": null,
+      "status": "PARTIAL",
+      "jobId": "02460e0e-669c-4197-a56d-2172e3927dd2",
+      "branches": [
+        {
+          "reason": "ACTION_FAILED",
+          "actionReason": "Protocol does not prove an active feature spin",
+          "status": "PENDING",
+          "path": [
+            "buy_feature:0"
+          ]
+        },
+        {
+          "reason": null,
+          "actionReason": null,
+          "status": "COMPLETE",
+          "path": [
+            "buy_feature:1"
+          ]
+        },
+        {
+          "reason": "ACTION_FAILED",
+          "actionReason": "Ante Bet manager is not actionable",
+          "status": "PENDING",
+          "path": [
+            "ante_bet:1"
+          ]
+        }
+      ]
+    }
+  ]
 }

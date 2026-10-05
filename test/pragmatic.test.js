@@ -9,6 +9,43 @@ function fixture(states) {
     async forkDemo(){return fixture(states);}, async economics(){return {bet:1,options:[]};}, async changeBet(){return {ok:false};}};
 }
 const base={phase:'base',terminal:true,options:[],inventoryKnown:true};
+test('a terminal ante branch reuses its confirmed normal rounds without sending extra verification spins',async()=>{
+ const ante={id:'ante:1',kind:'modifier'};let performed=false;
+ const child={observe:async()=>performed?base:{...base,options:[ante]},perform:async()=>{performed=true;return {ok:true,normalRoundsVerified:true};},capture:async()=>({}),waitForTransition:async()=>true,verifyBase:async()=>{assert.fail('extra verification can start an unrelated natural bonus');},close:async()=>{}};
+ const result=await runPragmatic({observe:async()=>({...base,options:[ante]}),forkDemo:async()=>child});
+ assert.equal(result.status,'COMPLETE');assert.equal(result.tree[0].steps.length,1);
+});
+test('an unverified modifier still requires terminal verification',async()=>{
+ const ante={id:'ante:1',kind:'modifier'};let performed=false;
+ const child={observe:async()=>performed?base:{...base,options:[ante]},perform:async()=>{performed=true;return {ok:true,normalRoundsVerified:false};},capture:async()=>({}),waitForTransition:async()=>true,verifyBase:async()=>false,close:async()=>{}};
+ const result=await runPragmatic({observe:async()=>({...base,options:[ante]}),forkDemo:async()=>child});
+ assert.equal(result.status,'PARTIAL');assert.equal(result.tree[0].reason,'RETURN_TO_BASE_UNCONFIRMED');
+});
+test('a natural bonus started by terminal verification is continued before the branch is certified',async()=>{
+ const buy={id:'buy:0',kind:'buy'};let stage='entry',checks=0;
+ const feature={phase:'feature',terminal:false,options:[],continueAction:{id:'bonus:continue',kind:'continue'}};
+ const child={observe:async()=>stage==='entry'?{...base,options:[buy]}:stage==='bonus'?feature:base,
+ perform:async action=>{stage=action.kind==='buy'?'base':'finished';return {ok:true};},capture:async()=>({}),waitForTransition:async()=>true,
+ verifyBase:async()=>{checks++;if(checks===1){stage='bonus';return false;}return true;},close:async()=>{}};
+ const result=await runPragmatic({observe:async()=>({...base,options:[buy]}),forkDemo:async()=>child});
+ assert.equal(result.status,'COMPLETE');assert.deepEqual(result.tree[0].steps.map(s=>s.action.kind),['buy','continue']);assert.equal(checks,2);
+});
+test('random bonus choices are left explicit rather than added as unreplayable purchase paths',async()=>{
+ const buy={id:'buy:0',kind:'buy'};let stage='entry';
+ const child={observe:async()=>stage==='entry'?{...base,options:[buy]}:stage==='bonus'?{phase:'choice',terminal:false,options:[{id:'pick:0',kind:'pick'}]}:base,
+ perform:async()=>{stage='base';return {ok:true};},capture:async()=>({}),waitForTransition:async()=>true,
+ verifyBase:async()=>{stage='bonus';return false;},close:async()=>{}};
+ const result=await runPragmatic({observe:async()=>({...base,options:[buy]}),forkDemo:async()=>child});
+ assert.equal(result.status,'PARTIAL');assert.equal(result.tree[0].reason,'NATURAL_BONUS_CHOICE_REQUIRED');assert.equal(result.tree.length,1);assert.equal(result.graph.nodes.some(n=>n.kind==='pick'),false);
+});
+test('a picker revealed after continuing a natural verification bonus is not scheduled for replay',async()=>{
+ const buy={id:'buy:0',kind:'buy'};let stage='entry';
+ const child={observe:async()=>stage==='entry'?{...base,options:[buy]}:stage==='bonus'?{phase:'feature',terminal:false,options:[],continueAction:{id:'continue',kind:'continue'}}:stage==='picker'?{phase:'choice',terminal:false,options:[{id:'pick:0',kind:'pick'}]}:base,
+ perform:async action=>{stage=action.kind==='buy'?'base':'picker';return {ok:true};},capture:async()=>({}),waitForTransition:async()=>true,
+ verifyBase:async()=>{stage='bonus';return false;},close:async()=>{}};
+ const result=await runPragmatic({observe:async()=>({...base,options:[buy]}),forkDemo:async()=>child});
+ assert.equal(result.tree[0].reason,'NATURAL_BONUS_CHOICE_REQUIRED');assert.equal(result.tree.length,1);assert.equal(result.graph.nodes.some(n=>n.kind==='pick'),false);
+});
 test('keeps purchase and nested choices in their respective branches',async()=>{
  const s=fixture([{phase:'base',options:[{id:'buy:0',kind:'buy',index:0}],inventoryKnown:true},
  {phase:'choice',options:[{id:'pick:0',kind:'pick'},{id:'pick:1',kind:'pick'}]},base]);

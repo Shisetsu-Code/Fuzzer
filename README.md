@@ -75,4 +75,6 @@ El cierre puede ser una transición del cliente sin una petición nueva. Si se r
 
 `BetLevelV2.betLevelSettings.betLevelScale` permite enumerar uno o varios niveles de Ante Bet con su multiplicador respecto al nivel cero. Cada nivel se activa mediante el controlador real, validando disponibilidad. La verificación exige dos respuestas nuevas de giros normales con `bl` correcto y sin `pur`; activar el modo no prueba por sí solo su ejecución. Los modos no identificados permanecen pendientes.
 
+Si la última acción de Ante ya confirmó esas dos tiradas y una observación nueva sigue en base sin opciones, el cierre reutiliza la evidencia; no envía dos giros adicionales. Si una comprobación terminal de otra rama activa un bonus natural, el recorrido continúa mediante sus controles conocidos y conserva los límites. Una elección dentro de ese bonus aleatorio queda `NATURAL_BONUS_CHOICE_REQUIRED`: no se agrega como ruta fija de compra que otra sesión no podría reproducir. Tampoco se certifica una función con el bonus abierto.
+
 `timeout_ms` controla el presupuesto del recorrido, entre 1.000 y 600.000 ms; por defecto 180.000. La preparación y el guardado de HAR pueden agregar tiempo. Agotar el presupuesto conserva las rutas pendientes y nunca convierte un resultado parcial en completo.
