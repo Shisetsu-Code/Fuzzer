@@ -40,6 +40,7 @@ export async function runPragmatic(session,{maxBranches,maxSteps=100,maxDepth=6,
          const last=branch.steps.at(-1);
          const verifiedModifier=last?.action.kind==='modifier'&&last.result?.ok===true&&last.result?.normalRoundsVerified===true;
          if(child.verifyBase&&!verifiedModifier&&!(await child.verifyBase())){
+           if(child.lastVerification)branch.verification=child.lastVerification;
            const current=await child.observe();
            // A verification spin can trigger a natural bonus. Traverse its actual
            // controls instead of declaring a return failure or buying again.
