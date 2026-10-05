@@ -23,9 +23,103 @@
       "index": 1,
       "multiplier": 1.25,
       "availability": "doInit.bls",
-      "observed": false,
-      "requestExamples": [],
-      "responseLines": []
+      "observed": true,
+      "requestExamples": [
+        {
+          "action": "doSpin",
+          "symbol": "vs20alieninv",
+          "c": "12",
+          "l": "20",
+          "bl": "1",
+          "index": "146",
+          "counter": "291"
+        },
+        {
+          "action": "doSpin",
+          "symbol": "vs20alieninv",
+          "c": "12",
+          "l": "20",
+          "bl": "1",
+          "index": "152",
+          "counter": "303"
+        },
+        {
+          "action": "doSpin",
+          "symbol": "vs20alieninv",
+          "c": "12",
+          "l": "20",
+          "bl": "1",
+          "index": "153",
+          "counter": "305"
+        }
+      ],
+      "responseLines": [
+        "25"
+      ],
+      "executionEvidence": {
+        "sourceFilename": "www.pragmaticplay.fun_Archive [26-10-04 22-27-31].har",
+        "requestCount": 7,
+        "completedRounds": 3,
+        "baseBet": 240,
+        "anteBet": 300,
+        "rounds": [
+          {
+            "startOrdinal": 146,
+            "continuationRequests": 4,
+            "finalSpinResponse": {
+              "trail": "cur_m~15;wcm~2;wc~8;scc~2",
+              "index": "150",
+              "reel_set": "0",
+              "na": "c",
+              "rs_t": "4",
+              "bl": "1",
+              "c": "12.00",
+              "counter": "300",
+              "l": "25"
+            },
+            "collectRequest": {
+              "symbol": "vs20alieninv",
+              "action": "doCollect",
+              "index": "151",
+              "counter": "301"
+            },
+            "collectResponse": {
+              "index": "151",
+              "na": "s",
+              "counter": "302"
+            }
+          },
+          {
+            "startOrdinal": 152,
+            "continuationRequests": 0,
+            "finalSpinResponse": {
+              "trail": "cur_m~1;wc~0",
+              "index": "152",
+              "reel_set": "9",
+              "na": "s",
+              "bl": "1",
+              "c": "12.00",
+              "counter": "304",
+              "l": "25"
+            }
+          },
+          {
+            "startOrdinal": 153,
+            "continuationRequests": 0,
+            "finalSpinResponse": {
+              "trail": "cur_m~1;wc~0;scc~1",
+              "index": "153",
+              "reel_set": "0",
+              "na": "s",
+              "bl": "1",
+              "c": "12.00",
+              "counter": "306",
+              "l": "25"
+            }
+          }
+        ],
+        "deactivationObserved": false
+      }
     }
   ],
   "purchases": [
@@ -133,12 +227,13 @@
     "reason": "HAR does not inventory local UI choices"
   },
   "notes": [
-    "Ante 1.25x is configured by bls=20,25 but no bl=1 request occurs in this manual capture.",
+    "Ante 1.25x is configured by bls=20,25 and confirmed by three completed manual rounds with bl=1, request l=20 and response l=25 in the additional capture.",
     "Purchase 0 ends with fs_total=10; purchase 1 with fs_total=11; both are collected with na=s.",
     "fs_total can coexist with an active cascade rs_c and na=s before the final collect.",
     "The final two doSpin requests belong to one normal round and its cascade, ending na=c without a captured collect.",
     "Two completed ordinary rounds after each purchase are not demonstrated by this capture.",
-    "Fresh launcher creates sessions; never reuse html5Game URLs or mgckey from HAR."
+    "Fresh launcher creates sessions; never reuse html5Game URLs or mgckey from HAR.",
+    "The additional capture completes the normal collect missing from the first capture and records two more purchase-1 cycles, collected after fs_total=11 and fs_total=9. It does not prove UI prompt handling or Ante deactivation."
   ],
   "automaticRecheck": {
     "jobId": "c6b1c41b-0ed8-4d60-97a7-927ac77b20de",
@@ -170,5 +265,12 @@
         "steps": 1
       }
     ]
-  }
+  },
+  "additionalManualSources": [
+    {
+      "filename": "www.pragmaticplay.fun_Archive [26-10-04 22-27-31].har",
+      "gameServiceExchanges": 154,
+      "fullHarPublished": false
+    }
+  ]
 }
