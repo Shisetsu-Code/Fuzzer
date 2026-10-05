@@ -20,6 +20,8 @@ El grafo se guarda por trabajo, pero todavía no se reanuda automáticamente en 
 
 La [revisión de fiabilidad del 5 de octubre](docs/reliability-review-2026-10-05.md) conserva la identidad de la primera apuesta enviada después de cada acción, registra como pendientes los controles visibles sin área de clic y evita que un timeout establezca una ruta. Incluye pruebas de regresión e integración; no agrega validaciones DEMO nuevas a las muestras anteriores.
 
+La [revisión de continuaciones](docs/continuation-reliability-2026-10-05.md) permite recuperar la ausencia confirmada del spin antes del clic, corrige la actividad de componentes deshabilitados y ancla por separado la petición de verificación. Cada operación conserva un diagnóstico de cierre en `completion`; un clic aceptado sin petición nueva permanece pendiente y no se repite automáticamente.
+
 Como máximo dos trabajos simultáneos y cuatro pestañas DEMO cargadas en total, incluidas las auxiliares. Guardar evidencia y cerrar las pestañas propias antes del siguiente trabajo; no reiniciar HardFire con trabajos activos. Conservar un HAR automático por juego después de guardar su evidencia estructurada; los HAR manuales no se eliminan.
 
 Si falla el guardado o cierre, el recorrido se detiene y el trabajo conserva su capacidad ocupada. El resultado indica `cleanupPending` y `retainedTabIds`. Cuando el trabajo termina, `pragmatic_fuzzer_cleanup({"job_id":"ID_DEL_TRABAJO"})` reintenta únicamente el guardado y cierre de sus pestañas retenidas; no vuelve a ejecutar acciones ni inicia otras sesiones. El mismo cierre se comparte entre llamadas concurrentes. Los HAR recuperados aparecen en `cleanupHars`; el error histórico y las rutas pendientes siguen visibles. Sin una identidad o un cierre propio registrado, se informa que la recuperación automática no está disponible. Los registros de recuperación viven en el proceso MCP actual.
@@ -65,7 +67,7 @@ Si falta una respuesta, cambia un control, aparece una elección no reconocida o
 
 Node.js 22 o posterior. `node --test test/*.test.js` ejecuta las pruebas sin instalar un navegador adicional. `scripts/install-hardfire.ps1` instala una copia del módulo y añade sus herramientas al MCP HardFire existente, con verificación de hash y respaldo del registro. Ejecutar bajo la cuenta de Windows con acceso a HardFire. Luego guardar cualquier HAR pendiente y reiniciar HardFire para que cargue el módulo.
 
-La suite tiene 216 pruebas después de esta revisión. El workflow `Tests` ejecuta `npm test` en Linux y Windows con Node 22 y 24. Las pruebas de integración del explorador ejecutan su lógica real y sustituyen los límites de Electron/captura/sesión; no cargan juegos ni equivalen a una certificación en vivo. El mock de módulos experimental se activa solo en sus procesos de prueba hijos.
+El workflow `Tests` ejecuta `npm test` en Linux y Windows con Node 22 y 24. Las pruebas de integración del explorador ejecutan su lógica real y sustituyen los límites de Electron/captura/sesión; no cargan juegos ni equivalen a una certificación en vivo. El mock de módulos experimental se activa solo en sus procesos de prueba hijos. Los resultados de cada tanda se documentan junto a sus cambios.
 
 `npm run pragmatic -- TAB_ID URL_PUBLICA execute` inicia un trabajo desde la consola. Usa el SDK MCP ya instalado en HardFire; `HARDFIRE_HOME` permite elegir su directorio y `MCP_URL` el endpoint local.
 

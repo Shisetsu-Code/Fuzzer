@@ -6,14 +6,15 @@ import {withSurfaceLock,ensurePainted} from './paint-guard.js';
 import {wagerEvidence,readRuntimeBalance,baseSurfaceMatches,parseProtocolMoney,classifySpinDebit} from '../../providers/pragmatic/wager-evidence.js';
 import {operationStateFromEntries,finishOperation,visibleOperationChoices} from '../../providers/pragmatic/operation-completion.js';
 export async function runStateExplorer(controller,{gameUrl,artifactDir,maxActions=20,maxDepth=4,timeoutMs=600000,onProgress,onOwnedTab,onClosedTab}={}){
- let session,lastEvidence,lastKey,lastCapture=0,rootSurface=null,rootConfiguration=null,lastActionAt=0,operationBoundary=null;const savedHars=[];
+ let session,lastEvidence,lastKey,lastCapture=0,rootSurface=null,rootConfiguration=null,lastActionAt=0,operationBoundary=null,verificationBoundary=null;const savedHars=[];
  const close=async()=>{
   if(!session)return;const owned=session;
   try{await owned.close();session=null;if(owned.har?.path&&!savedHars.includes(owned.har.path))savedHars.push(owned.har.path);}
   catch(error){error.code='SESSION_CLEANUP_FAILED';error.cleanupError=String(error.cleanupError||error.message);error.retainedTabIds=[...new Set([...(error.retainedTabIds||[]),owned.tabId].filter(id=>id!==undefined))];throw error;}
  };
- const adapter={now:()=>Date.now(),sleep:ms=>new Promise(r=>setTimeout(r,ms)),reset:async()=>{await close();operationBoundary=null;session=await createHardFireSession(controller,{gameUrl,artifactDir,entryOnly:true,onOwnedTab,onClosedTab});lastKey=null;rootSurface=null;rootConfiguration=null;await controller.tabs.activate(session.tabId);},
- snapshot:async()=>withSurfaceLock(async()=>{await ensurePainted(controller,session.tabId);const raw=await session.frame.evaluate(inspectDrawnButtons);const partition=filterKnownControls(raw.controls||[],{requireHitRect:true}),controls=partition.keep.map(b=>({...b,key:b.path})),unresolved=[...filterKnownControls(raw.unresolved||[]).keep,...partition.unresolved];const state=await session.provider.protocolState(session.frame);const flags={stages:state?.stages?.map(s=>s.name).sort(),logicIsFreeSpin:state?.logicIsFreeSpin,respinInProgress:state?.respinInProgress,spinBlockingFeatureIsRunning:state?.spinBlockingFeatureIsRunning,canSpin:state?.canSpin,stopActive:state?.stopActive,lastWinIsCounting:state?.lastWinIsCounting,waitInResultForBigWin:state?.waitInResultForBigWin};
+ const adapter={now:()=>Date.now(),sleep:ms=>new Promise(r=>setTimeout(r,ms)),reset:async()=>{await close();operationBoundary=null;verificationBoundary=null;session=await createHardFireSession(controller,{gameUrl,artifactDir,entryOnly:true,onOwnedTab,onClosedTab});lastKey=null;rootSurface=null;rootConfiguration=null;await controller.tabs.activate(session.tabId);},
+ snapshot:async()=>withSurfaceLock(async()=>{await ensurePainted(controller,session.tabId);const raw=await session.frame.evaluate(inspectDrawnButtons);const partition=filterKnownControls(raw.controls||[],{requireHitRect:true}),controls=partition.keep.map(b=>({...b,key:b.path})),unresolved=[...filterKnownControls(raw.unresolved||[]).keep,...partition.unresolved];const state=await session.provider.protocolState(session.frame);const flags={stages:state?.stages?.map(s=>s.name).sort(),logicIsFreeSpin:state?.logicIsFreeSpin,respinInProgress:state?.respinInProgress,spinBlockingFeatureIsRunning:state?.spinBlockingFeatureIsRunning,canSpin:state?.canSpin,stopActive:state?.stopActive,lastWinIsCounting:state?.lastWinIsCounting,waitInResultForBigWin:state?.waitInResultForBigWin,confirmFSActive:state?.confirmFSActive,fsStartNeedsConfirmation:state?.fsStartNeedsConfirmation,mustOpenBonus:state?.mustOpenBonus,mustOpenAnotherBonus:state?.mustOpenAnotherBonus,mustResumeFreeSpinOptions:state?.mustResumeFreeSpinOptions,manualRespin:state?.manualRespin};
+ const stageDetails=(state?.stages||[]).map(stage=>Object.fromEntries(Object.entries(stage).filter(([key,value])=>key==='name'&&typeof value==='string'||['mustSpin','fsStartConfirmed','shouldEnterFS','freeSpinsEnded','changeToResult','spinEnded'].includes(key)&&typeof value==='boolean')));
  const wallet=await session.frame.evaluate(readRuntimeBalance);const entries=await session.entries();
  if(wallet.balance===null||wallet.balance===0){for(const entry of [...entries].reverse()){const content=entry.response?.content;if(!content?.text||content.encoding==='base64')continue;const fields=new URLSearchParams(content.text);const value=fields.get('balance');if(value!==null&&value.trim()!==''&&parseProtocolMoney(value)!==null){wallet.balance=parseProtocolMoney(value);wallet.balanceSource='server:balance';break;}}}
  const menu=await session.purchaseMenu();const wager={...wallet,betLevelIndex:state?.betLevelIndex??null,canSpin:state?.canSpin===true,menuOpen:menu.open===true,serverMarker:JSON.stringify(controller.withTab(session.tabId).networkEvents())};
@@ -27,14 +28,15 @@ export async function runStateExplorer(controller,{gameUrl,artifactDir,maxAction
  const network=controller.withTab(session.tabId).networkEvents();
  const traffic=JSON.stringify(network);
  const choices=visibleOperationChoices(state?.pickerControls,raw.controls);
- return {key,controls,choices,operation:operationStateFromEntries(entries,operationBoundary===null?{}:{afterSequence:operationBoundary}),unresolved,traffic,wager,evidence:{tab_id:session.tabId,capture_id:lastEvidence.capture_id,full_path:lastEvidence.full_path,artifact_dir:lastEvidence.artifact_dir},flags};}),
+ return {key,controls,choices,operation:operationStateFromEntries(entries,{...(operationBoundary===null?{}:{afterSequence:operationBoundary}),...(verificationBoundary===null?{}:{verificationAfterSequence:verificationBoundary})}),unresolved,traffic,wager,evidence:{tab_id:session.tabId,capture_id:lastEvidence.capture_id,full_path:lastEvidence.full_path,artifact_dir:lastEvidence.artifact_dir},flags,stageDetails};}),
  click:async b=>withSurfaceLock(async()=>{await ensurePainted(controller,session.tabId);const fresh=await captureDrawnButtons(controller,session.tabId,artifactDir,{includeUniversal:true});const target=fresh.controls.find(c=>c.path===b.key);if(!target?.center)throw Error('Observed control is no longer available');const point=chooseHitPoint(target,fresh.controls);if(!point)throw Error('AMBIGUOUS_HIT_AREA');lastActionAt=Date.now();await controller.withTab(session.tabId).click(point.x,point.y);}),
  clickCenter:async()=>withSurfaceLock(async()=>{await ensurePainted(controller,session.tabId);return session.clickContinue();}),
  operationStarted:(before,after)=>(after.operation?.sequence||0)>(before.operation?.sequence||0),
  finishOperation:async(before,after,options)=>{
   session.started=true;operationBoundary=before.operation?.sequence||0;
+  verificationBoundary=null;
   try{const initial={...after,operation:operationStateFromEntries(await session.entries(),{afterSequence:operationBoundary})};return await finishOperation(adapter,before,initial,options);}
-  finally{operationBoundary=null;}
+  finally{operationBoundary=null;verificationBoundary=null;}
  },
  choose:async choice=>withSurfaceLock(async()=>{await ensurePainted(controller,session.tabId);return session.provider.pressProtocolChoice(session.frame,choice);}),
  advance:async()=>withSurfaceLock(async()=>{
@@ -42,13 +44,37 @@ export async function runStateExplorer(controller,{gameUrl,artifactDir,maxAction
    if(observed.phase==='choice')return {ok:false,kind:'CHOICE_REQUIRED'};
    return observed.continueAction?session.perform(observed.continueAction):{ok:true,kind:'WAIT'};
  }),
- spinNormal:async()=>withSurfaceLock(async()=>{
-   await ensurePainted(controller,session.tabId);const live=await session.provider.protocolState(session.frame);
-   if(live?.canSpin!==true||live.logicIsFreeSpin||live.respinInProgress||live.spinBlockingFeatureIsRunning||(await session.purchaseMenu()).open)return {ok:false};
+ spinNormal:async current=>withSurfaceLock(async()=>{
+   const reject=reason=>({ok:false,clicked:false,retryable:true,reason});
+   await ensurePainted(controller,session.tabId);
    const raw=await captureDrawnButtons(controller,session.tabId,artifactDir,{includeUniversal:true});
-   const spin=raw.controls.find(b=>b.center&&b.handlers.some(h=>h.event==='Evt_DataToCode_Pressed_Spin'));
-   if(!spin)return {ok:false};
-   await controller.withTab(session.tabId).click(spin.center.x*raw.image_size.width,spin.center.y*raw.image_size.height);return {ok:true};
+   const live=await session.provider.protocolState(session.frame),menu=await session.purchaseMenu();
+   if(live?.canSpin!==true)return reject('NORMAL_SPIN_RUNTIME_NOT_READY');
+   if(live.logicIsFreeSpin||live.respinInProgress||live.spinBlockingFeatureIsRunning||live.mustOpenBonus||live.mustOpenAnotherBonus||live.mustResumeFreeSpinOptions)return reject('NORMAL_SPIN_FEATURE_ACTIVE');
+   if(live.stopActive||live.lastWinIsCounting||live.waitInResultForBigWin||live.stages?.some(s=>s.name==='StageSpin'))return reject('NORMAL_SPIN_RUNTIME_BUSY');
+   if((live.pickerControls||[]).some(c=>c.active===true))return reject('NORMAL_SPIN_CHOICE_ACTIVE');
+   if(live.confirmFSActive)return reject('NORMAL_SPIN_CONFIRMATION_ACTIVE');
+   if(menu.open)return reject('NORMAL_SPIN_MENU_OPEN');
+   const candidates=(raw.controls||[]).filter(b=>b.enabled!==false&&b.handlers?.some(h=>h.event==='Evt_DataToCode_Pressed_Spin'));
+   if(!candidates.length)return reject('NORMAL_SPIN_CONTROL_UNAVAILABLE');
+   if(candidates.length!==1)return reject('NORMAL_SPIN_CONTROL_AMBIGUOUS');
+   const spin=candidates[0],rect=spin.hit_rect;
+   if(!rect||![rect.x,rect.y,rect.width,rect.height].every(Number.isFinite)||rect.width<=0||rect.height<=0)return reject('NORMAL_SPIN_HIT_AREA_UNAVAILABLE');
+   const point=chooseHitPoint(spin,raw.controls);
+   if(!point)return reject('NORMAL_SPIN_HIT_AREA_AMBIGUOUS');
+   const fresh=operationStateFromEntries(await session.entries()),sequenceBefore=fresh.sequence;
+   if(sequenceBefore!==current?.operation?.sequence)return reject('NORMAL_SPIN_SEQUENCE_CHANGED');
+   if(fresh.protocolSequence!==current?.operation?.protocolSequence)return reject('NORMAL_SPIN_PROTOCOL_CHANGED');
+   if(fresh.transaction?.complete!==true)return reject('NORMAL_SPIN_RESPONSE_INCOMPLETE');
+   if(fresh.protocolComplete!==true)return reject('NORMAL_SPIN_PROTOCOL_INCOMPLETE');
+   if(fresh.cascadeActive)return reject('NORMAL_SPIN_CASCADE_ACTIVE');
+   if(!['s','c'].includes(fresh.nextAction))return reject('NORMAL_SPIN_PROTOCOL_NOT_READY');
+   verificationBoundary=sequenceBefore;
+   try{
+     const clicked=await controller.withTab(session.tabId).click(point.x,point.y);
+     if(clicked?.ok===false)return {ok:false,clicked:true,retryable:false,reason:'NORMAL_SPIN_CLICK_UNCONFIRMED',sequenceBefore,control:spin.path};
+     return {ok:true,clicked:true,sequenceBefore,control:spin.path};
+   }catch{return {ok:false,clicked:true,retryable:false,reason:'NORMAL_SPIN_CLICK_UNCONFIRMED',sequenceBefore,control:spin.path};}
  }),
  afterAction:async(before,after)=>{
  if(!before.wager||!after.wager)return null;

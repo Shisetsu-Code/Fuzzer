@@ -6,6 +6,14 @@ import {fileURLToPath} from 'node:url';
 const fixture=fileURLToPath(new URL('./fixtures/state-explorer-integration-runner.mjs',import.meta.url));
 const scenarios=[
  ['delayed-purchase','the real adapter anchors a delayed purchase and verifies one fresh normal spin'],
+ ['normal-flags-overlay','normal flags do not bypass an observed continuation before one verification spin'],
+ ['verification-no-request','an accepted verification click without a request stays pending with diagnostics and no duplicate'],
+ ['verification-click-error','an uncertain verification click is recorded once and never retried'],
+ ['verification-race','a fresh request before verification capture cannot stand in for the one verification click'],
+ ['verification-nonspin-race','a pending non-spin request arriving before verification prevents the normal click'],
+ ['verification-response-race','a changed response body with the same request counts prevents the normal click'],
+ ['verification-cascade-race','a cascade arriving in the same response prevents the normal click'],
+ ['verification-body-pending','an unfinished response body with the same request counts prevents the normal click'],
  ['hitless','the real adapter reports a visible control without a hit rectangle as pending'],
  ['reset-failure','failed reset cleanup preserves the graph and stops new session creation'],
  ['reset-recovered','confirmed final cleanup releases ownership without restarting failed exploration'],
