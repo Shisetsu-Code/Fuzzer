@@ -1,5 +1,11 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {assertDemoUrl,parseInit,PragmaticSession} from '../providers/pragmatic/session.js';
+test('normal verification waits through a transient ready flag until the cascade is collected',async()=>{
+ const list=[];let spins=0,readyChecks=0;
+ const entry=(action,text)=>({startedDateTime:String(list.length),request:{url:'https://demogamesfree.pragmaticplay.net/gameService',postData:{text:'action='+action+'&index='+list.length}},response:{status:200,content:{text}}});
+ const s=new PragmaticSession({entries:async()=>list,provider:{press:async()=>{spins++;readyChecks=0;list.push(entry('doSpin','na=s&rs_c=1'));return {ok:true};},protocolState:async()=>{if(++readyChecks===3){list.push(entry('doSpin','na=c&rs_t=1'));list.push(entry('doCollect','na=s'));}return {canSpin:true};}}});
+ assert.equal(await s.verifyBase(),true);assert.equal(spins,2);
+});
 test('a response with an active cascade cannot certify a normal round despite a ready runtime flag',async()=>{
  let count=0;
  const list=[{startedDateTime:'0',request:{url:'https://demogamesfree.pragmaticplay.net/gameService',postData:{text:'action=doInit'}},response:{status:200,content:{text:'na=s'}}}];

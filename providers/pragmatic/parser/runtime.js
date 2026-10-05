@@ -1111,6 +1111,7 @@ export const pragmatic = {
       const featureSpin =
         (Number.isFinite(fsmax) && fsmax > 0 && Number.isFinite(fs) && (fs < fsmax || fs === fsmax && state?.logicIsFreeSpin === true)) ||
         String(exchange?.rs || '').toLowerCase() === 'mc' ||
+        String(exchange?.rs_c ?? '').split(',').some(value => value.trim() !== '' && Number.isFinite(Number(value)) && Number(value) >= 0) ||
         (exchange?.trail != null && /pending|feature/i.test(String(exchange.trail)));
 
       if (!featureSpin) {

@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {pragmatic} from '../providers/pragmatic/parser/runtime.js';
+test('a purchased cascade can advance before free spins are awarded',async()=>{
+ const events=[];globalThis.Vars={Evt_ToServer_RequestSpin:'spin'};globalThis.XT={TriggerEvent:e=>events.push(e)};
+ try{const provider={...pragmatic,protocolState:async()=>({canSpin:true})};const result=await provider.continueProtocol({evaluate:async(fn,arg)=>fn(arg)},{na:'s',rs_c:'1',rs_p:'0',rs_m:'1'});assert.equal(result.ok,true);assert.deepEqual(events,['spin']);}
+ finally{delete globalThis.Vars;delete globalThis.XT;}
+});
 test('a bonus response received while reels spin stops the visual stage before bonus selection',async()=>{
  const events=[];globalThis.Vars={Evt_DataToCode_Pressed_Stop:'stop'};globalThis.XT={TriggerEvent:e=>events.push(e)};
  try{const provider={...pragmatic,protocolState:async()=>({stages:[{name:'StageSpin'}]})};const result=await provider.continueProtocol({evaluate:async(fn,arg)=>fn(arg)},{na:'b'});assert.equal(result.kind,'spin-animation-stop');assert.deepEqual(events,['stop']);}
