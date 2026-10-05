@@ -1,5 +1,11 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {assertDemoUrl,parseInit,PragmaticSession} from '../providers/pragmatic/session.js';
+test('a collected bonus blocked in the result stage receives one physical continue click',async()=>{
+ let clicked=0;const state={canSpin:true,logicIsFreeSpin:false,spinBlockingFeatureIsRunning:true,stages:[{name:'StageResult'}]};
+ const s=new PragmaticSession({entries:async()=>[],clickContinue:async()=>{clicked++;return {ok:true};},provider:{protocolState:async()=>state}});s.started=true;s.syncInit=async()=>{};s.latestExchange=async()=>({na:'s'});s.latestRequest=async()=>({action:'doCollect'});s.purchaseMenu=async()=>({open:false});
+ const o=await s.observe();assert.equal(o.continueAction.kind,'result_click');assert.equal((await s.perform(o.continueAction)).ok,true);assert.equal(clicked,1);
+ state.pickerControls=[{active:true,name:'Choice'}];assert.equal((await s.perform(o.continueAction)).ok,false);assert.equal(clicked,1);
+});
 test('normal verification waits through a transient ready flag until the cascade is collected',async()=>{
  const list=[];let spins=0,readyChecks=0;
  const entry=(action,text)=>({startedDateTime:String(list.length),request:{url:'https://demogamesfree.pragmaticplay.net/gameService',postData:{text:'action='+action+'&index='+list.length}},response:{status:200,content:{text}}});
