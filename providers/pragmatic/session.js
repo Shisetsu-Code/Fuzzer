@@ -20,7 +20,7 @@ const activeCascade=exchange=>String(exchange.rs_c??'').split(',').some(value=>v
 const body=e=>e.response?.content?.encoding==='base64'?Buffer.from(e.response.content.text||'','base64').toString():e.response?.content?.text||'';
 const key=e=>[e.startedDateTime,e.request?.postData?.text,body(e)].join('|');
 export class PragmaticSession{
- constructor({frame,entries,fork,close=async()=>{},saveHar=async()=>null,provider=pragmatic}){Object.assign(this,{frame,entries,fork,close,saveHar,provider});this.started=false;this.initial=null;this.frameKey=null;}
+ constructor({frame,entries,fork,close=async()=>{},saveHar=async()=>null,clickContinue,provider=pragmatic}){Object.assign(this,{frame,entries,fork,close,saveHar,clickContinue,provider});this.started=false;this.initial=null;this.frameKey=null;}
  async syncInit(){
    const entries=await this.entries();
    const init=entries.filter(e=>/gameService/.test(e.request?.url||'')&&new URLSearchParams(e.request?.postData?.text||'').get('action')==='doInit'&&e.response?.status===200).at(-1);
@@ -91,6 +91,7 @@ export class PragmaticSession{
        options:menu.options.map(c=>({id:`nested:${c.kind}:${c.root}:${c.managerIndex??0}:${c.index}:${c.name}`,kind:'nested_buy',index:c.purchaseIndex,control:c}))};}
      if(this.pendingKind==='nested_buy'&&Number.isInteger(menu.selected)&&menu.selected>=0)return {phase:'purchase-selected',terminal:false,inventoryKnown:!!this.initial,options:[],state,exchange,reason:'Nested purchase selected; submission/confirmation not yet proven'};
    }
+   if(this.started&&this.clickContinue&&state.spinBlockingFeatureIsRunning===true&&!state.respinInProgress&&exchange.na==='s'&&!activeCascade(exchange)&&(await this.latestRequest()).action==='doCollect'&&state.stages?.some(s=>s.name==='StageResult'||s.name==='StageResultFreeSpin'))return {phase:'feature',terminal:false,inventoryKnown:!!this.initial,options:[],state,exchange,continueAction:{id:'result:click',kind:'result_click'}};
    const base=state.canSpin===true&&!state.logicIsFreeSpin&&!state.spinBlockingFeatureIsRunning&&!state.respinInProgress&&!activeCascade(exchange)&&exchange.na==='s';
    if(base&&!this.started){
      const economic=await this.provider.listEconomicPurchases(this.frame);
@@ -139,6 +140,12 @@ export class PragmaticSession{
        return {ok:false,reason:'Nested purchase control not executable'};
      },{control:action.control});
    }
+   if(action.kind==='result_click'){
+     const state=await this.provider.protocolState(this.frame),exchange=await this.latestExchange();
+     if(!this.clickContinue||!this.started||exchange.na!=='s'||activeCascade(exchange)||(await this.latestRequest()).action!=='doCollect'||state?.spinBlockingFeatureIsRunning!==true||state.respinInProgress||(state.pickerControls||[]).some(c=>c.active!==false)||!state.stages?.some(s=>s.name==='StageResult'||s.name==='StageResultFreeSpin')||(await this.purchaseMenu()).open)return {ok:false,reason:'Collected result click is no longer safe'};
+     const marker=await this.wireMarker();if(this.resultClickMarker===marker)return {ok:false,reason:'Result click already attempted; state did not return to base'};
+     this.resultClickMarker=marker;this.pendingKind='result_click';return {...await this.clickContinue(),kind:'physical-result-continue'};
+   }
    if(action.kind==='finish'){this.pendingKind='continue';this.waitingOnly=true;return this.provider.pressProtocolChoice(this.frame,action.control);}
    if(action.kind==='runtime_finish'){
      this.pendingKind='continue';this.waitingOnly=true;
@@ -172,6 +179,7 @@ export class PragmaticSession{
      await sleep(200);const e=await this.latestExchange(),s=await this.provider.protocolState(this.frame);
      if(await this.wireMarker()!==marker)return true;
      if(this.pendingKind==='nested_buy'&&before.menuSignature&&JSON.stringify(await this.purchaseMenu())!==before.menuSignature)return true;
+     if(this.pendingKind==='result_click'){if(s?.canSpin===true&&!s.logicIsFreeSpin&&!s.spinBlockingFeatureIsRunning&&!s.respinInProgress)return true;continue;}
      if(this.awaitingFinish){if(s&&(!s.logicIsFreeSpin&&s.canSpin===true||(s.bonusControls||[]).some(c=>c.active===true&&/FreeSpinsWindow(?:Win|Lose)CollectPressed|BonusRoundsOnContinuePressed/.test(c.event))))return true;continue;}
      if(this.pendingKind==='modifier'&&s&&JSON.stringify(s)!==protocol)return true;
      if(this.pendingKind==='continue'&&this.waitingOnly&&s&&JSON.stringify(s)!==protocol&&

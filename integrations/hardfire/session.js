@@ -49,7 +49,11 @@ export async function createHardFireSession(controller,{gameUrl,deadline=Date.no
    if(!frame)throw new Error('DEMO entry did not expose a supported runtime');
    session=new PragmaticSession({frame,entries:async()=>target.recorder?.toJSON().log.entries||[],
      fork:()=>createHardFireSession(controller,{gameUrl,deadline:Date.now()+45000}),
-     saveHar:()=>scoped.recordSave(),close:async()=>{
+     clickContinue:async()=>{
+       const point=await scoped._wc().executeJavaScript(`(()=>{const f=[...document.querySelectorAll('iframe')].find(e=>e.src.startsWith('https://demogamesfree.pragmaticplay.net/'));const r=f?.getBoundingClientRect();if(r&&r.width>0&&r.height>0)return {x:r.x+r.width/2,y:r.y+r.height/2};if(location.hostname==='demogamesfree.pragmaticplay.net')return {x:innerWidth/2,y:innerHeight/2};return null;})()`);
+       if(!point)return {ok:false,reason:'Visible DEMO viewport not found'};
+       await scoped.click(point.x,point.y);return {ok:true};
+     },saveHar:()=>scoped.recordSave(),close:async()=>{
        if(target.recorder?.recording)session.har=await scoped.recordSave();
        await controller.tabs.close(created.id);
      }});
