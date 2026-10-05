@@ -29,7 +29,8 @@ const controller={tabs:{activate:async id=>{assert.equal(id,42);}},withTab:id=>{
 
 // Browser/session creation, raster capture, and paint checks are external boundaries.
 // Traversal, state parsing, operation completion, filtering, and HAR saving stay real.
-mock.module(new URL('../../integrations/hardfire/session.js',import.meta.url).href,{exports:{createHardFireSession:async(_controller,options)=>{
+// namedExports works in both Node 22 and 24; the newer exports option is unavailable in Node 22.
+mock.module(new URL('../../integrations/hardfire/session.js',import.meta.url).href,{namedExports:{createHardFireSession:async(_controller,options)=>{
  creates++;assert.equal(creates,1,'cleanup failure must never authorize another session');
  const session={tabId:42,provider:{protocolState:async()=>({canSpin:true,stages:[],pickerControls:[]})},
  frame:{evaluate:async fn=>{
@@ -42,8 +43,8 @@ mock.module(new URL('../../integrations/hardfire/session.js',import.meta.url).hr
  }};
  options.onOwnedTab?.(42,()=>session.close());return session;
 }}});
-mock.module(new URL('../../integrations/hardfire/drawn-buttons.js',import.meta.url).href,{exports:{captureDrawnButtons:async()=>({capture_id:'capture-1',full_path:path.join(artifactDir,'screen.jpg'),artifact_dir:artifactDir,image_size:{width:100,height:100},controls:raw().controls.map(b=>({...b,center:b.hit_rect?{x:(b.hit_rect.x+b.hit_rect.width/2)/100,y:(b.hit_rect.y+b.hit_rect.height/2)/100}:null}))})}});
-mock.module(new URL('../../integrations/hardfire/paint-guard.js',import.meta.url).href,{exports:{withSurfaceLock:async fn=>fn(),ensurePainted:async()=>({ok:true})}});
+mock.module(new URL('../../integrations/hardfire/drawn-buttons.js',import.meta.url).href,{namedExports:{captureDrawnButtons:async()=>({capture_id:'capture-1',full_path:path.join(artifactDir,'screen.jpg'),artifact_dir:artifactDir,image_size:{width:100,height:100},controls:raw().controls.map(b=>({...b,center:b.hit_rect?{x:(b.hit_rect.x+b.hit_rect.width/2)/100,y:(b.hit_rect.y+b.hit_rect.height/2)/100}:null}))})}});
+mock.module(new URL('../../integrations/hardfire/paint-guard.js',import.meta.url).href,{namedExports:{withSurfaceLock:async fn=>fn(),ensurePainted:async()=>({ok:true})}});
 const {runStateExplorer}=await import('../../integrations/hardfire/state-explorer.js');
 
 // Advance only this child process's scheduling clock; no game or wall-clock waits.
