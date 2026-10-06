@@ -135,7 +135,7 @@ export async function createHardFireSession(controller,{gameUrl,deadline=Date.no
        await sleep(100);
        // Check a stalled compositor at most once per ten seconds. Re-present
        // the window without navigating, renewing the session or resending buy.
-       if(Date.now()-lastPaintCheck>=10000){
+       if(!liveProtocol&&Date.now()-lastPaintCheck>=10000){
          lastPaintCheck=Date.now();
          try{await scoped.screenshot(65);}catch(error){
            if(!/screenshot_empty/.test(String(error.message)))throw error;

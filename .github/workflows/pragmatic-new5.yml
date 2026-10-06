@@ -84,9 +84,10 @@ jobs:
       FUZZER_MANIFEST: ${{ github.workspace }}/docs/evidence/pragmatic-actions-new5-2026-10-05-manifest.json
       FUZZER_ARTIFACT_DIR: ${{ github.workspace }}/outputs/live-private/${{ matrix.id }}
       FUZZER_OUTPUT_DIR: ${{ github.workspace }}/outputs/live-evidence/${{ matrix.id }}
-      FUZZER_MAX_ACTIONS: '12'
+      FUZZER_MAX_ACTIONS: '100'
       FUZZER_MAX_DEPTH: '8'
-      FUZZER_TIMEOUT_MS: '360000'
+      FUZZER_BENCHMARK: '1'
+      FUZZER_TIMEOUT_MS: '600000'
       FUZZER_SOURCE_SHA: ${{ needs.select.outputs.source_sha }}
       HARDFIRE_SOURCE_SHA: adf6de5ec14e394f77fb1816d5f46e5deb250b0a
     steps:
