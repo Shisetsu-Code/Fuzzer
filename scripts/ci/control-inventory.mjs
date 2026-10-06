@@ -1,3 +1,8 @@
+import path from 'node:path';
+export function redirectRunnerArgs(argv,entry,replacement){
+ return argv.map(arg=>{const prefix=arg.startsWith('--app=')?'--app=':'';const candidate=prefix?arg.slice(prefix.length):arg;return (!candidate.startsWith('-')&&path.resolve(candidate)===path.resolve(entry))?prefix+replacement:arg;});
+}
+
 /** Read-only diagnostic: schema/visibility metadata, never arbitrary runtime values. */
 export function inspectControlInventory(){
  const safe=fn=>{try{return fn();}catch{return null;}};

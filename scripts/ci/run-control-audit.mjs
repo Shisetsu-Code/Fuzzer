@@ -2,7 +2,7 @@
 // by the ordinary runner. Intended for short targeted diagnostic runs.
 import {app,webContents} from 'electron';
 import {fileURLToPath} from 'node:url';
-import {inspectControlInventory} from './control-inventory.mjs';
+import {inspectControlInventory,redirectRunnerArgs} from './control-inventory.mjs';
 import {inspectDrawnButtons} from '../../providers/pragmatic/drawn-buttons.js';
 let sampling=false,count=0;const seen=new Set();
 const timer=setInterval(async()=>{
@@ -18,5 +18,5 @@ const timer=setInterval(async()=>{
   }
  }}catch{console.log('CONTROL_AUDIT_SAMPLE_UNAVAILABLE');}finally{sampling=false;}
 },5000);timer.unref();
-process.argv=process.argv.map(arg=>arg===fileURLToPath(import.meta.url)?fileURLToPath(new URL('./run-live-demo.mjs',import.meta.url)):arg);
+process.argv=redirectRunnerArgs(process.argv,fileURLToPath(import.meta.url),fileURLToPath(new URL('./run-live-demo.mjs',import.meta.url)));
 await import('./run-live-demo.mjs');
