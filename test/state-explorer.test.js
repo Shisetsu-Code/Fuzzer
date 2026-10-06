@@ -56,3 +56,17 @@ test('a random feature triggered by an ordinary antebet spin does not create rep
  finishOperation:async(b,s,{choicePlan=[]}={})=>{phase='root';return {ok:true,kind:'spin',snapshot:snap(),decisions:[{options:[{key:'a'},{key:'b'}],selected:choicePlan[0]||'a'}]}}};
  await exploreStates(a,{maxActions:5,wait:async()=>({snapshot:snap()})});assert.equal(clicks,1);
 });
+
+
+test('action traversal is breadth-first: siblings are explored before grandchildren',async()=>{
+ let state='root';
+ const controls={root:[{key:'open'}],menu:[{key:'a'},{key:'b'}],A:[{key:'a1'}],B:[],A1:[]};
+ const a={reset:async()=>{state='root'},snapshot:async()=>({key:state,controls:controls[state]||[],traffic:0}),click:async b=>{
+  if(state==='root'&&b.key==='open')state='menu';
+  else if(state==='menu'&&b.key==='a')state='A';
+  else if(state==='menu'&&b.key==='b')state='B';
+  else if(state==='A'&&b.key==='a1')state='A1';
+ }};
+ const r=await exploreStates(a,{mode:'actions',maxActions:10,maxRetries:0,wait:async()=>({snapshot:await a.snapshot(),reason:'STATE_CHANGED'})});
+ assert.deepEqual(r.edges.map(e=>e.action),['open','a','b','a1']);
+});
