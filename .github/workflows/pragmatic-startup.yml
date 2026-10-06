@@ -1,0 +1,38 @@
+name: Pragmatic CI startup check
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/pragmatic-startup.yml'
+      - 'scripts/ci/run-live-demo.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  startup:
+    name: Electron entry point / no game
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+      - run: npm install --no-save --package-lock=false --no-audit --no-fund electron@44.4.0
+      - name: Verify CLI argument layout without opening a game
+        run: |
+          mkdir -p outputs
+          cat > outputs/electron-entry-probe.mjs <<'NODE'
+          import {app} from 'electron';
+          import path from 'node:path';
+          import {fileURLToPath} from 'node:url';
+          const entry = fileURLToPath(import.meta.url);
+          const legacyGuardMatches = Boolean(process.argv[1] && path.resolve(process.argv[1]) === entry);
+          console.log('ELECTRON_ENTRY_PROBE=' + JSON.stringify({argv:process.argv,legacyGuardMatches,electron:process.versions.electron,defaultApp:process.defaultApp}));
+          app.exit(legacyGuardMatches ? 0 : 1);
+          NODE
+          xvfb-run -a -s '-screen 0 1280x800x24' ./node_modules/.bin/electron --no-sandbox --use-gl=angle --use-angle=swiftshader outputs/electron-entry-probe.mjs
