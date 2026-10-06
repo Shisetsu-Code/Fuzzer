@@ -7,6 +7,7 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {createHardFireHost,HARDFIRE_COMMIT,boundedDiagnostic} from './hardfire-host.mjs';
 import {saveOwnedHar} from '../../integrations/hardfire/har.js';
+import {writeRecoveryCheckpoint} from './recover-live-evidence.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 let safeToExit=true;
@@ -46,6 +47,21 @@ export function isRunnerEntry(argv,entry){
  return path.resolve(selected)===filename;
 }
 
+// Progress arrays belong to the running explorer. Freeze completed observations
+// before awaiting diagnostics, and do not invent a route for work still in flight.
+export function createProgressCheckpoint(){
+ let snapshot=null;
+ return {
+  record(progress){snapshot=structuredClone(progress);},
+  read(){return snapshot?structuredClone(snapshot):null;},
+  recover(error,cleanupFailure){
+   if(!snapshot)return null;
+   const recovered=structuredClone(snapshot);
+   return {...recovered,status:'PARTIAL',completeGame:false,pending:[...recovered.pending,{phase:'runner',reason:code(error)}],...(cleanupFailure?structuredClone(cleanupFailure):{})};
+  }
+ };
+}
+
 async function main(){
  const config=readRunConfig(),game=selectManifestGame(JSON.parse(readFileSync(config.manifest,'utf8')),config.gameId);
  mkdirSync(config.artifactDir,{recursive:true});
@@ -56,10 +72,15 @@ async function main(){
  for(const flag of ['disable-background-timer-throttling','disable-renderer-backgrounding','disable-backgrounding-occluded-windows','ignore-gpu-blocklist'])app.commandLine.appendSwitch(flag);
  app.commandLine.appendSwitch('disable-features','CalculateNativeWinOcclusion,IntensiveWakeUpThrottling');
  const profileDir=path.join(config.artifactDir,'electron-profile');mkdirSync(profileDir,{recursive:true});app.setPath('userData',profileDir);
- await app.whenReady();
- let host,result,error,budgetTimer,sampleTimer,sampling=false,initialCaptured=false;
- const owned=new Map(),evidenceRefs=[],evidenceHarPaths=new Set(),runtime=new Map(),startedMs=Date.now(),startedAt=new Date(startedMs).toISOString();
+ let host,result,error,cleanupFailure,budgetTimer,sampleTimer,sampling=false,initialCaptured=false;
+ const owned=new Map(),evidenceRefs=[],evidenceHarPaths=new Set(),runtime=new Map(),checkpoint=createProgressCheckpoint(),startedMs=Date.now(),startedAt=new Date(startedMs).toISOString();
  const execution={hardfireCommit:HARDFIRE_COMMIT,sourceCommit:process.env.FUZZER_SOURCE_SHA||null,versions:{...process.versions},requestedSpeed:4,startedAt,live:true,maxLoadedTabs:1,maxActions:config.maxActions,maxDepth:config.maxDepth,timeoutMs:config.timeoutMs};
+ let cleanupConfirmed=false,exportStarted=false,explorerReturned=false;
+ const persist=()=>writeRecoveryCheckpoint({artifactDir:config.artifactDir,outputDir:config.outputDir,game,observedResult:result??checkpoint.read(),progressObserved:explorerReturned||checkpoint.read()!==null,error:error?{code:code(error)}:null,
+  execution:{...execution,runtime:[...runtime.values()],finishedAt:new Date().toISOString(),elapsedMs:Date.now()-startedMs},evidenceRefs,evidenceHarPaths:[...evidenceHarPaths],lastOwnedTabIds:host?.openTabIds()||[],cleanupConfirmed,cleanupFailure,exportStarted});
+ const onHarSaved=async saved=>{evidenceHarPaths.add(saved.path);persist();};
+ persist();
+ await app.whenReady();
  const capture=async role=>{
   if(!host)return;
   for(const id of host.openTabIds())try{
@@ -80,7 +101,7 @@ async function main(){
    if(tab.recorder?.startedAt){
     // Explicitly incomplete: final recovery is not evidence of operation completion.
     const har=tab.recorder.toJSON();har.log._captureIncomplete={reason:'CI_FINAL_CLEANUP',pendingBodies:tab.recorder.pendingBodies?.size??null};
-    const saved=await saveOwnedHar(tab.recorder,{artifactDir:config.artifactDir,tabId:id,gameUrl:game.url,snapshot:{har,complete:false}});evidenceHarPaths.add(saved.path);
+    await saveOwnedHar(tab.recorder,{artifactDir:config.artifactDir,tabId:id,gameUrl:game.url,snapshot:{har,complete:false},onSaved:onHarSaved});
     host.markSaved(id);
    }
    await host.controller.tabs.close(id);owned.delete(id);
@@ -91,32 +112,36 @@ async function main(){
   if(stdout.trim()!==HARDFIRE_COMMIT)throw Error('CI_HARDFIRE_PIN_MISMATCH');
   execution.sourceCommit=(await promisify(execFile)('git',['-C',root,'rev-parse','HEAD'])).stdout.trim();
   if(process.env.FUZZER_SOURCE_SHA&&execution.sourceCommit!==process.env.FUZZER_SOURCE_SHA)throw Error('CI_FUZZER_PIN_MISMATCH');
-  host=await createHardFireHost({electron,hardfireRoot:config.hardfireRoot,speed:4});
+  host=await createHardFireHost({electron,hardfireRoot:config.hardfireRoot,speed:4,onHarSaved});
   safeToExit=false;
   sampleTimer=setInterval(()=>{void sample().catch(()=>{});},5000);
   const {runStateExplorer}=await import('../../integrations/hardfire/state-explorer.js');
   log({event:'LIVE_START',gameId:game.id,hardfireCommit:HARDFIRE_COMMIT,maxActions:config.maxActions,maxDepth:config.maxDepth,timeoutMs:config.timeoutMs,requestedSpeed:4});
   const run=runStateExplorer(host.controller,{gameUrl:game.url,artifactDir:config.artifactDir,maxActions:config.maxActions,maxDepth:config.maxDepth,timeoutMs:config.timeoutMs,
-   onOwnedTab:(id,closeOwned)=>owned.set(id,closeOwned),onClosedTab:id=>owned.delete(id),
-   onProgress:async progress=>{log({event:'LIVE_PROGRESS',gameId:game.id,actions:progress.actions,nodes:progress.nodes?.length??0,edges:progress.edges?.length??0,pending:progress.pending?.length??0});await sample();}});
+   onOwnedTab:(id,closeOwned)=>{owned.set(id,closeOwned);persist();},onClosedTab:id=>{owned.delete(id);persist();},
+   onProgress:async progress=>{checkpoint.record(progress);persist();log({event:'LIVE_PROGRESS',gameId:game.id,actions:progress.actions,nodes:progress.nodes?.length??0,edges:progress.edges?.length??0,pending:progress.pending?.length??0});await sample();}});
   // The engine has its own operation deadlines. This extra budget covers a
   // stalled startup/renderer and routes all exit paths through HAR persistence.
   const budget=new Promise((_,reject)=>{budgetTimer=setTimeout(()=>{host.beginShutdown();reject(Error('CI_FINAL_BUDGET_EXCEEDED'));},config.timeoutMs+90000);});
-  result=await Promise.race([run,budget]);
+  result=await Promise.race([run,budget]);explorerReturned=true;
  }catch(caught){error=caught;if(caught.har?.path)evidenceHarPaths.add(caught.har.path);await capture('error');if(caught.screenshot?.path)evidenceRefs.push({full_path:caught.screenshot.path,capture_id:'session-startup-error',role:'error'});log({event:'LIVE_ERROR',gameId:game.id,code:code(caught)});}
  finally{
   clearTimeout(budgetTimer);clearInterval(sampleTimer);
   await sample().catch(()=>{});
-  try{await cleanup();}catch(caught){error??=caught;if(result){result.status='PARTIAL';result.cleanupPending=true;result.retainedTabIds=host.openTabIds();}log({event:'LIVE_CLEANUP_ERROR',gameId:game.id,code:code(caught),retainedTabs:host?.openTabIds().length??0});}
+  // Persist before the first close: a native Electron crash can skip every finally.
+  persist();
+  try{await cleanup();cleanupConfirmed=!(host?.openTabIds().length);}catch(caught){error??=caught;cleanupFailure={cleanupPending:true,cleanupError:code(caught),retainedTabIds:host?.openTabIds()||[]};if(result){result.status='PARTIAL';Object.assign(result,structuredClone(cleanupFailure));}log({event:'LIVE_CLEANUP_ERROR',gameId:game.id,code:code(caught),retainedTabs:cleanupFailure.retainedTabIds.length});}
+  persist();
  }
  execution.runtime=[...runtime.values()];execution.finishedAt=new Date().toISOString();execution.elapsedMs=Date.now()-startedMs;execution.retainedTabIds=host?.openTabIds()||[];
  safeToExit=execution.retainedTabIds.length===0;
- result??={status:'ERROR',nodes:[],edges:[],pending:[],actions:0};result.execution=execution;
+ result??=checkpoint.recover(error,cleanupFailure)??{status:'ERROR',nodes:[],edges:[],pending:[],actions:0};if(cleanupFailure)Object.assign(result,structuredClone(cleanupFailure));result.execution=execution;
  // Raw evidence stays in the private staging directory. Only exporter output
  // and the exporter's whitelisted summary are intended for CI publication.
  await fs.writeFile(path.join(config.artifactDir,'result.json'),JSON.stringify({game,result,error:error?{code:code(error),message:String(error.message)}:undefined},null,2));
  const {exportLiveEvidence}=await import('./export-live-evidence.mjs');
  const retainedHarPaths=[];for(const file of evidenceHarPaths)if(await fs.stat(file).then(()=>true,()=>false))retainedHarPaths.push(file);
+ exportStarted=true;persist();
  const exported=await exportLiveEvidence({game,result,error,artifactDir:config.artifactDir,outputDir:config.outputDir,evidenceRefs,evidenceHarPaths:retainedHarPaths});
  console.log('FUZZER_SUMMARY_JSON='+JSON.stringify(exported.summary));
  if(host?.openTabIds().length){process.exitCode=1;log({event:'LIVE_RETAINED_UNSAVED_TABS',gameId:game.id,count:host.openTabIds().length});return;}

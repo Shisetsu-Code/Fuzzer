@@ -6,6 +6,8 @@ import {createHardFireHost,loadHardFireComponents,HARDFIRE_COMMIT} from './hardf
 import {isRunnerEntry} from './run-live-demo.mjs';
 import {saveOwnedHar} from '../../integrations/hardfire/har.js';
 
+const diagnosticError=error=>({errorName:String(error?.name||'Error').replace(/[^A-Za-z]/g,'').slice(0,40),message:String(error?.message||'').replace(/https?:\/\/[^\s]+/g,'[URL]').slice(0,160)});
+
 export async function probePhase(phase,task,{emit,timeoutMs=10000}){
  emit({phase,status:'begin'});let timer;
  try{
@@ -13,7 +15,7 @@ export async function probePhase(phase,task,{emit,timeoutMs=10000}){
   const operation=task();
   const result=await Promise.race([operation,new Promise((_,reject)=>{timer=setTimeout(()=>{emit({phase,status:'timeout',timeoutMs});reject(Error('CI_PROBE_PHASE_TIMEOUT'));},timeoutMs);})]);
   emit({phase,status:'done'});return result;
- }catch(error){emit({phase,status:'failed',errorCode:error.message==='CI_PROBE_PHASE_TIMEOUT'?'CI_PROBE_PHASE_TIMEOUT':'CI_PROBE_PHASE_FAILED'});throw error;}
+ }catch(error){emit({phase,status:'failed',errorCode:error.message==='CI_PROBE_PHASE_TIMEOUT'?'CI_PROBE_PHASE_TIMEOUT':'CI_PROBE_PHASE_FAILED',...diagnosticError(error)});throw error;}
  finally{clearTimeout(timer);}
 }
 
@@ -64,7 +66,7 @@ async function main(){
   emit({phase:'probe_complete',status:'done'});writeFileSync(path.join(outputDir,'result.json'),JSON.stringify({variant:order,status:'PASSED',events},null,2));
   clearTimeout(overall);app.exit(0);
  }catch(error){
-  emit({phase:'probe_failed',status:'failed',errorCode:error.message==='CI_PROBE_PHASE_TIMEOUT'?'CI_PROBE_PHASE_TIMEOUT':'CI_PROBE_FAILED'});
+  emit({phase:'probe_failed',status:'failed',errorCode:error.message==='CI_PROBE_PHASE_TIMEOUT'?'CI_PROBE_PHASE_TIMEOUT':'CI_PROBE_FAILED',...diagnosticError(error)});
   writeFileSync(path.join(outputDir,'result.json'),JSON.stringify({variant:order,status:'FAILED',events},null,2));
   clearTimeout(overall);
   // Both variants run in separate Actions jobs/processes. Persisted milestones

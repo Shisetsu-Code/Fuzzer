@@ -7,6 +7,20 @@ import {createHardFireSession} from '../integrations/hardfire/session.js';
 import {saveOwnedHar} from '../integrations/hardfire/har.js';
 const gameUrl='https://www.pragmaticplay.fun/en/slots/coven-rising/';
 
+test('owned HAR observer is awaited after persistence and a failed journal prevents native close',async()=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-har-journal-'));let cleanup,closes=0,rejectJournal=true,observed;
+ const target={sessionIsolated:true,recorder:{recording:true,stop:async()=>{target.recorder.recording=false;return {log:{entries:[{fixture:'saved-before-close'}]}};}},onHarSaved:async saved=>{
+  observed=saved;assert.equal(JSON.parse(await fs.readFile(saved.path,'utf8')).log.entries[0].fixture,'saved-before-close');
+  await new Promise(resolve=>setImmediate(resolve));if(rejectJournal)throw Error('CI_JOURNAL_FAILED');
+ }};
+ const controller={tabs:{new:async()=>({id:223}),resolve:()=>target,close:async()=>{assert.ok(observed);closes++;}},withTab:()=>({recordStart:async()=>{throw Error('startup failed');},screenshot:async()=>{throw Error('no pixels');}})};
+ try{
+  await assert.rejects(createHardFireSession(controller,{gameUrl,artifactDir:dir,onOwnedTab:(id,retry)=>{cleanup=retry;}}),error=>{assert.equal(error.cleanupError,'CI_JOURNAL_FAILED');return true;});
+  assert.equal(closes,0);await assert.rejects(cleanup(),/CI_JOURNAL_FAILED/);assert.equal(closes,0);
+  rejectJournal=false;const saved=await cleanup();assert.equal(closes,1);assert.equal(saved.path,observed.path);
+ }finally{await fs.rm(dir,{recursive:true,force:true});}
+});
+
 test('an unfinished response cannot block saving owned HAR evidence forever',async()=>{
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-har-pending-'));
  const recorder={recording:false,pendingBodies:new Set([{}]),stop:()=>new Promise(()=>{}),toJSON:()=>({log:{entries:[{request:{url:gameUrl},response:{status:200,content:{_bodyCaptureStatus:'pending'}}}]}})};

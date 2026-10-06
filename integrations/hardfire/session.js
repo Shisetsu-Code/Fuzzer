@@ -55,7 +55,7 @@ export async function createHardFireSession(controller,{gameUrl,deadline=Date.no
  const closeOwnedTab=async()=>{if(closed)return;await controller.tabs.close(created.id);closed=true;onClosedTab?.(created.id);};
  const saveHar=async()=>{
    saveRequired=true;
-   savedHar=await saveOwnedHar(target.recorder,{artifactDir,tabId:created.id,gameUrl,snapshot:harSnapshot,onCaptured:value=>{harSnapshot=value;}});
+   savedHar=await saveOwnedHar(target.recorder,{artifactDir,tabId:created.id,gameUrl,snapshot:harSnapshot,onCaptured:value=>{harSnapshot=value;},onSaved:target.onHarSaved});
    saveRequired=false;
    if(session)session.har=savedHar;return savedHar;
  };

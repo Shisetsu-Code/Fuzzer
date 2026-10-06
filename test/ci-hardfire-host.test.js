@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-async function fixture(){
+async function fixture({runtimeRequiresDocument=false,clearViewAfterClose=false}={}){
  const {createHardFireHost}=await import('../scripts/ci/hardfire-host.mjs');
  const events=[];let id=0;
- class View{constructor(options){this.options=options;this.webContents={id:++id,dead:false,isDestroyed(){return this.dead;},close(){events.push('close');this.dead=true;},setBackgroundThrottling(){},setAudioMuted(){},setWindowOpenHandler(){},on(){},mainFrame:{framesInSubtree:[]}};}setVisible(){}setBounds(bounds){this.bounds=bounds;}setBackgroundColor(){}}
+ class View{constructor(options){this.options=options;const wc={id:++id,dead:false,documentReady:false,isDestroyed(){return this.dead;},close(){events.push('close');this.dead=true;},setBackgroundThrottling(){},setAudioMuted(){},setWindowOpenHandler(){},on(){},mainFrame:{framesInSubtree:[]}};if(runtimeRequiresDocument)wc.loadURL=async url=>{assert.equal(url,'about:blank');wc.documentReady=true;events.push('blank-load');};if(clearViewAfterClose)Object.defineProperty(this,'webContents',{get:()=>wc.dead?undefined:wc});else this.webContents=wc;}setVisible(){}setBounds(bounds){this.bounds=bounds;}setBackgroundColor(){}}
  class Window{constructor(options){this.options=options;this.contentView={addChildView(){},removeChildView(){}};}getContentSize(){return [1280,720];}isDestroyed(){return false;}on(){}show(){}hide(){}close(){events.push('window-close');}}
- class Runtime{async start(){events.push('runtime-start');}async stop(){events.push('runtime-stop');}getSessionIds(){return [];}getWebSocketSnapshot(){return [];}}
+ class Runtime{constructor(wc){this.wc=wc;}async start(){if(runtimeRequiresDocument&&!this.wc.documentReady)throw Error('CDP_CONTEXT_NOT_INITIALIZED');events.push('runtime-start');}async stop(){events.push('runtime-stop');}getSessionIds(){return [];}getWebSocketSnapshot(){return [];}}
  class Tap{install(){events.push('tap-install');}}
  class Recorder{constructor(){this.recording=false;}async start(){events.push('record-start');this.recording=true;}}
  class Controller{constructor(options){this.options=options;}async recordStart(){return this.options.startRecording(this.options.getActiveTab());}async click(){events.push('click');}}
@@ -64,4 +64,16 @@ test('recorded game speed comes from its actual DEMO frame and never from the ca
  assert.equal((await host.runtimeStatus())[0].observedSpeed,null);
  wc.mainFrame.framesInSubtree=[{url:'https://demogamesfree.pragmaticplay.net/game',executeJavaScript:async()=>4}];
  const actual=(await host.runtimeStatus())[0];assert.equal(actual.observedSpeed,4);assert.equal(actual.frameKind,'demo');
+});
+
+test('a fresh CI view initializes its blank renderer before awaiting CDP runtime commands',async()=>{
+ const {host,events}=await fixture({runtimeRequiresDocument:true});
+ const created=await host.controller.tabs.new({});await host.controller.withTab(created.id).recordStart();
+ assert.deepEqual(events.slice(0,4),['tap-install','blank-load','runtime-start','record-start']);
+});
+
+test('confirmed closure releases capacity when the native view clears its webContents getter',async()=>{
+ const {host}=await fixture({clearViewAfterClose:true});const first=await host.controller.tabs.new({});
+ await host.controller.tabs.close(first.id);assert.deepEqual(host.openTabIds(),[]);
+ const next=await host.controller.tabs.new({});assert.notEqual(next.id,first.id);
 });

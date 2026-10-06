@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 
-export async function saveOwnedHar(recorder,{artifactDir,tabId,gameUrl,timeoutMs=10000,snapshot,onCaptured}){
+export async function saveOwnedHar(recorder,{artifactDir,tabId,gameUrl,timeoutMs=10000,snapshot,onCaptured,onSaved}){
  let timer,complete=snapshot?.complete??true;
  const timeout=Symbol('HAR_STOP_TIMEOUT');
  let har;
@@ -22,5 +22,9 @@ export async function saveOwnedHar(recorder,{artifactDir,tabId,gameUrl,timeoutMs
  const host=new URL(gameUrl).hostname.replace(/[^a-z0-9.-]/gi,'_');
  const filename=path.join(directory,`${host}-${tabId}-${randomUUID()}.har`);
  await fs.writeFile(filename,JSON.stringify(har,null,2),{encoding:'utf8',flag:'wx'});
- return {ok:true,path:filename,entries:har.log.entries.length,complete};
+ const saved={ok:true,path:filename,entries:har.log.entries.length,complete};
+ // A caller may journal the actual persisted path before any native tab close.
+ // Rejection leaves the session's save obligation pending and retains ownership.
+ await onSaved?.(saved);
+ return saved;
 }

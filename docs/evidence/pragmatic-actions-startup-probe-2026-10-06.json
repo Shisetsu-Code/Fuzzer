@@ -1,0 +1,306 @@
+{
+  "schema": "fuzzer/host-startup-diagnostic/v1",
+  "scope": "Real Electron and pinned HardFire on about:blank only; no game launched",
+  "runId": 37398841327,
+  "runUrl": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37398841327",
+  "sourceCommit": "7a919079c268b788c0be9d11f1aed230afba73bd",
+  "hardfireCommit": "adf6de5ec14e394f77fb1816d5f46e5deb250b0a",
+  "cases": [
+    {
+      "variant": "current",
+      "artifactId": 11384113668,
+      "archiveSha256": "21e0c5e23bfdb8326f3db111d60c536e3b726fe139475ed9bdcd080447496267",
+      "archiveDigestVerified": true,
+      "result": {
+        "variant": "current",
+        "status": "FAILED",
+        "events": [
+          {
+            "variant": "current",
+            "elapsedMs": 0,
+            "phase": "bootstrap",
+            "status": "done",
+            "hardfireCommit": "adf6de5ec14e394f77fb1816d5f46e5deb250b0a",
+            "versions": {
+              "electron": "44.4.0",
+              "node": "24.21.0",
+              "chrome": "152.0.7977.78"
+            }
+          },
+          {
+            "variant": "current",
+            "elapsedMs": 9,
+            "phase": "app_ready",
+            "status": "begin"
+          },
+          {
+            "variant": "current",
+            "elapsedMs": 493,
+            "phase": "app_ready",
+            "status": "done"
+          },
+          {
+            "variant": "current",
+            "elapsedMs": 529,
+            "phase": "host_created",
+            "status": "done"
+          },
+          {
+            "variant": "current",
+            "elapsedMs": 530,
+            "phase": "tab_new",
+            "status": "begin"
+          },
+          {
+            "variant": "current",
+            "elapsedMs": 533,
+            "phase": "runtime_start",
+            "status": "begin"
+          },
+          {
+            "variant": "current",
+            "elapsedMs": 534,
+            "phase": "cdp_command",
+            "status": "begin",
+            "method": "Page.addScriptToEvaluateOnNewDocument"
+          },
+          {
+            "variant": "current",
+            "elapsedMs": 10534,
+            "phase": "runtime_start",
+            "status": "timeout",
+            "timeoutMs": 10000
+          },
+          {
+            "variant": "current",
+            "elapsedMs": 10534,
+            "phase": "runtime_start",
+            "status": "failed",
+            "errorCode": "CI_PROBE_PHASE_TIMEOUT"
+          },
+          {
+            "variant": "current",
+            "elapsedMs": 10534,
+            "phase": "tab_new",
+            "status": "failed",
+            "errorCode": "CI_PROBE_PHASE_TIMEOUT"
+          },
+          {
+            "variant": "current",
+            "elapsedMs": 10535,
+            "phase": "probe_failed",
+            "status": "failed",
+            "errorCode": "CI_PROBE_PHASE_TIMEOUT"
+          }
+        ]
+      }
+    },
+    {
+      "variant": "blank-first",
+      "artifactId": 11384213485,
+      "archiveSha256": "67aaf42585db814f4fdcdc63ac635b9ccc5d8fca1eb52ced12b52018555f676f",
+      "archiveDigestVerified": true,
+      "result": {
+        "variant": "blank-first",
+        "status": "FAILED",
+        "events": [
+          {
+            "variant": "blank-first",
+            "elapsedMs": 1,
+            "phase": "bootstrap",
+            "status": "done",
+            "hardfireCommit": "adf6de5ec14e394f77fb1816d5f46e5deb250b0a",
+            "versions": {
+              "electron": "44.4.0",
+              "node": "24.21.0",
+              "chrome": "152.0.7977.78"
+            }
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 10,
+            "phase": "app_ready",
+            "status": "begin"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 393,
+            "phase": "app_ready",
+            "status": "done"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 443,
+            "phase": "host_created",
+            "status": "done"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 444,
+            "phase": "tab_new",
+            "status": "begin"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 447,
+            "phase": "blank_before_runtime",
+            "status": "begin"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 617,
+            "phase": "blank_before_runtime",
+            "status": "done"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 617,
+            "phase": "runtime_start",
+            "status": "begin"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 619,
+            "phase": "cdp_command",
+            "status": "begin",
+            "method": "Page.addScriptToEvaluateOnNewDocument"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 636,
+            "phase": "cdp_command",
+            "status": "done",
+            "method": "Page.addScriptToEvaluateOnNewDocument"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 637,
+            "phase": "cdp_command",
+            "status": "begin",
+            "method": "Runtime.evaluate"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 640,
+            "phase": "cdp_command",
+            "status": "done",
+            "method": "Runtime.evaluate"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 640,
+            "phase": "cdp_command",
+            "status": "begin",
+            "method": "Network.enable"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 641,
+            "phase": "cdp_command",
+            "status": "done",
+            "method": "Network.enable"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 642,
+            "phase": "runtime_start",
+            "status": "done"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 673,
+            "phase": "tab_new",
+            "status": "done"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 674,
+            "phase": "renderer_evaluate",
+            "status": "begin"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 676,
+            "phase": "renderer_evaluate",
+            "status": "done"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 676,
+            "phase": "record_start",
+            "status": "begin"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 680,
+            "phase": "record_start",
+            "status": "done"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 680,
+            "phase": "blank_screenshot",
+            "status": "begin"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 718,
+            "phase": "blank_screenshot",
+            "status": "done"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 718,
+            "phase": "save_owned_har",
+            "status": "begin"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 2238,
+            "phase": "save_owned_har",
+            "status": "done"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 2238,
+            "phase": "har_persisted",
+            "status": "done",
+            "entries": 0,
+            "complete": true
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 2238,
+            "phase": "tab_close",
+            "status": "begin"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 2238,
+            "phase": "tab_close",
+            "status": "begin"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 2264,
+            "phase": "tab_close",
+            "status": "failed",
+            "errorCode": "CI_PROBE_PHASE_FAILED"
+          },
+          {
+            "variant": "blank-first",
+            "elapsedMs": 2264,
+            "phase": "probe_failed",
+            "status": "failed",
+            "errorCode": "CI_PROBE_FAILED"
+          }
+        ]
+      }
+    }
+  ],
+  "findings": [
+    "Current host order blocks on Page.addScriptToEvaluateOnNewDocument before tabs.new can return.",
+    "Navigating about:blank first permits runtime installation, renderer evaluation, recorder start, screenshot and persistence of an empty HAR.",
+    "Blank-first still fails during tab_close; startup success alone does not prove lifecycle completion."
+  ]
+}
