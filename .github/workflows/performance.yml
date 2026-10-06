@@ -15,6 +15,7 @@ permissions:
 concurrency:
   group: pragmatic-live-demos
   cancel-in-progress: false
+  queue: max
 jobs:
   select:
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository

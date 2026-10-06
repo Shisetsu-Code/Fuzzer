@@ -22,6 +22,7 @@ permissions:
 concurrency:
   group: pragmatic-live-demos
   cancel-in-progress: false
+  queue: max
 
 jobs:
   select:
