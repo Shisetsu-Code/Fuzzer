@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {gunzipSync} from 'node:zlib';
+import {fileURLToPath} from 'node:url';
 const game={id:'demo',title:'Demo',url:'https://www.pragmaticplay.fun/en/slots/demo/'};
 async function fixture(run){const root=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-recovery-'));const artifactDir=path.join(root,'private'),outputDir=path.join(root,'public');await fs.mkdir(artifactDir);try{await run({root,artifactDir,outputDir});}finally{await fs.rm(root,{recursive:true,force:true});}}
 
@@ -13,9 +14,15 @@ test('a separate Node process recovers durable purchase evidence and saved HAR a
  const harPath=path.join(artifactDir,'own.har');await fs.writeFile(harPath,JSON.stringify({log:{entries:[{request:{url:'https://demo.test/gameService?token=private',method:'POST',postData:{text:'action=doSpin&pur=0&sessionKey=private'}},response:{status:200,content:{text:'na=s&token=private'}}}],_captureIncomplete:{reason:'CI_FINAL_CLEANUP'}}}));
  const entry=new URL('../scripts/ci/recover-live-evidence.mjs',import.meta.url);
  const state={artifactDir,outputDir,game,observedResult:{actions:1,nodes:[{key:'root'}],edges:[{operation:{kind:'purchase',normalSpinVerified:true,submission:{payload:{pur:'0'}}}}],pending:[]},error:{code:'CI_FINAL_BUDGET_EXCEEDED'},execution:{live:true},evidenceHarPaths:[harPath],lastOwnedTabIds:[7],cleanupConfirmed:false};
- const crashed=spawnSync(process.execPath,['--input-type=module','-e',`import {writeRecoveryCheckpoint} from ${JSON.stringify(entry.href)};writeRecoveryCheckpoint(JSON.parse(process.argv[1]));process.kill(process.pid,'SIGKILL');`,JSON.stringify(state)],{encoding:'utf8'});
- assert.equal(crashed.signal,'SIGKILL');assert.equal(crashed.status,null);
- const child=spawnSync(process.execPath,[entry.pathname],{env:{...process.env,FUZZER_ARTIFACT_DIR:artifactDir,FUZZER_OUTPUT_DIR:outputDir,FUZZER_GAME_ID:game.id},encoding:'utf8'});
+ const crashed=spawnSync(process.execPath,['--input-type=module','-e',`import {writeRecoveryCheckpoint} from ${JSON.stringify(entry.href)};import {writeFileSync} from 'node:fs';import path from 'node:path';const state=JSON.parse(process.argv[1]);writeRecoveryCheckpoint(state);process.kill(process.pid,'SIGKILL');writeFileSync(path.join(state.artifactDir,'unreachable-after-kill'),'unexpected continuation');`,JSON.stringify(state)],{encoding:'utf8'});
+ assert.equal(crashed.error,undefined);assert.equal(crashed.stderr,'');
+ // Windows reports self-SIGKILL as a nonzero exit status rather than a signal.
+ // Both branches still require actual abrupt termination and a durable journal.
+ if(process.platform==='win32'){assert.equal(crashed.signal,null);assert.ok(Number.isInteger(crashed.status)&&crashed.status!==0);}
+ else{assert.equal(crashed.signal,'SIGKILL');assert.equal(crashed.status,null);}
+ await assert.rejects(fs.stat(path.join(artifactDir,'unreachable-after-kill')),{code:'ENOENT'});
+ assert.equal(JSON.parse(await fs.readFile(path.join(artifactDir,'recovery.json'),'utf8')).observedResult.actions,1);
+ const child=spawnSync(process.execPath,[fileURLToPath(entry)],{env:{...process.env,FUZZER_ARTIFACT_DIR:artifactDir,FUZZER_OUTPUT_DIR:outputDir,FUZZER_GAME_ID:game.id},encoding:'utf8'});
  assert.equal(child.status,0,child.stderr);assert.match(child.stdout,/FUZZER_SUMMARY_JSON=/);assert.doesNotMatch(child.stdout,/private|sessionKey/);
  const result=JSON.parse(await fs.readFile(path.join(outputDir,'result.json'),'utf8'));
  assert.equal(result.status,'PARTIAL');assert.equal(result.actions,1);assert.equal(result.completeGame,false);assert.equal(result.edges.length,1);assert.equal(result.edges[0].operation.normalSpinVerified,true);assert.equal(result.cleanupPending,true);assert.deepEqual(result.retainedTabIds,[7]);
