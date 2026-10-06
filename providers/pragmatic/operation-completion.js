@@ -118,7 +118,12 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
    assessedSnapshot=current;assessedAt=now;
    const observedProgress=JSON.stringify([op.sequence,op.protocolSequence,op.nextAction,op.protocolComplete,op.cascadeActive,current.capture?.pending,current.capture?.uncertain,current.flags,current.wager?.menuOpen,choices.map(c=>c.key)]);
    if(observedProgress!==progressKey){progressKey=observedProgress;lastProgress=now;}
-   if(now-lastProgress>=stallMs)return result(false,'OPERATION_STALLED');
+   // A completed response that explicitly advertises a decision is an open
+   // traversal frontier, not a stalled operation. The panel may be animated in
+   // later; keep observing until choices appear or the absolute operation/global
+   // deadline expires. Generic operations still use the short stall budget.
+   const advertisedChoicePending=op.protocolComplete===true&&['b','m','fso'].includes(op.nextAction)&&!choices.length;
+   if(!advertisedChoicePending&&now-lastProgress>=stallMs)return result(false,'OPERATION_STALLED');
    if(readyTicks>=2){
      if(verificationSequence===null){
        if(decisions.length<choicePlan.length)return result(false,'CHOICE_NOT_OBSERVED');
