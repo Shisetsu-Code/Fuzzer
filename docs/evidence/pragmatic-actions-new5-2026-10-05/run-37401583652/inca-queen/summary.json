@@ -1,0 +1,81 @@
+{
+  "schema": "fuzzer/live-summary/v1",
+  "game": {
+    "id": "inca-queen",
+    "title": "Inca Queen",
+    "url": "https://www.pragmaticplay.fun/en/slots/inca-queen/"
+  },
+  "execution": {
+    "hardfireCommit": "adf6de5ec14e394f77fb1816d5f46e5deb250b0a",
+    "sourceCommit": "2d3c5617c44ec9b29330d893d231c19c310c6327",
+    "startedAt": "2026-10-06T01:55:36.528Z",
+    "finishedAt": "2026-10-06T02:03:00.025Z",
+    "elapsedMs": 443497,
+    "maxActions": 100,
+    "maxDepth": 8,
+    "timeoutMs": 1200000,
+    "live": true,
+    "versions": {
+      "node": "24.21.0",
+      "electron": "44.4.0",
+      "chrome": "152.0.7977.78"
+    },
+    "runtime": [
+      {
+        "tabId": 1,
+        "requestedSpeed": 4,
+        "observedSpeed": null,
+        "frameKind": "demo"
+      },
+      {
+        "tabId": 2,
+        "requestedSpeed": 4,
+        "observedSpeed": null,
+        "frameKind": "demo"
+      },
+      {
+        "tabId": 3,
+        "requestedSpeed": 4,
+        "observedSpeed": null,
+        "frameKind": "demo"
+      },
+      {
+        "tabId": 4,
+        "requestedSpeed": 4,
+        "observedSpeed": 4,
+        "frameKind": "demo"
+      }
+    ]
+  },
+  "resultStatus": "PARTIAL",
+  "actions": 2,
+  "nodes": 2,
+  "edges": 2,
+  "completeGame": false,
+  "cleanupPending": false,
+  "pendingCount": 3,
+  "pendingReasons": {
+    "ACTIVE_TIMEOUT": 3
+  },
+  "purchaseCount": 0,
+  "verifiedPurchaseCount": 0,
+  "modifierCount": 1,
+  "choiceCount": 0,
+  "purchases": [],
+  "modifiers": [
+    {
+      "edgeIndex": 0,
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/GamePivot/GameFeatures/AnteBet/BetLevelButtons/ButtonColliders/Level0Button",
+      "modifierEnabled": true,
+      "performed": false,
+      "classification": null,
+      "cost": null,
+      "multiplier": null,
+      "request": null
+    }
+  ],
+  "choices": [],
+  "summaryRowsOmitted": 0,
+  "error": null,
+  "warnings": []
+}

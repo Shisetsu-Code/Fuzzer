@@ -1,98 +1,124 @@
 # Cinco DEMOs nuevos en GitHub Actions
 
-**Primera tanda completada y revisada.** Los cinco juegos dejaron evidencia íntegra y resultados `PARTIAL`. La repetición con el marcador de actividad corregido está en marcha; esta versión no anticipa su resultado.
+**Pruebas terminadas: cinco juegos distintos, dos tandas completas y un diagnóstico adicional de Dragon’s Gate. Los cinco resultados de ambas tandas son `PARTIAL`; no se envió ni verificó una compra o un giro.** Se guardaron y revisaron los resultados, los HAR saneados y las capturas. La segunda tanda reconoció tres estados adicionales, pero el criterio de quietud siguió deteniendo el recorrido.
 
-La tanda solicitada el 5 de octubre de 2026 (Argentina) se ejecuta el 6 de octubre en UTC. Los juegos seleccionados no aparecen en los registros consultados del repositorio, Snapshot, Tester-Spin y el contexto previo disponible. El [manifiesto de selección](evidence/pragmatic-actions-new5-2026-10-05-manifest.json) conserva las fuentes, las exclusiones y los límites de esa afirmación; no permite descartar pruebas en un historial inaccesible.
+Los juegos se seleccionaron porque no aparecen en los registros consultados de Fuzzer, Snapshot, Tester-Spin y el contexto previo disponible. El [manifiesto original](evidence/pragmatic-actions-new5-2026-10-05-manifest.json) conserva las fuentes y 72 exclusiones, incluidas variantes de nombres. Su estado `PROPOSED_NOT_RUN` corresponde a la selección previa, conservada como snapshot; las ejecuciones se documentan aquí. No se afirma ausencia de pruebas en un historial no disponible. La petición y los nombres de archivo corresponden al 5 de octubre de 2026 en Argentina; las ejecuciones ocurrieron el 6 de octubre en UTC.
 
-## Ejecución identificada
+## Resultado de la segunda tanda
 
-- [Tanda real en Actions, run 37400090388](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37400090388).
-- Fuzzer ejecutado: `571026fe225b5a511d804bb39a29a2fd7ab2e526`.
-- HardFire: `adf6de5ec14e394f77fb1816d5f46e5deb250b0a`, con sus implementaciones reales de controlador, grabador, captura de red e inyección de runtime.
-- Electron fijado a `44.4.0`, Ubuntu y Xvfb; las versiones efectivamente cargadas se conservan en cada resultado.
-- Una pestaña aislada por trabajo, dos trabajos simultáneos. Vista de juego de 1280 × 720. Velocidad solicitada 4×; la lectura dentro del frame DEMO se informa por separado.
-- Límite por juego: 100 acciones, profundidad 8 y 20 minutos; recuperación global adicional de 90 segundos y límite externo de trabajo de 30 minutos.
+[Run 37401583652](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37401583652), Fuzzer `2d3c5617c44ec9b29330d893d231c19c310c6327`. Los [artefactos completos revisados](evidence/pragmatic-actions-new5-2026-10-05/run-37401583652/) incluyen procedencia, hashes y un análisis derivado independiente.
 
-El host aporta la fachada de pestañas de CI y llama al explorador existente. Cada sesión comienza a grabar antes de navegar al catálogo oficial, y guarda su HAR antes de cerrar su pestaña.
-
-## Resultados por juego
-
-La primera tanda terminó con cinco exportaciones completas y cierre confirmado en los cinco juegos. Se revisaron los hashes del ZIP y de cada archivo, los resultados, los cuerpos de protocolo y las capturas. Los [artefactos preservados en el repositorio](evidence/pragmatic-actions-new5-2026-10-05/run-37400090388/) evitan depender de la retención de un día de Actions.
-
-| Juego | Acciones / pendientes | Duración | Estado observado al terminar | Peticiones de juego |
+| Juego | Acciones / nodos / pendientes | Duración | Evidencia observada | Protocolo capturado |
 |---|---:|---:|---|---|
-| Dragon's Gate – Bonus Choice | 1 / 1 | 158,246 s | Confirmación de compra de bonus por $100 demo | 1 `doInit` |
-| Inca Queen | 2 / 2 | 203,287 s | Ante Bet activado ($2 → $60); otra rama abre compra de respins por $500 demo | 2 `doInit` |
-| Big Bass Blast | 2 / 2 | 208,587 s | Ante Bet activado ($2 → $3); otra rama abre compra por $200 demo | 2 `doInit` |
-| Hundreds and Thousands | 2 / 2 | 213,469 s | Ante Bet activado ($2 → $4); otra rama abre compra por $200 demo | 2 `doInit` |
-| Blazing Wilds Megaways | 1 / 1 | 95,294 s | Confirmación de compra de free spins por $200 demo | 1 `doInit` |
+| Dragon’s Gate – Bonus Choice | 1 / 1 / 1 | 112,871 s | Confirmación de compra por $100 demo abierta; no se aceptó | 1 `doInit` |
+| Inca Queen | 2 / 2 / 3 | 443,497 s | Ante OFF→ON reconocido como nuevo estado; otra rama abre compra de respins por $500 demo | 4 `doInit` |
+| Big Bass Blast | 2 / 2 / 5 | 490,060 s | Ante visible ON; menú de compra por $200 demo reconocido, con aceptar/cancelar detectados | 6 `doInit` |
+| Hundreds and Thousands | 2 / 1 / 2 | 179,702 s | Ante visible ON y confirmación por $200 demo abierta; sin nuevo nodo aceptado | 2 `doInit` |
+| Blazing Wilds Megaways | 1 / 2 / 5 | 503,539 s | Menú de compra por $200 demo reconocido; sus controles destino quedaron pendientes | 6 `doInit` |
 
-Los ocho pendientes son `ACTIVE_TIMEOUT`. No se capturó ningún `doSpin`, `doBonus`, `doCollect` ni envío de compra con `pur`. Las ocho inicializaciones tienen HTTP 200 y cuerpos presentes. Los clics de UI sí surtieron efecto, pero los menús no se confirmaron y los cambios de Ante Bet no se verificaron con un giro. El total es **cero compras verificadas, cero modificadores verificados y cero elecciones de bonus**. En los cinco resultados `cleanupPending:false` y `completeGame:false`.
+En total: **8 acciones nuevas del explorador, 8 nodos, 8 aristas y 16 pendientes `ACTIVE_TIMEOUT`**. Once pendientes ocurrieron durante replay: dos en Inca, cuatro en Big Bass y cinco en Blazing. Sus trazas llegaron a la clave de estado esperada, pero la espera no permitió continuar. La acción destino —por ejemplo, aceptar la compra— no se ejecutó. Un control en una tarea pendiente no cuenta como clic, compra ni opción de bonus ejecutada.
 
-La velocidad 4× se leyó dentro de los frames DEMO de Inca, Big Bass, Hundreds y Blazing. La lectura de Dragon fue `null`; sólo consta que se solicitó 4×. El símbolo observado procede del HAR: `vs50dragatebch`, `vs20thunder`, `vs10bbasblitz`, `vs100hsandks` y `vswaysfirewmw`, respectivamente.
+El contador de acciones no incluye todos los clics de preparación, replay o continuación. Los IDs sucesivos de pestaña corresponden a sesiones nuevas de preparación; no significan que estuvieran cargadas simultáneamente.
 
-### Fallo del marcador de actividad
+Los **19 intercambios de `/gameService` son `doInit`, todos HTTP 200 y con body presente**. Hay cero `doSpin`, cero `doBonus`, cero `doCollect`, cero compras enviadas y cero compras verificadas. Todos los paquetes dicen `EXPORTED`, sin warnings, con `cleanupPending:false`, `retainedTabIds:[]` y `completeGame:false`.
 
-`waitTransition` exige una ventana de quietud después de detectar tráfico. El adaptador de CI incluía `HarRecorder.lastNetworkEventAt`, que la versión fijada de HardFire actualiza para **todos** los mensajes de CDP, incluidos los ajenos a la red. Una regresión con el `waitTransition` real reproduce `ACTIVE_TIMEOUT` al inyectar únicamente mensajes `Runtime.consoleAPICalled`, incluso con controles estables y HAR vacío.
+### Modificadores y controles observados
 
-Se corrige el origen del marcador sin cambiar la espera ni los criterios de finalización: se cuentan eventos `Network.*` durante la grabación, actividad de NetworkTap, frames WebSocket y cambios de los cuerpos capturados o pendientes. Los mensajes de inspección no cuentan como tráfico. La nueva prueba debe permitir `STATE_CHANGED` frente a mensajes Runtime y seguir detectando actividad HTTP/WS real.
+Las capturas muestran Ante Bet OFF→ON en Inca ($2→$60), Big Bass ($2→$3) y Hundreds ($2→$4), con saldo demo intacto. Son cambios visuales; sin un giro no se verificó su payload, débito ni coste efectivo.
 
-Los artefactos de la primera tanda conservan el subconjunto `/gameService`, pero no el historial de eventos del depurador ni el tráfico de fondo. Por eso demuestran el bloqueo después de los clics y el defecto del contrato, pero **no prueban por sí solos qué tipo de evento reiniciaba la espera en esos procesos históricos**. La repetición comprueba el efecto real de la corrección.
+Inca registra un modificador habilitado en el resumen (`modifierCount:1`), pero `performed:false`, `request:null` y `cost:null`. Los otros dos cambios visuales terminaron antes de generar esa clasificación estructurada. No hay modificadores verificados con apuestas.
 
-## Repetición con el marcador corregido
+En Big Bass y Blazing, los nodos nuevos incluyen aceptar/cancelar y otros colliders. Esos controles no equivalen a modalidades de compra adicionales. Todos sus recorridos posteriores se detuvieron durante la apertura repetida del menú.
 
-- [Run 37401583652](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37401583652), sobre `2d3c5617c44ec9b29330d893d231c19c310c6327`.
-- Mismos cinco juegos, presupuesto, reglas del explorador, HardFire y Electron que la primera tanda. Sólo cambian el marcador de actividad y sus pruebas.
-- Las [pruebas en Actions](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37401583675) pasan 282/282 por entorno (Node 22/24, Linux/Windows), sin omisiones.
-- El [probe con Electron real](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37401583782) completa la entrada, grabación y cierre; es una prueba sin juego.
-- Dragon vuelve a quedar en confirmación con `ACTIVE_TIMEOUT`; Inca descubre un segundo nodo tras activar Ante Bet, pero todavía no acredita un giro. La tabla definitiva requiere recuperar los cinco artefactos.
+### Comparación con la primera tanda
 
-Para identificar qué mantiene activa la espera se añade un diagnóstico de hasta 32 muestras de actividad, separadas por al menos dos segundos, con contadores HTTP/WS, cuerpos pendientes, número de entradas y un hash del marcador. Los nombres de métodos CDP se contabilizan sin sus parámetros. El historial queda fuera del marcador y no altera la espera. Se prepara una ejecución dirigida únicamente a Dragon; no se anticipa su resultado.
+La [primera tanda, run 37400090388](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37400090388), ejecutó `571026fe225b5a511d804bb39a29a2fd7ab2e526`. Sus [artefactos preservados](evidence/pragmatic-actions-new5-2026-10-05/run-37400090388/) acreditan ocho acciones, cinco nodos y ocho pendientes directos; sólo ocho `doInit`, sin giros ni compras.
 
-## Criterio de evidencia
+| Juego | Nodos: primera → segunda | Pendientes: primera → segunda | Cambio observado |
+|---|---:|---:|---|
+| Dragon’s Gate | 1 → 1 | 1 → 1 | Sigue en confirmación |
+| Inca Queen | 1 → 2 | 2 → 3 | Se reconoce el estado Ante ON; los replays siguen bloqueados |
+| Big Bass Blast | 1 → 2 | 2 → 5 | Se reconoce el menú de compra; los destinos no se ejecutan |
+| Hundreds and Thousands | 1 → 1 | 2 → 2 | Persiste el bloqueo de las dos acciones |
+| Blazing Wilds Megaways | 1 → 2 | 1 → 5 | Se reconoce el menú de compra; los destinos no se ejecutan |
 
-Una compra acreditada debe conservar su petición y respuesta completas, el cierre observado de su operación y una petición propia de giro normal posterior. Un HTTP 200 aislado no acredita ese recorrido. Se distinguen opciones de compra únicas, intentos repetidos, elecciones, modificadores y pendientes.
+El aumento de pendientes refleja nuevas tareas descubiertas y detenidas durante replay. No son compras fallidas adicionales ni más opciones únicas. Las duraciones de la primera tanda fueron 158,246; 203,287; 208,587; 213,469 y 95,294 segundos, respectivamente.
 
-`EXHAUSTED_OBSERVED_CONTROLS` se limita a los controles observados durante la exploración. `PARTIAL` conserva los avances y el motivo de cada pendiente. El estado de exportación es independiente del estado del juego, y `completeGame` permanece en `false`.
+## Diagnóstico dirigido de la espera
 
-La exportación incluye el resultado estructurado, su resumen, el protocolo `/gameService` saneado y hasta ocho JPEG de calidad 65. Los cuerpos referenciados se resuelven sobre el HAR original antes de filtrar. Los hashes del manifiesto permiten comprobar la integridad de los archivos exportados. Los registros de Actions conservan también el resumen con el prefijo `FUZZER_SUMMARY_JSON=`.
+[Run 37402505219](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37402505219), únicamente Dragon’s Gate, sobre `5d371c3562fcb51ef45452f29b79bdfaafaba8f1`. Esta versión añade observabilidad y conserva el comportamiento del motor. El [resultado completo](evidence/pragmatic-actions-new5-2026-10-05/run-37402505219/dragon-s-gate-bonus-choice/result.json) contiene `execution.runtime[].activity`.
 
-## Incidencias de infraestructura anteriores a la tanda real
+El diagnóstico terminó en 136,998 segundos, con una acción y `ACTIVE_TIMEOUT` tras 65,575 segundos de transición. La captura mantiene la confirmación de $100 abierta. El HAR contiene sólo un `doInit` HTTP 200; no se envió una compra. La evidencia se exportó y la pestaña se cerró.
 
-Estos intentos no se cuentan como juegos probados:
+### Defecto corregido
 
-1. El [run 37394550052](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37394550052), sobre `362d0f719b9746bbd07c6c98e5de480c25a88eaa`, no creó trabajos de juego. El workflow usaba el contexto `runner.temp` en un `env` de trabajo; se corrigió a un directorio bajo `github.workspace`.
-2. El [run 37394763268](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37394763268), sobre `0ccbd5a5744091baab26dfe0cba8cb18a4e90bfd`, importó el módulo pero no llamó a `main()`. Electron conservaba `--no-sandbox` en `argv[1]`; la antigua guarda esperaba allí la ruta del script. No se abrieron juegos ni se generaron HAR. Una prueba con Electron real reprodujo la discrepancia y permitió retirar ese intento inactivo.
-3. El [check corregido 37396276567](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37396276567) comprobó la nueva selección del archivo de entrada con Electron `44.4.0`: `legacyGuardMatches:false`, `guardMatches:true`. El workflow real exige además un marcador escrito al entrar en `main()`, antes de abrir ventanas, dentro de 30 segundos.
+El adaptador de CI usaba `HarRecorder.lastNetworkEventAt` como señal de tráfico. La versión fijada de HardFire actualiza ese reloj con todos los mensajes CDP, incluidos Runtime y Page. Una regresión con el `waitTransition` real reproduce un timeout al inyectar sólo mensajes Runtime, con controles estables y HAR vacío.
+
+Se reemplazó ese reloj por eventos `Network.*`, actividad HTTP de NetworkTap, frames WebSocket y cambios de cuerpos capturados o pendientes. El mismo caso de regresión reconoce `STATE_CHANGED` tras dos observaciones, a los 1.000 ms del reloj controlado. Los tiempos de espera y las reglas de finalización del motor no cambiaron. El listener se retira de forma idempotente al sustituir la grabación, fallar su inicio o cerrar la pestaña.
+
+La repetición demuestra que esta corrección no resolvió todos los timeouts.
+
+### Actividad que quedó registrada
+
+El diagnóstico conserva hasta 32 muestras, con un intervalo mínimo de dos segundos, y contadores por nombre de método CDP. No publica parámetros, URLs ni cuerpos en ese historial. El historial queda fuera del marcador, para que observarlo no genere actividad.
+
+| Muestra | Tiempo relativo | Eventos Network | Eventos Web | Frames WS | Cuerpos pendientes | Entradas del recorder |
+|---|---:|---:|---:|---:|---:|---:|
+| Primera | 20.827 ms | 3.778 | 781 | 0 | 0 | 96 |
+| Última | 132.850 ms | 3.872 | 842 | 0 | 1 | 110 |
+
+En la ventana registrada aumentaron **94 eventos Network, 61 eventos Web y 14 entradas del recorder**. Se contabilizaron métodos de solicitud, respuesta, recepción de datos y finalización HTTP; no hubo frames ni métodos WebSocket. El protocolo exportado de `/gameService` siguió teniendo únicamente la inicialización. Se demuestra actividad de transporte y captura más amplia que ese protocolo; no se identifica un endpoint, servicio de telemetría o descarga concreto.
+
+Las diez muestras reales están separadas entre 6,86 y 30,087 segundos. Los dos segundos son un mínimo de muestreo, no una cadencia garantizada. Hay pares de muestras sin variación, uno separado por 13,864 segundos. Eso no prueba que el motor recibiera esa ventana quieta: el snapshot lee el marcador para `wager`, puede capturar la pantalla y vuelve a leerlo para `traffic`. Falta una etiqueta de fase para reconstruir cada entrada exacta de `waitTransition`.
+
+### Frontera de protocolo pendiente de implementar
+
+El código también usa la variación del marcador amplio para calcular `payloadObserved`. En Inca, Big Bass y Blazing aparece `payloadObserved:true` con saldo intacto y sin giro o compra en el HAR. Ese booleano no acredita un payload de apuesta.
+
+La siguiente corrección necesita separar actividad general, identidad de una solicitud propia del juego y estado de captura. No basta con usar sólo el HAR finalizado: `session.entries()` lee `recorder.toJSON()`, que omite los mapas `active` y `webActive`. La revisión offline con el recorder del pin reprodujo un `doSpin` todavía activo que no aparecía en esa lectura; el parser veía sólo `doInit` y un protocolo aparentemente completo. Incluyendo la solicitud activa, reconocía el spin y la incompletitud.
+
+El cambio pendiente debe conservar identidad y orden al pasar de request activo a finalizado, tratar payloads/cuerpos pendientes como incertidumbre y evitar contar dos veces la misma solicitud vista por CDP y webRequest. La quietud debe exigir ausencia de solicitudes propias en vuelo y de captura incierta, además de un marcador estable. Antes del giro de prueba hay que refrescar esa frontera. Las rutas y coordenadas deben seguir saliendo exclusivamente de controles observados.
+
+Esta separación **no está implementada ni validada en los cinco juegos en esta entrega**. No se saltó una espera ni se rebajó una verificación para convertir resultados parciales en completos.
+
+## Configuración y alcance de la evidencia
+
+Las tres ejecuciones usan HardFire `adf6de5ec14e394f77fb1816d5f46e5deb250b0a`, sus componentes reales de controlador, recorder, NetworkTap y runtime, y Electron `44.4.0`. Las versiones efectivas registradas son Node `24.21.0` y Chrome `152.0.7977.78`.
+
+Cada trabajo mantiene una pestaña aislada de 1280×720; la matriz admite dos trabajos simultáneos. Se graba desde antes de entrar en el catálogo oficial y se guarda el HAR antes del cierre. Presupuesto por juego: 100 acciones nuevas, profundidad 8 y 20 minutos; watchdog adicional de 90 segundos y límite externo de trabajo de 30 minutos. Ninguna de las once ejecuciones de juego revisadas agotó ese presupuesto global.
+
+Se solicitó velocidad 4×. El valor observado se leyó dentro del frame DEMO y se conserva por pestaña; `null` significa que no se obtuvo esa lectura, no que se demostrara otra velocidad. En la primera tanda Dragon tuvo lectura `null`; en la segunda y en el diagnóstico tuvo 4. La segunda tanda conserva también lecturas `null` en algunas sesiones de Inca, Big Bass y Blazing; no se supone 4× para esas sesiones.
+
+Los símbolos proceden del HAR, no del nombre del catálogo: Dragon `vs50dragatebch`, Inca `vs20thunder`, Big Bass `vs10bbasblitz`, Hundreds `vs100hsandks` y Blazing `vswaysfirewmw`.
+
+Una compra verificada exige su envío propio y respuesta completa, cierre observado de la operación y un giro normal posterior con ancla independiente. Un HTTP 200, un diálogo abierto o un collider detectado no prueban ese recorrido. `EXHAUSTED_OBSERVED_CONTROLS` sólo agotaría los controles observados, y `completeGame` permanece en `false`.
+
+Los exports incluyen resultado, resumen, HAR saneado de `/gameService` y hasta ocho JPEG de calidad 65. Los cuerpos referenciados se resuelven sobre el HAR original antes de filtrar. Los manifests verifican bytes y SHA-256; los archivos de procedencia guardan IDs, SHA del código y digest del ZIP de Actions. El análisis derivado se conserva separado del resultado original. La copia en el repositorio evita depender de la retención de un día de los artefactos de Actions.
 
 ## Verificación del código
 
-El [workflow 37400090425](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37400090425), sobre la misma versión de Fuzzer que la tanda real, pasó **277 pruebas por entorno**, sin fallos ni omisiones, en Node 22 y 24 sobre Linux y Windows. La prueba real de entrada de Electron también pasó. Estas pruebas automatizadas se distinguen de la evidencia de ejecución de cada juego.
+La [evidencia de CI](evidence/pragmatic-actions-new5-2026-10-05/ci-validation.json) conserva los runs y los totales revisados. Las suites validan la integración de la PR; son evidencia distinta de los recorridos DEMO.
 
-## Recuperación del progreso al vencer el presupuesto
+| Fuente de Fuzzer | Pruebas por entorno | Matriz |
+|---|---:|---|
+| `571026fe` | 277/277 | [Run 37400090425](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37400090425) |
+| `2d3c5617` | 282/282 | [Run 37401583675](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37401583675) |
+| `5d371c35` | 285/285 | [Run 37402505202](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37402505202) |
 
-La revisión del runner identificó un caso adicional: `onProgress` comunicaba observaciones ya terminadas, pero el runner sólo registraba sus conteos. Si vencía su watchdog durante la siguiente tarea, el fallback podía exportar cero acciones y arrays vacíos. El HAR seguía siendo evidencia separada, pero se perdía el resultado estructurado de las operaciones anteriores.
+Cada matriz incluye Node 22 y 24 en Ubuntu y Windows, con cero fallos, omitidas, canceladas o pendientes. Las 17 pruebas específicas del host pasan. Los probes de entrada y host con Electron real también pasan, incluyendo el [último run 37402505216](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37402505216). Los probes vacíos acreditan arranque, captura, grabación y cierre; no acreditan un juego.
 
-La corrección conserva una copia profunda de cada checkpoint antes de esperar diagnósticos. Si falta un resultado final, recupera ese checkpoint como `PARTIAL` y añade un pendiente global con el error del runner. No crea una arista ni certifica la acción que seguía en curso. También conserva por separado un fallo de limpieza y sus IDs retenidos cuando todavía no existe un resultado final; el resumen exportado mantiene `cleanupPending:true` en ese caso.
+## Infraestructura corregida para ejecutar las pruebas
 
-Tres regresiones nuevas cubren una compra terminada seguida de otra acción bloqueada, la independencia respecto de mutaciones posteriores, la ausencia de progreso y la conservación del fallo de limpieza en la exportación. La corrección inicial del checkpoint pasó **269 pruebas** localmente. La versión ampliada con recuperación durable y cierre del host pasó **277 pruebas** en los cuatro entornos de Actions indicados arriba. Está incluida en la tanda corregida `37400090388`; no se atribuye a los intentos anteriores.
+El workflow original no creaba trabajos por un contexto de directorio inválido; se corrigió a `github.workspace`. Después, Electron conservaba `--no-sandbox` en `argv[1]` y la guarda del módulo no llamaba a `main()`. Una prueba con Electron real reprodujo la discrepancia; el runner reconoce ahora el archivo de entrada y escribe un sentinel antes de abrir ventanas.
 
-## Recuperación después de un crash nativo
+El host también esperaba CDP antes de inicializar el renderer. El [probe A/B 37398841327](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37398841327) reprodujo el bloqueo en `Page.addScriptToEvaluateOnNewDocument`. Cargar `about:blank` primero desbloqueó runtime, captura y grabación. Ese probe detectó además un acceso al getter del WebContentsView después de destruirlo. El host conserva ahora la referencia estable y confirma su cierre. El [probe corregido 37399548934](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37399548934) completó el ciclo en 2.179 ms y 2.108 ms. Los resultados y hashes están en la [evidencia de arranque](evidence/pragmatic-actions-startup-probe-2026-10-06.json).
 
-El checkpoint privado se escribe con archivo exclusivo, `fsync` y renombrado atómico. Se actualiza al iniciar, al registrar progreso, cuando cambia el ownership y antes de cerrar. El callback `onSaved` se espera después de persistir el HAR y antes del cierre; si falla el journal, la sesión conserva su obligación de guardado.
+Los intentos anteriores sin recorrido de juego no se cuentan como pruebas de los cinco DEMOs:
 
-Un paso independiente de Node, ejecutado siempre después de Electron, recupera el checkpoint y sus referencias explícitas mediante el mismo exportador. Preserva un export final cuyo manifiesto, tamaños y hashes sean válidos. Sin progreso observado conserva `ERROR` y cero acciones; con progreso conserva `PARTIAL` y sus pendientes. La recuperación no rescata datos que sólo existieran en la memoria del recorder.
+- [37394550052](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37394550052): workflow inválido, sin trabajos de juego.
+- [37394763268](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37394763268): módulo importado sin entrar en `main()`, sin abrir juegos ni HAR.
+- [37396276232](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37396276232): dos jobs agotaron 21,5 minutos sin progreso y terminaron con `SIGTRAP`, sin export. El bloqueo reproducido del mismo host justificó retirar esa tanda; es una atribución de alta confianza, no una marca directa del estado de esos procesos. Los otros tres jobs quedaron cancelados. El permiso temporal para retirar ese run se eliminó antes de la tanda real.
 
-La prueba de regresión termina un proceso abruptamente y recupera los datos desde otro. Su comprobación de terminación contempla los distintos resultados que Node informa en Windows y POSIX; usa una ruta nativa para el proceso de recuperación.
+El runner conserva ahora copias profundas del progreso y checkpoints privados atómicos (`fsync` y rename), actualizados también al guardar el HAR y antes del cierre. Un proceso independiente recupera evidencia durable si Electron termina abruptamente. Sin progreso conserva `ERROR`; con progreso conserva `PARTIAL` y añade el pendiente global. No inventa la acción en curso ni recupera datos que sólo permanecían en RAM. Una regresión termina un proceso y recupera desde otro, con comprobaciones adecuadas para Windows y POSIX.
 
-## Bloqueo del host reproducido y cierre corregido
-
-La [evidencia de los probes](evidence/pragmatic-actions-startup-probe-2026-10-06.json) conserva resultados reales y los SHA-256 verificados de sus ZIP. El [run 37398841327](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37398841327), con Electron 44.4.0 y HardFire fijado, reprodujo que el orden original queda esperando `Page.addScriptToEvaluateOnNewDocument` antes de devolver la pestaña. Cargar `about:blank` antes del runtime desbloqueó CDP, la evaluación del renderer, el recorder, la captura y la persistencia de un HAR vacío.
-
-Ese primer probe también mostró un fallo al cerrar. El host releía `WebContentsView.webContents` después de destruir el WebContents; ahora conserva su referencia estable y confirma el cierre con ella. En el [run 37399548934](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37399548934), la ruta de producción completó arranque, captura, HAR y cierre en 2.179 ms; la variante comparativa lo completó en 2.108 ms. Ambos resultados son pruebas sin juegos.
-
-La tanda anterior `37396276232`, sobre `eefa33ddc8d3545fa52094b38402d0e7aa9abe6c`, tuvo dos trabajos que llegaron a `LIVE_START`, agotaron 21,5 minutos sin `LIVE_PROGRESS` y terminaron con `SIGTRAP`, sin export. El bloqueo reproducido con el mismo host constituye una atribución de alta confianza para retirar esa tanda; no es una marca directa de su estado histórico. No se le acredita recorrido de DEMO ni se afirma que se hubiera guardado un HAR original. La retirada se solicitó a las 01:31:13 UTC después de pasar el probe corregido. Los otros tres trabajos quedaron cancelados. El permiso temporal usado para retirar únicamente ese run se eliminó antes del relanzamiento.
-
-## Límites y siguientes cambios
-
-Se completará esta sección con los bloqueos observados, la recuperación de evidencia y las correcciones posteriores a la tanda. Los resultados de una versión no se trasladarán como validación en vivo de una versión posterior.
+Las once ejecuciones reales revisadas conservaron evidencia exportada y cierre confirmado de sus pestañas. La rama y sus evidencias quedan en la [PR #1](https://github.com/Shisetsu-Code/Fuzzer/pull/1), en borrador, para revisar el resultado y continuar con la frontera de protocolo identificada.

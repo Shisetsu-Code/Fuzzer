@@ -79,6 +79,8 @@ Cada juego tiene un presupuesto de 100 acciones, profundidad 8 y 20 minutos. El 
 
 El estado del juego y la exportación se informan por separado. `PARTIAL` conserva lo recorrido y sus pendientes; `EXHAUSTED_OBSERVED_CONTROLS` sólo significa que se agotaron los controles observados dentro de esa exploración. El resultado siempre mantiene `completeGame:false`. Un fallo de entrada no cuenta como juego recorrido, y HTTP 200 por sí solo no verifica el cierre de una compra.
 
+La [tanda de cinco DEMOs en Actions del 5 de octubre](docs/validation-pragmatic-actions-new5-2026-10-05.md) conserva dos ejecuciones por juego y un diagnóstico adicional. Los cinco resultados siguen `PARTIAL`, sin giros ni compras enviados. Se reconocieron nuevos estados de Ante Bet y confirmación, pero persiste un bloqueo de quietud; el informe distingue tráfico general, solicitudes propias pendientes y los cambios que faltan implementar.
+
 `npm run pragmatic -- TAB_ID URL_PUBLICA execute` inicia un trabajo desde la consola. Usa el SDK MCP ya instalado en HardFire; `HARDFIRE_HOME` permite elegir su directorio y `MCP_URL` el endpoint local.
 
 El catálogo comprobado es el MCP local de HardFire. No se publican estas funciones mediante Firetrace ni se despliega un servicio Cloudflare nuevo.

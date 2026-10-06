@@ -69,6 +69,17 @@
 
 - [x] Review the combined host, exporter and workflow.
 - [x] Publish the exact tested files to the existing draft PR with `[live-demo:all]` in the commit message (source `571026fe225b5a511d804bb39a29a2fd7ab2e526`, corrected run `37400090388`).
-- [ ] Observe the five Actions jobs, recover artifacts and inspect per-game protocol/screenshots.
-- [ ] Fix concrete infrastructure or engine defects only when evidence identifies the cause; rerun only affected cases when needed.
-- [ ] Save a report with each game's actual status, elapsed time, observed/verified actions and unresolved coverage.
+- [x] Observe both five-game Actions runs (`37400090388`, `37401583652`), recover artifacts and inspect per-game protocol/screenshots; also inspect Dragon diagnostic `37402505219`.
+- [x] Fix reproduced startup, teardown, recovery and CDP-clock defects; rerun the five games and add a bounded diagnostic without weakening completion rules.
+- [x] Save a report with each game's actual status, elapsed time, observed/verified actions and unresolved coverage, plus original sanitized artifacts and provenance.
+
+## Follow-up identified by the live evidence (not implemented)
+
+The five-game execution and comparison are complete. The remaining timeout requires a separate protocol-boundary change; this is not claimed as fixed by the CI host changes.
+
+- [ ] Build a snapshot of owned game requests that includes active, failed and body-pending requests with stable identity/order.
+- [ ] Correlate or explicitly mark uncertainty between CDP and webRequest observations; never count a duplicate as another spin.
+- [ ] Keep broad transport as diagnostics; use the owned protocol lifecycle for quietness and new-request evidence.
+- [ ] Require no owned pending/unknown request before settling or issuing a modifier probe; refresh the boundary immediately before the click.
+- [ ] Reproduce background HTTP activity, delayed payload/body capture, duplicate observations and accepted-click uncertainty in the real traversal tests.
+- [ ] Validate the completed change on the affected DEMOs with fresh source-attributed evidence.

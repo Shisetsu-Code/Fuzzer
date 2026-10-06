@@ -1,0 +1,99 @@
+{
+  "schema": "fuzzer/ci-artifact-provenance/v1",
+  "runId": 37401583652,
+  "runUrl": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37401583652",
+  "sourceCommit": "2d3c5617c44ec9b29330d893d231c19c310c6327",
+  "verifiedAt": "2026-10-06T02:17:22Z",
+  "artifactRetentionDays": 1,
+  "evidenceStoredInRepository": true,
+  "jobs": [
+    {
+      "id": 112069785371,
+      "name": "DEMO / Hundreds and Thousands",
+      "url": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37401583652/job/112069785371",
+      "startedAt": "2026-10-06T02:03:06Z",
+      "completedAt": "2026-10-06T02:06:19Z",
+      "conclusion": "failure"
+    },
+    {
+      "id": 112069785374,
+      "name": "DEMO / Big Bass Blast",
+      "url": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37401583652/job/112069785374",
+      "startedAt": "2026-10-06T01:57:33Z",
+      "completedAt": "2026-10-06T02:05:55Z",
+      "conclusion": "failure"
+    },
+    {
+      "id": 112069785454,
+      "name": "DEMO / Blazing Wilds Megaways™",
+      "url": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37401583652/job/112069785454",
+      "startedAt": "2026-10-06T02:05:57Z",
+      "completedAt": "2026-10-06T02:14:33Z",
+      "conclusion": "failure"
+    },
+    {
+      "id": 112069785550,
+      "name": "DEMO / Inca Queen",
+      "url": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37401583652/job/112069785550",
+      "startedAt": "2026-10-06T01:55:25Z",
+      "completedAt": "2026-10-06T02:03:05Z",
+      "conclusion": "failure"
+    },
+    {
+      "id": 112069785568,
+      "name": "DEMO / Dragon's Gate - Bonus Choice",
+      "url": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37401583652/job/112069785568",
+      "startedAt": "2026-10-06T01:55:24Z",
+      "completedAt": "2026-10-06T01:57:32Z",
+      "conclusion": "failure"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 11386110543,
+      "name": "pragmatic-hundreds-and-thousands-37401583652-1",
+      "bytes": 423674,
+      "sha256": "sha256:d37c0642504852706f0b1ac5b3d0c5d0ec5bd6ae888ac21ed3d4b64b0bed05bd",
+      "createdAt": "2026-10-06T02:06:16Z",
+      "zipDigestVerified": true
+    },
+    {
+      "id": 11385738102,
+      "name": "pragmatic-blazing-wilds-megaways-37401583652-1",
+      "bytes": 951392,
+      "sha256": "sha256:f2baa63b4bfe1cec8f42ed46600c71946b02c0e85048fbda18e0d8144955523d",
+      "createdAt": "2026-10-06T02:14:31Z",
+      "zipDigestVerified": true
+    },
+    {
+      "id": 11385707233,
+      "name": "pragmatic-big-bass-blast-37401583652-1",
+      "bytes": 950915,
+      "sha256": "sha256:7ebe5b30f45e0393b5eea974751601beb14cfe8d38cf330b9ca28ef6144e3352",
+      "createdAt": "2026-10-06T02:05:53Z",
+      "zipDigestVerified": true
+    },
+    {
+      "id": 11385586978,
+      "name": "pragmatic-inca-queen-37401583652-1",
+      "bytes": 835108,
+      "sha256": "sha256:88627091caecb4f04a06ee77792395e6016ff2504cbb31e83ab01a0bf63de430",
+      "createdAt": "2026-10-06T02:03:02Z",
+      "zipDigestVerified": true
+    },
+    {
+      "id": 11385511486,
+      "name": "pragmatic-dragon-s-gate-bonus-choice-37401583652-1",
+      "bytes": 340761,
+      "sha256": "sha256:4cde53c70c5edad73cd9ae70f04d2a8893535e337c50cfc59c3ad080328d3f3b",
+      "createdAt": "2026-10-06T01:57:30Z",
+      "zipDigestVerified": true
+    }
+  ],
+  "limitations": [
+    "All five results are PARTIAL; no doSpin, doBonus, doCollect or purchase submission was captured.",
+    "The eight newly counted actions exclude preparation and replay clicks. Eleven pending tasks failed during replay and did not execute their destination action.",
+    "payloadObserved indicates a change in the broad activity marker and does not by itself prove a game payload or purchase.",
+    "The preserved HAR is the sanitized /gameService subset. Broader transport and capture activity was not sampled in this run."
+  ]
+}

@@ -1,0 +1,153 @@
+{
+  "schema": "fuzzer/ci-validation/v1",
+  "currentSourceCommit": "5d371c3562fcb51ef45452f29b79bdfaafaba8f1",
+  "validationTarget": "Pull-request integration for the identified source commits; distinct from live DEMO evidence.",
+  "unitRuns": [
+    {
+      "sourceCommit": "571026fe225b5a511d804bb39a29a2fd7ab2e526",
+      "runId": 37400090425,
+      "url": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37400090425",
+      "testsPerEnvironment": 277,
+      "environments": 4,
+      "proof": [
+        {
+          "jobId": 112065095695,
+          "totals": [
+            "2026-10-06T01:38:30.9216578Z # tests 277",
+            "2026-10-06T01:38:30.9216970Z # pass 277",
+            "2026-10-06T01:38:30.9217157Z # fail 0",
+            "2026-10-06T01:38:30.9217349Z # cancelled 0",
+            "2026-10-06T01:38:30.9217550Z # skipped 0",
+            "2026-10-06T01:38:30.9217739Z # todo 0"
+          ]
+        },
+        {
+          "jobId": 112065095855,
+          "totals": [
+            "2026-10-06T01:37:50.0513561Z ℹ tests 277",
+            "2026-10-06T01:37:50.0514118Z ℹ pass 277",
+            "2026-10-06T01:37:50.0514397Z ℹ fail 0",
+            "2026-10-06T01:37:50.0514630Z ℹ cancelled 0",
+            "2026-10-06T01:37:50.0514858Z ℹ skipped 0",
+            "2026-10-06T01:37:50.0515108Z ℹ todo 0"
+          ]
+        },
+        {
+          "jobId": 112065095878,
+          "totals": [
+            "2026-10-06T01:38:02.2745184Z # tests 277\r",
+            "2026-10-06T01:38:02.2745449Z # pass 277\r",
+            "2026-10-06T01:38:02.2745573Z # fail 0\r",
+            "2026-10-06T01:38:02.2745708Z # cancelled 0\r",
+            "2026-10-06T01:38:02.2745858Z # skipped 0\r",
+            "2026-10-06T01:38:02.2745990Z # todo 0\r"
+          ]
+        },
+        {
+          "jobId": 112065095903,
+          "totals": [
+            "2026-10-06T01:38:09.1785752Z ℹ tests 277\r",
+            "2026-10-06T01:38:09.1786145Z ℹ pass 277\r",
+            "2026-10-06T01:38:09.1786330Z ℹ fail 0\r",
+            "2026-10-06T01:38:09.1786521Z ℹ cancelled 0\r",
+            "2026-10-06T01:38:09.1786721Z ℹ skipped 0\r",
+            "2026-10-06T01:38:09.1786907Z ℹ todo 0\r"
+          ]
+        }
+      ]
+    },
+    {
+      "sourceCommit": "2d3c5617c44ec9b29330d893d231c19c310c6327",
+      "runId": 37401583675,
+      "url": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37401583675",
+      "testsPerEnvironment": 282,
+      "environments": 4,
+      "jobIds": [
+        112069748386,
+        112069748346,
+        112069748356,
+        112069748542
+      ],
+      "verification": "All four completed logs independently reviewed: 282 pass, zero fail/skip/cancel/todo."
+    },
+    {
+      "sourceCommit": "5d371c3562fcb51ef45452f29b79bdfaafaba8f1",
+      "runId": 37402505202,
+      "url": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37402505202",
+      "testsPerEnvironment": 285,
+      "environments": 4,
+      "proof": [
+        {
+          "job": 112072585678,
+          "name": "Node 22 / ubuntu-latest",
+          "totals": [
+            "2026-10-06T02:06:49.5291682Z # tests 285",
+            "2026-10-06T02:06:49.5292051Z # pass 285",
+            "2026-10-06T02:06:49.5292230Z # fail 0",
+            "2026-10-06T02:06:49.5292417Z # cancelled 0",
+            "2026-10-06T02:06:49.5292608Z # skipped 0",
+            "2026-10-06T02:06:49.5292791Z # todo 0"
+          ]
+        },
+        {
+          "job": 112072585763,
+          "name": "Node 22 / windows-latest",
+          "totals": [
+            "2026-10-06T02:07:01.5557726Z # tests 285",
+            "2026-10-06T02:07:01.5558244Z # pass 285",
+            "2026-10-06T02:07:01.5558513Z # fail 0",
+            "2026-10-06T02:07:01.5558771Z # cancelled 0",
+            "2026-10-06T02:07:01.5559042Z # skipped 0",
+            "2026-10-06T02:07:01.5559308Z # todo 0"
+          ]
+        },
+        {
+          "job": 112072585778,
+          "name": "Node 24 / windows-latest",
+          "totals": [
+            "2026-10-06T02:07:00.0354181Z ℹ tests 285",
+            "2026-10-06T02:07:00.0354415Z ℹ pass 285",
+            "2026-10-06T02:07:00.0354527Z ℹ fail 0",
+            "2026-10-06T02:07:00.0354636Z ℹ cancelled 0",
+            "2026-10-06T02:07:00.0354828Z ℹ skipped 0",
+            "2026-10-06T02:07:00.0354936Z ℹ todo 0"
+          ]
+        },
+        {
+          "job": 112072585887,
+          "name": "Node 24 / ubuntu-latest",
+          "totals": [
+            "2026-10-06T02:06:48.8742304Z ℹ tests 285",
+            "2026-10-06T02:06:48.8742849Z ℹ pass 285",
+            "2026-10-06T02:06:48.8743137Z ℹ fail 0",
+            "2026-10-06T02:06:48.8743402Z ℹ cancelled 0",
+            "2026-10-06T02:06:48.8743692Z ℹ skipped 0",
+            "2026-10-06T02:06:48.8743984Z ℹ todo 0"
+          ]
+        }
+      ]
+    }
+  ],
+  "startupRuns": [
+    {
+      "sourceCommit": "2d3c5617c44ec9b29330d893d231c19c310c6327",
+      "runId": 37401583782,
+      "url": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37401583782",
+      "jobsSucceeded": 3,
+      "liveGame": false,
+      "currentHostCompleteMs": 2272,
+      "blankFirstCompleteMs": 3544
+    },
+    {
+      "sourceCommit": "5d371c3562fcb51ef45452f29b79bdfaafaba8f1",
+      "runId": 37402505216,
+      "url": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37402505216",
+      "conclusion": "success",
+      "liveGame": false
+    }
+  ],
+  "limitations": [
+    "Unit and blank-host probes do not certify any game, purchase or bonus.",
+    "Live game results retain their own source commit and runtime observations."
+  ]
+}

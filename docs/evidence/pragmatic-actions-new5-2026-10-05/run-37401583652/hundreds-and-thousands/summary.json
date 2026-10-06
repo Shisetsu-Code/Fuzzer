@@ -1,0 +1,58 @@
+{
+  "schema": "fuzzer/live-summary/v1",
+  "game": {
+    "id": "hundreds-and-thousands",
+    "title": "Hundreds and Thousands",
+    "url": "https://www.pragmaticplay.fun/en/slots/hundreds-and-thousands/"
+  },
+  "execution": {
+    "hardfireCommit": "adf6de5ec14e394f77fb1816d5f46e5deb250b0a",
+    "sourceCommit": "2d3c5617c44ec9b29330d893d231c19c310c6327",
+    "startedAt": "2026-10-06T02:03:15.531Z",
+    "finishedAt": "2026-10-06T02:06:15.233Z",
+    "elapsedMs": 179702,
+    "maxActions": 100,
+    "maxDepth": 8,
+    "timeoutMs": 1200000,
+    "live": true,
+    "versions": {
+      "node": "24.21.0",
+      "electron": "44.4.0",
+      "chrome": "152.0.7977.78"
+    },
+    "runtime": [
+      {
+        "tabId": 1,
+        "requestedSpeed": 4,
+        "observedSpeed": 4,
+        "frameKind": "demo"
+      },
+      {
+        "tabId": 2,
+        "requestedSpeed": 4,
+        "observedSpeed": 4,
+        "frameKind": "demo"
+      }
+    ]
+  },
+  "resultStatus": "PARTIAL",
+  "actions": 2,
+  "nodes": 1,
+  "edges": 2,
+  "completeGame": false,
+  "cleanupPending": false,
+  "pendingCount": 2,
+  "pendingReasons": {
+    "ACTIVE_TIMEOUT": 2
+  },
+  "purchaseCount": 0,
+  "verifiedPurchaseCount": 0,
+  "modifierCount": 0,
+  "choiceCount": 0,
+  "purchases": [],
+  "modifiers": [],
+  "choices": [],
+  "summaryRowsOmitted": 0,
+  "error": null,
+  "warnings": []
+}
