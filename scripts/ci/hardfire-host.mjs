@@ -55,7 +55,7 @@ export async function createHardFireHost({electron,hardfireRoot,components=loadH
    // WebContentsView.webContents becomes undefined after destruction. Retain
    // the original wrapper, whose isDestroyed() remains valid during teardown.
    const wc=tab.wc;
-   await tab.runtimeController.stop();window.contentView.removeChildView(tab.view);if(!wc.isDestroyed())wc.close();
+   await tab.runtimeController.stop();tab.detachTrafficListener?.();window.contentView.removeChildView(tab.view);if(!wc.isDestroyed())wc.close();
    const deadline=Date.now()+1000;while(!wc.isDestroyed()&&Date.now()<deadline)await new Promise(r=>setTimeout(r,25));
    if(!wc.isDestroyed())throw Error('CI_CLOSE_UNCONFIRMED');
    tabs.delete(tab.id);if(activeId===tab.id)activeId=null;return {id:tab.id,closed:true};
@@ -63,7 +63,19 @@ export async function createHardFireHost({electron,hardfireRoot,components=loadH
  },withTab:id=>{
   const tab=resolve(id);if(tab.scoped)return tab.scoped;
   const scoped=new HardFireController({getActiveTab:()=>resolve(id),createTab:()=>resolve(id),networkTap:()=>tab.networkTap,
-   startRecording:async()=>{operational();tab.harSaved=false;tab.recorder=new HarRecorder(tab.wc,{networkTap:tab.networkTap,gameOnly:true,cdpSessionsProvider:()=>tab.runtimeController.getSessionIds(),webSocketSnapshotProvider:()=>tab.runtimeController.getWebSocketSnapshot()});await tab.recorder.start();return {ok:true};}});
+   startRecording:async()=>{
+    operational();tab.harSaved=false;tab.detachTrafficListener?.();
+    const recorder=new HarRecorder(tab.wc,{networkTap:tab.networkTap,gameOnly:true,cdpSessionsProvider:()=>tab.runtimeController.getSessionIds(),webSocketSnapshotProvider:()=>tab.runtimeController.getWebSocketSnapshot()});tab.recorder=recorder;
+    // The recorder's lastNetworkEventAt also advances on Runtime/Page/Target
+    // messages. Track only Network events, including chunks and open sockets
+    // that are not yet represented in its game-only HAR.
+    tab.networkEventCount=0;
+    const debuggerApi=tab.wc.debugger,onMessage=(_event,method)=>{if(recorder.recording&&typeof method==='string'&&method.startsWith('Network.'))tab.networkEventCount++;};
+    debuggerApi.on('message',onMessage);
+    const detach=()=>{debuggerApi.removeListener('message',onMessage);if(tab.detachTrafficListener===detach)tab.detachTrafficListener=null;};
+    tab.detachTrafficListener=detach;
+    try{await recorder.start();return {ok:true};}catch(error){detach();throw error;}
+   }});
   for(const method of ['click','clickRelative','open','triggerAndCapture'])if(typeof scoped[method]==='function'){
    const original=scoped[method].bind(scoped);scoped[method]=async(...args)=>{operational();resolve(id);return original(...args);};
   }
@@ -71,7 +83,7 @@ export async function createHardFireHost({electron,hardfireRoot,components=loadH
   // explorer needs ongoing recorder activity, including pending body changes.
   scoped.networkEvents=()=>{
    const recorder=tab.recorder,hash=value=>value===undefined?null:createHash('sha256').update(String(value)).digest('hex');
-   return {lastActivity:recorder?.lastNetworkEventAt||0,pendingBodies:recorder?.pendingBodies?.size||0,events:(recorder?.toJSON().log.entries||[]).map((entry,index)=>({index,startedDateTime:entry.startedDateTime||null,status:entry.response?.status??null,requestHash:hash(entry.request?.postData?.text),bodyHash:hash(entry.response?.content?.text),bodyLength:entry.response?.content?.text?.length??null,captureState:entry.response?.content?._bodyCaptureStatus||null,bodyError:!!entry.response?.content?._bodyCaptureError}))};
+   return {networkEvents:tab.networkEventCount||0,webEvents:recorder?.webEvents||0,wsFrames:recorder?.wsFrames||0,pendingBodies:recorder?.pendingBodies?.size||0,events:(recorder?.toJSON().log.entries||[]).map((entry,index)=>({index,startedDateTime:entry.startedDateTime||null,status:entry.response?.status??null,requestHash:hash(entry.request?.postData?.text),bodyHash:hash(entry.response?.content?.text),bodyLength:entry.response?.content?.text?.length??null,captureState:entry.response?.content?._bodyCaptureStatus||null,bodyError:!!entry.response?.content?._bodyCaptureError}))};
   };
   tab.scoped=scoped;return scoped;
  }};

@@ -1,14 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {EventEmitter} from 'node:events';
+import {waitTransition} from '../providers/pragmatic/state-explorer.js';
 
-async function fixture({runtimeRequiresDocument=false,clearViewAfterClose=false}={}){
+async function fixture({runtimeRequiresDocument=false,clearViewAfterClose=false,recorderStart}={}){
  const {createHardFireHost}=await import('../scripts/ci/hardfire-host.mjs');
  const events=[];let id=0;
- class View{constructor(options){this.options=options;const wc={id:++id,dead:false,documentReady:false,isDestroyed(){return this.dead;},close(){events.push('close');this.dead=true;},setBackgroundThrottling(){},setAudioMuted(){},setWindowOpenHandler(){},on(){},mainFrame:{framesInSubtree:[]}};if(runtimeRequiresDocument)wc.loadURL=async url=>{assert.equal(url,'about:blank');wc.documentReady=true;events.push('blank-load');};if(clearViewAfterClose)Object.defineProperty(this,'webContents',{get:()=>wc.dead?undefined:wc});else this.webContents=wc;}setVisible(){}setBounds(bounds){this.bounds=bounds;}setBackgroundColor(){}}
+ class View{constructor(options){this.options=options;const wc={id:++id,dead:false,documentReady:false,debugger:new EventEmitter(),isDestroyed(){return this.dead;},close(){events.push('close');this.dead=true;},setBackgroundThrottling(){},setAudioMuted(){},setWindowOpenHandler(){},on(){},mainFrame:{framesInSubtree:[]}};if(runtimeRequiresDocument)wc.loadURL=async url=>{assert.equal(url,'about:blank');wc.documentReady=true;events.push('blank-load');};if(clearViewAfterClose)Object.defineProperty(this,'webContents',{get:()=>wc.dead?undefined:wc});else this.webContents=wc;}setVisible(){}setBounds(bounds){this.bounds=bounds;}setBackgroundColor(){}}
  class Window{constructor(options){this.options=options;this.contentView={addChildView(){},removeChildView(){}};}getContentSize(){return [1280,720];}isDestroyed(){return false;}on(){}show(){}hide(){}close(){events.push('window-close');}}
  class Runtime{constructor(wc){this.wc=wc;}async start(){if(runtimeRequiresDocument&&!this.wc.documentReady)throw Error('CDP_CONTEXT_NOT_INITIALIZED');events.push('runtime-start');}async stop(){events.push('runtime-stop');}getSessionIds(){return [];}getWebSocketSnapshot(){return [];}}
  class Tap{install(){events.push('tap-install');}}
- class Recorder{constructor(){this.recording=false;}async start(){events.push('record-start');this.recording=true;}}
+ class Recorder{constructor(){this.recording=false;this.pendingBodies=new Set();this.webEvents=0;this.wsFrames=0;}async start(){events.push('record-start');this.recording=true;await recorderStart?.();}toJSON(){return {log:{entries:[]}};}}
  class Controller{constructor(options){this.options=options;}async recordStart(){return this.options.startRecording(this.options.getActiveTab());}async click(){events.push('click');}}
  const host=await createHardFireHost({electron:{BrowserWindow:Window,WebContentsView:View,session:{fromPartition:partition=>({partition})}},components:{HardFireController:Controller,HarRecorder:Recorder,NetworkTap:Tap,RuntimeController:Runtime,buildRuntimePatch:()=>''},hardfireRoot:'/reference',speed:4});
  return {host,events};
@@ -55,7 +57,55 @@ test('quietness observes pending and equal-length updated responses without expo
  const pending=JSON.stringify(scoped.networkEvents());entries[0].response.content.text='na=b';
  const firstBody=JSON.stringify(scoped.networkEvents());assert.notEqual(firstBody,pending);
  entries[0].response.content.text='na=s';const update=JSON.stringify(scoped.networkEvents());assert.notEqual(update,firstBody);
+ tab.recorder.pendingBodies.add('body');const pendingBody=JSON.stringify(scoped.networkEvents());assert.notEqual(pendingBody,update);
+ tab.recorder.pendingBodies.clear();assert.equal(JSON.stringify(scoped.networkEvents()),update);
  assert.ok(!update.includes('secret'));assert.ok(!update.includes('na=s'));
+});
+
+test('non-network CDP messages cannot keep a changed state artificially active',async()=>{
+ const {host}=await fixture();const first=await host.controller.tabs.new({});const scoped=host.controller.withTab(first.id);await scoped.recordStart();
+ const tab=host.controller.tabs.resolve(first.id);let clock=0;
+ const marker=()=>JSON.stringify(scoped.networkEvents()),before={key:'base',controls:[{key:'purchase'}],traffic:marker()};
+ const outcome=await waitTransition({now:()=>clock,sleep:async ms=>{clock+=ms;},snapshot:async()=>{
+  // The pinned recorder updates this clock for every debugger event, including
+  // Runtime/Page messages, even though its HAR has not changed.
+  tab.recorder.lastNetworkEventAt=clock;tab.wc.debugger.emit('message',{},'Runtime.consoleAPICalled',{type:'log'});
+  return {key:'purchase-menu',controls:[{key:'confirm'}],traffic:marker()};
+ }},before,{quietMs:10000,activeMs:60000,pollMs:500});
+ assert.equal(outcome.reason,'STATE_CHANGED');assert.equal(outcome.elapsedMs,1000);
+ assert.equal(marker(),before.traffic);
+});
+
+test('live HTTP chunks and open WebSocket events change traffic only while recording',async()=>{
+ const {host}=await fixture();const first=await host.controller.tabs.new({});const scoped=host.controller.withTab(first.id);await scoped.recordStart();
+ const tab=host.controller.tabs.resolve(first.id),marker=()=>JSON.stringify(scoped.networkEvents());let previous=marker();
+ for(const method of ['Network.requestWillBeSent','Network.dataReceived','Network.responseReceived','Network.webSocketCreated','Network.webSocketFrameReceived','Network.webSocketClosed']){
+  tab.wc.debugger.emit('message',{},method,{requestId:'owned'});const next=marker();assert.notEqual(next,previous,method);previous=next;
+ }
+ tab.recorder.recording=false;tab.wc.debugger.emit('message',{},'Network.dataReceived',{});assert.equal(marker(),previous);
+});
+
+test('HTTP tap and live WebSocket frame counters are visible before HAR finalization',async()=>{
+ const {host}=await fixture();const first=await host.controller.tabs.new({});const scoped=host.controller.withTab(first.id);await scoped.recordStart();
+ const tab=host.controller.tabs.resolve(first.id),marker=()=>JSON.stringify(scoped.networkEvents());const start=marker();
+ tab.recorder.webEvents++;const http=marker();assert.notEqual(http,start);
+ tab.recorder.wsFrames++;assert.notEqual(marker(),http);
+ assert.deepEqual(tab.recorder.toJSON().log.entries,[]);
+});
+
+test('traffic listeners are retired when a recorder is replaced or its tab closes',async()=>{
+ const {host}=await fixture();const first=await host.controller.tabs.new({});const scoped=host.controller.withTab(first.id);await scoped.recordStart();
+ const tab=host.controller.tabs.resolve(first.id);assert.equal(tab.wc.debugger.listenerCount('message'),1);
+ await scoped.recordStart();assert.equal(tab.wc.debugger.listenerCount('message'),1);
+ host.markSaved(first.id);await host.controller.tabs.close(first.id);assert.equal(tab.wc.debugger.listenerCount('message'),0);
+});
+
+test('recording startup rejection preserves its cause after concurrent saved-tab closure',async()=>{
+ let rejectStart;const gate=new Promise((_resolve,reject)=>{rejectStart=reject;});const original=Error('CAPTURE_START_FAILED');
+ const {host}=await fixture({recorderStart:()=>gate});const first=await host.controller.tabs.new({});const scoped=host.controller.withTab(first.id),tab=host.controller.tabs.resolve(first.id);
+ const starting=scoped.recordStart(),rejected=assert.rejects(starting,error=>error===original);
+ host.markSaved(first.id);await host.controller.tabs.close(first.id);rejectStart(original);await rejected;
+ assert.equal(tab.wc.debugger.listenerCount('message'),0);assert.deepEqual(host.openTabIds(),[]);
 });
 
 test('recorded game speed comes from its actual DEMO frame and never from the catalog',async()=>{
