@@ -117,9 +117,9 @@ async function main(){
   sampleTimer=setInterval(()=>{void sample().catch(()=>{});},5000);
   const {runStateExplorer}=await import('../../integrations/hardfire/state-explorer.js');
   log({event:'LIVE_START',gameId:game.id,hardfireCommit:HARDFIRE_COMMIT,maxActions:config.maxActions,maxDepth:config.maxDepth,timeoutMs:config.timeoutMs,requestedSpeed:4});
-  const run=runStateExplorer(host.controller,{gameUrl:game.url,artifactDir:config.artifactDir,maxActions:config.maxActions,maxDepth:config.maxDepth,timeoutMs:config.timeoutMs,
+  const run=runStateExplorer(host.controller,{gameUrl:game.url,artifactDir:config.artifactDir,mode:'actions',maxActions:config.maxActions,maxDepth:config.maxDepth,timeoutMs:config.timeoutMs,
    onOwnedTab:(id,closeOwned)=>{owned.set(id,closeOwned);persist();},onClosedTab:id=>{owned.delete(id);persist();},
-   onProgress:async progress=>{checkpoint.record(progress);persist();log({event:'LIVE_PROGRESS',gameId:game.id,actions:progress.actions,nodes:progress.nodes?.length??0,edges:progress.edges?.length??0,pending:progress.pending?.length??0});await sample();}});
+   onProgress:async progress=>{checkpoint.record(progress);persist();log({event:'LIVE_PROGRESS',gameId:game.id,actions:progress.actions,nodes:progress.nodes?.length??0,edges:progress.edges?.length??0,pending:progress.pending?.length??0,queued:progress.queued?.length??0,phase:progress.inFlight?.phase||'settled'});}});
   // The engine has its own operation deadlines. This extra budget covers a
   // stalled startup/renderer and routes all exit paths through HAR persistence.
   const budget=new Promise((_,reject)=>{budgetTimer=setTimeout(()=>{host.beginShutdown();reject(Error('CI_FINAL_BUDGET_EXCEEDED'));},config.timeoutMs+90000);});

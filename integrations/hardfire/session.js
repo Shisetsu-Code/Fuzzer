@@ -4,6 +4,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {randomUUID} from 'node:crypto';
 import {saveOwnedHar} from './har.js';
+import {createProtocolView} from './protocol-view.js';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 export async function refreshOwnedSurface(controller,scoped,tabId){
  await controller.tabs.activate(tabId);
@@ -40,7 +41,7 @@ export async function selectDemoFrame(wc){
  }
  throw new Error('Pragmatic DEMO runtime not found in this tab');
 }
-export async function createHardFireSession(controller,{gameUrl,deadline=Date.now()+45000,artifactDir=path.join(os.homedir(),'.hardfire','fuzzer'),entryOnly=false,onOwnedTab,onClosedTab}={}){
+export async function createHardFireSession(controller,{gameUrl,deadline=Date.now()+45000,artifactDir=path.join(os.homedir(),'.hardfire','fuzzer'),entryOnly=false,liveProtocol=false,onOwnedTab,onClosedTab}={}){
  gameUrl=assertDemoUrl(gameUrl);
  // Fork a public launcher, never an authenticated html5Game URL or copied session.
  const launcher=new URL(gameUrl);
@@ -112,7 +113,8 @@ export async function createHardFireSession(controller,{gameUrl,deadline=Date.no
      await sleep(500);
    }
    if(!frame)throw new Error('DEMO entry did not expose a supported runtime');
-   session=new PragmaticSession({frame,entries:async()=>target.recorder?.toJSON().log.entries||[],
+   const readProtocol=createProtocolView(target.recorder);
+   session=new PragmaticSession({frame,entries:async()=>liveProtocol?readProtocol().entries:target.recorder?.toJSON().log.entries||[],
      fork:()=>createHardFireSession(controller,{gameUrl,deadline:Date.now()+45000,artifactDir,onOwnedTab,onClosedTab}),captureFailure,
      maintainSurface:async()=>{
        await controller.tabs.activate(created.id);
@@ -146,6 +148,7 @@ export async function createHardFireSession(controller,{gameUrl,deadline=Date.no
        await scoped.click(point.x,point.y);return {ok:true};
      },saveHar,close:cleanupOwned});
    session.tabId=created.id;
+   if(liveProtocol)session.protocolCapture=readProtocol;
    if(entryOnly){const initDeadline=Date.now()+30000;do{await session.syncInit();if(session.initial)break;await sleep(200);}while(Date.now()<initDeadline);const ready=await session.provider.waitReady(session.frame,30000);if(!ready?.ok)throw Error('DEMO intro did not reach a ready state');}
    else await session.prepare();return session;
  }catch(error){

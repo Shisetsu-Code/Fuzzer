@@ -5,6 +5,8 @@ import {fileURLToPath} from 'node:url';
 
 const fixture=fileURLToPath(new URL('./fixtures/state-explorer-integration-runner.mjs',import.meta.url));
 const scenarios=[
+ ['action-capture','action mode captures an accepted operation without an extra verification spin'],
+ ['action-probe','action mode uses exactly one probe without requiring an ante classification'],
  ['delayed-purchase','the real adapter anchors a delayed purchase and verifies one fresh normal spin'],
  ['normal-flags-overlay','normal flags do not bypass an observed continuation before one verification spin'],
  ['verification-no-request','an accepted verification click without a request stays pending with diagnostics and no duplicate'],

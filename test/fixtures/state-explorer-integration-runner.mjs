@@ -18,9 +18,10 @@ const gamma=button('FeatureGamma',10,'Evt_FeatureGamma');
 gamma.hit_rect={x:10,y:40,width:20,height:20};gamma.drawn_rect={...gamma.hit_rect};
 const isReset=scenario==='reset-failure'||scenario==='reset-recovered';
 const protocolRaces=new Map([['verification-nonspin-race','NORMAL_SPIN_PROTOCOL_CHANGED'],['verification-response-race','NORMAL_SPIN_PROTOCOL_NOT_READY'],['verification-cascade-race','NORMAL_SPIN_CASCADE_ACTIVE'],['verification-body-pending','NORMAL_SPIN_RESPONSE_INCOMPLETE']]);
-const isPurchase=['delayed-purchase','normal-flags-overlay','verification-no-request','verification-click-error','verification-race'].includes(scenario)||protocolRaces.has(scenario);
+const isAction=scenario.startsWith('action-');
+const isPurchase=['action-capture','delayed-purchase','normal-flags-overlay','verification-no-request','verification-click-error','verification-race'].includes(scenario)||protocolRaces.has(scenario);
 const continuation={...button('FullScreenContinue',0,'Evt_Continue'),labels:['PRESS ANYWHERE TO CONTINUE'],hit_rect:{x:0,y:0,width:100,height:100},drawn_rect:{x:0,y:0,width:100,height:100}};
-const raw=()=>({supported:true,viewport:{width:100,height:100},controls:[...(phase==='overlay'?[continuation]:[spin]),...(scenario==='hitless'?[{...alpha,hit_rect:null,clickable:'UNKNOWN'}]:isReset?(phase==='root'?[alpha,beta,gamma]:[]):isPurchase?[alpha]:[])],unresolved:[]});
+const raw=()=>({supported:true,viewport:{width:100,height:100},controls:[...(phase==='overlay'?[continuation]:[spin]),...(scenario==='hitless'?[{...alpha,hit_rect:null,clickable:'UNKNOWN'}]:isReset?(phase==='root'?[alpha,beta,gamma]:[]):isPurchase||isAction?[alpha]:[])],unresolved:[]});
 const exchange=(extra='')=>({request:{url:'https://demogamesfree.pragmaticplay.net/gs2c/gameService?token=private',postData:{text:`action=doSpin&c=0.1&l=20&${extra}`}},response:{status:200,content:{text:'na=s&balance=100000'}}});
 const controller={tabs:{activate:async id=>{assert.equal(id,42);}},withTab:id=>{
  assert.equal(id,42);
@@ -39,7 +40,7 @@ mock.module(new URL('../../integrations/hardfire/session.js',import.meta.url).hr
  frame:{evaluate:async fn=>{
   if(fn.name==='inspectDrawnButtons'){if(scenario==='observation-failure')throw Error('runtime observation failed');return raw();}
   assert.equal(fn.name,'readRuntimeBalance');return {balance:100000,balanceSource:'runtime:BalanceDisplayed.GetDouble',candidates:[]};
- }},entries:async()=>{
+ }},protocolCapture:()=>({entries,marker:JSON.stringify(entries),pending:false,uncertain:false}),entries:async()=>{
   if(freshGuardArmed&&!raced){
    raced=true;
    if(scenario==='verification-nonspin-race')entries.push({request:{url:'https://demogamesfree.pragmaticplay.net/gs2c/gameService',postData:{text:'action=doCollect'}},response:{status:0,content:{text:''}}});
@@ -65,7 +66,8 @@ const {runStateExplorer}=await import('../../integrations/hardfire/state-explore
 mock.method(Date,'now',()=>clock);
 mock.method(globalThis,'setTimeout',(fn,ms,...args)=>{clock+=ms;queueMicrotask(()=>fn(...args));return 1;});
 try{
- const options={gameUrl:'https://www.pragmaticplay.fun/en/slots/example/',artifactDir,maxActions:5,timeoutMs:60000,onOwnedTab:id=>owned.add(id),onClosedTab:id=>owned.delete(id)};
+ if(scenario==='action-probe')entries.push({request:{url:'https://demogamesfree.pragmaticplay.net/gs2c/gameService',postData:{text:'action=doInit'}},response:{status:200,content:{text:'na=s&balance=100000'}}});
+ const options={mode:isAction?'actions':'strict',gameUrl:'https://www.pragmaticplay.fun/en/slots/example/',artifactDir,maxActions:5,timeoutMs:60000,onOwnedTab:id=>owned.add(id),onClosedTab:id=>owned.delete(id)};
  if(scenario==='observation-failure'){
   await assert.rejects(runStateExplorer(controller,options),error=>{
    assert.equal(error.message,'runtime observation failed');assert.equal(error.cleanupError,'HAR write failed');assert.deepEqual(error.retainedTabIds,[42]);return true;
@@ -74,7 +76,11 @@ try{
  }else{
   const result=await runStateExplorer(controller,options);
   assert.equal(creates,1);assert.equal(result.completeGame,false);
-  if(scenario==='delayed-purchase'||scenario==='normal-flags-overlay'||scenario==='verification-race'){
+  if(isAction){
+   assert.equal(result.status,'EXHAUSTED_OBSERVED_CONTROLS');assert.equal(result.edges.length,1);assert.equal(result.nodes.length,1);assert.equal(result.edges[0].validity.valid,true);
+   assert.equal(result.edges[0].operation.ok,true);assert.equal(result.edges[0].operation.verificationRequired,false);
+   assert.equal(normalSpins,scenario==='action-probe'?1:0);assert.equal(result.edges[0].operation.normalSpinVerified,scenario==='action-probe');
+  }else if(scenario==='delayed-purchase'||scenario==='normal-flags-overlay'||scenario==='verification-race'){
    assert.equal(result.status,'EXHAUSTED_OBSERVED_CONTROLS');assert.equal(result.edges.length,1);assert.equal(result.nodes.length,1);
    const operation=result.edges[0].operation;
    assert.equal(operation.kind,'purchase');assert.equal(operation.ok,true);assert.equal(operation.submission.payload.pur,'2');assert.equal(operation.submission.sequence,1);

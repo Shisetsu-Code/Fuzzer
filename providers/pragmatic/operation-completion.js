@@ -8,7 +8,7 @@ export function operationStateFromEntries(entries,{afterSequence,verificationAft
  const response=e=>{const c=e?.response?.content;return c?.encoding==='base64'?Buffer.from(c.text||'','base64').toString():c?.text||'';};
  const body=response(last),fields=new URLSearchParams(body);
  const kindOf=e=>{const request=new URLSearchParams(e.request.postData.text);return request.has('pur')&&Number(request.get('pur'))>=0?'purchase':'spin';};
- const transaction=e=>e?{kind:kindOf(e),status:e.response?.status||0,complete:e.response?.status===200&&!!response(e),endpoint:sanitizeTransportUrl(e.request.url),payload:Object.fromEntries(new URLSearchParams(sanitizeTransportText(e.request.postData.text)))}:null;
+ const transaction=e=>e?{kind:kindOf(e),status:e.response?.status||0,complete:e._fuzzerPending!==true&&!e.response?._error&&e.response?.status===200&&!!response(e),endpoint:sanitizeTransportUrl(e.request.url),payload:Object.fromEntries(new URLSearchParams(sanitizeTransportText(e.request.postData.text)))}:null;
  const kind=latest?kindOf(latest):null;
  // The boundary is the spin count before the action, not the latest bonus spin.
  const submitted=Number.isInteger(afterSequence)&&afterSequence>=0?spins[afterSequence]:null;
@@ -17,13 +17,14 @@ export function operationStateFromEntries(entries,{afterSequence,verificationAft
    transaction:transaction(latest),
    ...(afterSequence===undefined?{}:{submission:submitted?{sequence:afterSequence+1,...transaction(submitted)}:null}),
    ...(verificationAfterSequence===undefined?{}:{verification:verified?{sequence:verificationAfterSequence+1,...transaction(verified)}:null}),
-   protocolComplete:last?.response?.status===200&&!!body,nextAction:fields.get('na'),
+   protocolComplete:!protocol.some(e=>e._fuzzerPending===true||e.response?._error)&&last?.response?.status===200&&!!body,nextAction:fields.get('na'),
    cascadeActive:String(fields.get('rs_c')??'').split(',').some(v=>v.trim()!==''&&Number.isFinite(Number(v))&&Number(v)>=0)};
 }
 
 function normalControlBlockers(s){
  const f=s.flags||{},o=s.operation||{};
  const blockers=[];
+ if(s.capture?.pending===true)blockers.push('CAPTURE_PENDING');
  if(f.canSpin!==true)blockers.push('CAN_SPIN_NOT_READY');
  for(const [flag,reason]of [['logicIsFreeSpin','FREE_SPINS_ACTIVE'],['respinInProgress','RESPIN_ACTIVE'],['spinBlockingFeatureIsRunning','FEATURE_BLOCKING'],['stopActive','STOP_ACTIVE'],['lastWinIsCounting','WIN_COUNTING'],['waitInResultForBigWin','BIG_WIN_PENDING']])if(f[flag])blockers.push(reason);
  if(f.stages?.includes('StageSpin'))blockers.push('SPIN_STAGE_ACTIVE');
@@ -55,7 +56,7 @@ export function visibleOperationChoices(pickers,drawings){
 }
 
 /** Complete one submitted operation. Only choice alternatives form a family; reels/results do not. */
-export async function finishOperation(a,before,initial,{choicePlan=[],deadline=Infinity,timeoutMs=180000,pollMs=500}={}){
+export async function finishOperation(a,before,initial,{choicePlan=[],deadline=Infinity,timeoutMs=180000,pollMs=500,verifyPurchase=true}={}){
  const started=a.now(),until=Math.min(started+timeoutMs,deadline),sequenceBefore=before?.operation?.sequence||0;
  const initialOperation=initial.operation||{},anchored=Object.hasOwn(initialOperation,'submission');
  const original=anchored?initialOperation.submission:initialOperation.sequence===sequenceBefore+1&&initialOperation.transaction?{sequence:initialOperation.sequence,...initialOperation.transaction}:null;
@@ -83,7 +84,7 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
      evidence:Object.fromEntries(['tab_id','capture_id','full_path','artifact_dir'].filter(k=>['string','number'].includes(typeof current.evidence?.[k])).map(k=>[k,current.evidence[k]]))
    };
  };
- const result=(ok,reason)=>({ok,reason,kind,normalSpinVerified:ok,verificationRequired:kind==='purchase',decisions,verificationChoices,continuations,elapsedMs:a.now()-started,snapshot:current,submission,verification,completion:completion()});
+ const result=(ok,reason)=>({ok,reason,kind,normalSpinVerified:ok&&(kind!=='purchase'||verifyPurchase),verificationRequired:verifyPurchase&&kind==='purchase',decisions,verificationChoices,continuations,elapsedMs:a.now()-started,snapshot:current,submission,verification,completion:completion()});
  if(!submission||submission.sequence!==sequenceBefore+1)return result(false,'OPERATION_SUBMISSION_UNAVAILABLE');
  while(a.now()<until){
    const now=a.now();if(current.traffic!==traffic){traffic=current.traffic;lastTraffic=now;readyTicks=0;}
@@ -109,7 +110,7 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
    if(readyTicks>=2){
      if(verificationSequence===null){
        if(decisions.length<choicePlan.length)return result(false,'CHOICE_NOT_OBSERVED');
-       if(kind!=='purchase'){phase='complete';return result(true,'OPERATION_COMPLETE');}
+       if(!verifyPurchase||kind!=='purchase'){phase='complete';return result(true,'OPERATION_COMPLETE');}
        phase='verification_control';
        if(!controlUnavailable||now-lastSpinAt>=2000){
          const spin=await a.spinNormal(current);lastSpinAt=now;
@@ -123,7 +124,7 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
          readyTicks=0;
        }
      }else if(verificationAvailable&&verification?.kind==='spin'&&verification.complete===true){phase='complete';return result(true,'OPERATION_COMPLETE');}
-   }else if(choices.length){
+   }else if(choices.length&&(verifyPurchase||!busy&&current.capture?.pending!==true)){
      const marker=JSON.stringify(choices.map(c=>[c.key,c.labels||[]]));
      if(marker!==choiceMarker){
        const planned=verificationSequence===null?choicePlan[decisions.length]:null;
@@ -139,7 +140,7 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
    // An accepted click may still have an uncaptured request. Never advance on
    // the preceding protocol exchange while that verification boundary is empty.
    const verificationRequestPending=verificationSequence!==null&&!verificationAvailable;
-   const recoveryAllowed=!verificationRequestPending&&!choices.length&&!current.wager?.menuOpen&&(!normalReady||controlUnavailable);
+   const recoveryAllowed=current.capture?.pending!==true&&!verificationRequestPending&&!choices.length&&!current.wager?.menuOpen&&(!normalReady||controlUnavailable);
    if(!busy&&recoveryAllowed&&op.protocolComplete&&now-lastTraffic>=1000&&now-lastAdvance>=2000){
      const r=await a.advance?.(current);if(r)continuations.push(continuationOutcome(typeof r.kind==='string'&&/^[A-Za-z0-9_-]{1,64}$/.test(r.kind)?r.kind:'UNKNOWN',r,now-started));lastAdvance=now;
    }

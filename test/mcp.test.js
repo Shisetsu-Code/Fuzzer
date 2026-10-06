@@ -7,7 +7,7 @@ import {registerFuzzerTools} from '../integrations/hardfire/mcp-tools.js';
 
 for(const startup of [false,true])test(`MCP keeps admission occupied after ${startup?'startup':'session'} cleanup rejects until owned closure is confirmed`,async()=>{
  const tools=new Map(),chain={};for(const name of ['int','positive','optional','default','url','min','max','uuid'])chain[name]=()=>chain;
- const z={number:()=>chain,string:()=>chain,boolean:()=>chain};const dir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-retained-slot-'));
+ const z={number:()=>chain,string:()=>chain,boolean:()=>chain,enum:()=>chain};const dir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-retained-slot-'));
  const releases=new Map();let created=0;
  registerFuzzerTools({register:(name,d,s,r,fn)=>tools.set(name,fn),z,text:v=>v,artifactDir:dir,controller:{tabs:{resolve:()=>({})}},
   sessionFactory:async(controller,{onOwnedTab,onClosedTab})=>{
@@ -30,7 +30,7 @@ for(const startup of [false,true])test(`MCP keeps admission occupied after ${sta
 
 test('MCP retains unknown branch ownership after preparation closes successfully',async()=>{
  const tools=new Map(),chain={};for(const name of ['int','positive','optional','default','url','min','max','uuid'])chain[name]=()=>chain;
- const z={number:()=>chain,string:()=>chain,boolean:()=>chain};const dir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-unknown-owner-'));
+ const z={number:()=>chain,string:()=>chain,boolean:()=>chain,enum:()=>chain};const dir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-unknown-owner-'));
  let releaseSecond,created=0;const base={phase:'base',terminal:true,inventoryKnown:true,options:[]},buy={id:'buy:0',kind:'buy'};
  registerFuzzerTools({register:(name,d,s,r,fn)=>tools.set(name,fn),z,text:v=>v,artifactDir:dir,controller:{tabs:{resolve:()=>({})}},
   sessionFactory:async(controller,{onOwnedTab,onClosedTab})=>{
@@ -51,7 +51,7 @@ test('MCP retains unknown branch ownership after preparation closes successfully
 
 test('explicit job cleanup retries only retained save-and-close closures and releases admission once',async()=>{
  const tools=new Map(),chain={};for(const name of ['int','positive','optional','default','url','min','max','uuid'])chain[name]=()=>chain;
- const z={number:()=>chain,string:()=>chain,boolean:()=>chain};const dir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-mcp-cleanup-'));
+ const z={number:()=>chain,string:()=>chain,boolean:()=>chain,enum:()=>chain};const dir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-mcp-cleanup-'));
  await fs.writeFile(path.join(dir,'HARs'),'blocked');const tabs=new Map(),closed=[];let created=0,stops=0;
  const controller={tabs:{new:async()=>{const id=501+created++;const recorder={recording:true,stop:async()=>{stops++;recorder.recording=false;return {log:{entries:[{fixture:id}]}};}};tabs.set(id,{sessionIsolated:true,recorder});return {id};},resolve:id=>tabs.get(id)||{},close:async id=>{closed.push(id);tabs.delete(id);}},
   withTab:()=>({recordStart:async()=>{throw new Error('startup failed');},screenshot:async()=>{throw new Error('no pixels');}})};
@@ -74,7 +74,7 @@ test('explicit job cleanup retries only retained save-and-close closures and rel
 
 test('a recovered explorer cleanup error does not retain admission after all owned tabs close',async()=>{
  const tools=new Map(),chain={};for(const name of ['int','positive','optional','default','url','min','max','uuid'])chain[name]=()=>chain;
- const z={number:()=>chain,string:()=>chain,boolean:()=>chain};const dir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-recovered-explorer-'));let explorations=0;
+ const z={number:()=>chain,string:()=>chain,boolean:()=>chain,enum:()=>chain};const dir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-recovered-explorer-'));let explorations=0;
  registerFuzzerTools({register:(name,d,s,r,fn)=>tools.set(name,fn),z,text:v=>v,artifactDir:dir,controller:{},
   explorerFactory:async(controller,{onOwnedTab,onClosedTab})=>{
    const id=601+explorations++;onOwnedTab(id);onClosedTab(id);
@@ -91,7 +91,7 @@ test('a recovered explorer cleanup error does not retain admission after all own
 
 test('tool registrations share admission and retained cleanup only for the same controller',async()=>{
  const chain={};for(const name of ['int','positive','optional','default','url','min','max','uuid'])chain[name]=()=>chain;
- const z={number:()=>chain,string:()=>chain,boolean:()=>chain};const dir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-shared-controller-'));
+ const z={number:()=>chain,string:()=>chain,boolean:()=>chain,enum:()=>chain};const dir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-shared-controller-'));
  let created=0,allowClose=false;const controller={tabs:{resolve:()=>({})}},otherController={tabs:{resolve:()=>({})}};
  const register=controller=>{
   const tools=new Map();registerFuzzerTools({register:(name,d,s,r,fn)=>tools.set(name,fn),z,text:v=>v,artifactDir:dir,controller,
@@ -118,7 +118,7 @@ test('tool registrations share admission and retained cleanup only for the same 
 
 test('MCP preserves startup evidence and reports screenshot failures without hiding the original error',async()=>{
  const chain={};for(const name of ['int','positive','optional','default','url','min','max','uuid'])chain[name]=()=>chain;
- const z={number:()=>chain,string:()=>chain,boolean:()=>chain};
+ const z={number:()=>chain,string:()=>chain,boolean:()=>chain,enum:()=>chain};
  const artifactDir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-evidence-test-'));
  for(const startup of [true,false]){
   const tools=new Map();let closed=false;
@@ -140,7 +140,7 @@ test('MCP preserves startup evidence and reports screenshot failures without hid
 test('MCP limits jobs to two (four loaded game tabs) and recovers slots only after cleanup',async()=>{
  const tools=new Map(),chain={};
  for(const name of ['int','positive','optional','default','url','min','max','uuid'])chain[name]=()=>chain;
- const z={number:()=>chain,string:()=>chain,boolean:()=>chain};
+ const z={number:()=>chain,string:()=>chain,boolean:()=>chain,enum:()=>chain};
  const artifactDir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-concurrency-test-'));
  const pending=new Map();let releaseCleanup;
  const cleanupGate=new Promise(resolve=>{releaseCleanup=resolve;});
@@ -191,7 +191,7 @@ test('MCP limits jobs to two (four loaded game tabs) and recovers slots only aft
 test('MCP retains known purchases without executing branches after an unfinished bet probe',async()=>{
  const tools=new Map(),chain={};
  for(const name of ['int','positive','optional','default','url','min','max','uuid'])chain[name]=()=>chain;
- const z={number:()=>chain,string:()=>chain,boolean:()=>chain};
+ const z={number:()=>chain,string:()=>chain,boolean:()=>chain,enum:()=>chain};
  const artifactDir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-probe-test-'));
  let forked=false,closed=false;
  const screenshot={path:'fixture-probe.jpg',mimeType:'image/jpeg',tabId:31,reason:'PROBE_SPINS_NOT_COMPLETED'};
