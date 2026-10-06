@@ -33,3 +33,20 @@ test('a server choice announced before its panel appears does not turn Stop into
  assert.equal(r.ok,true);assert.equal(centers,1);assert.deepEqual(selected,['Game/Bonus/Left']);
  assert.equal(r.decisions.length,1);assert.deepEqual(r.decisions[0].options.map(o=>o.key),['drawn:Game/Bonus/Left','drawn:Game/Bonus/Right']);
 });
+
+
+test('a server-advertised choice frontier may appear after the generic stall window and is still traversed',async()=>{
+ let time=0,selected=[];
+ const snapshot=()=>{
+  const phase=time<20000?'intro':selected.length?'done':'choice';
+  return {key:phase,controls:[],capture:{pending:false,uncertain:false},traffic:1,wager:{menuOpen:false},
+   flags:{canSpin:phase==='done',stopActive:phase==='intro',mustOpenBonus:phase!=='done',stages:phase==='intro'?['StageResult']:[]},
+   operation:{sequence:1,protocolSequence:phase==='done'?2:1,kind:'purchase',transaction:{kind:'purchase',complete:true,status:200},protocolComplete:true,nextAction:phase==='done'?'s':'b'},
+   choices:phase==='choice'?visibleOperationChoices([], [option('Left'),option('Right')],{fallback:true}):[]};
+ };
+ const a={now:()=>time,sleep:async ms=>{time+=ms},snapshot:async()=>snapshot(),advance:async()=>({ok:true,kind:'WAIT'}),clickCenter:async()=>({ok:true}),
+  choose:async c=>{selected.push(c.path);return {ok:true};}};
+ const r=await finishOperation(a,{operation:{sequence:0}},snapshot(),{verifyPurchase:false,timeoutMs:60000,stallMs:15000});
+ assert.equal(r.ok,true);assert(time>=20000);assert.deepEqual(selected,['Game/Bonus/Left']);
+ assert.deepEqual(r.decisions[0].options.map(o=>o.key),['drawn:Game/Bonus/Left','drawn:Game/Bonus/Right']);
+});
