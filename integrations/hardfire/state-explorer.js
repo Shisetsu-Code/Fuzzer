@@ -8,7 +8,7 @@ import {wagerEvidence,readRuntimeBalance,baseSurfaceMatches,parseProtocolMoney,c
 import {waitTransition} from '../../providers/pragmatic/state-explorer.js';
 import {operationStateFromEntries,finishOperation,visibleOperationChoices} from '../../providers/pragmatic/operation-completion.js';
 import {measure,independent,createBenchmark,withBenchmark} from '../../lib/performance.js';
-async function runStateExplorerImpl(controller,{gameUrl,artifactDir,maxActions=20,maxDepth=4,timeoutMs=600000,mode='actions',maxRetries=mode==='actions'?2:0,maxRouteAttempts,operationStallMs=15000,maxWagerStepsPerRoute=1,onProgress,onOwnedTab,onClosedTab}={}){
+async function runStateExplorerImpl(controller,{gameUrl,artifactDir,maxActions=20,maxDepth=4,timeoutMs=600000,mode='actions',maxRetries=mode==='actions'?2:0,maxRouteAttempts,operationStallMs=15000,actionDwellMs=4000,maxWagerStepsPerRoute=1,onProgress,onOwnedTab,onClosedTab}={}){
  if(!['actions','strict'].includes(mode))throw Error('INVALID_EXPLORATION_MODE');
  const actionMode=mode==='actions',deadline=Date.now()+timeoutMs;
  let operationControlPaths=[],rootControlPaths=[];
@@ -49,7 +49,7 @@ async function runStateExplorerImpl(controller,{gameUrl,artifactDir,maxActions=2
  finishOperation:async(before,after,options)=>{
   session.started=true;operationBoundary=before.operation?.sequence||0;operationControlPaths=[...rootControlPaths,...(before.controls||[]).map(c=>c.key)];
   verificationBoundary=null;
-  try{const initial={...after,operation:operationStateFromEntries(await session.entries(),{afterSequence:operationBoundary})};return await finishOperation(adapter,before,initial,{...options,verifyPurchase:!actionMode,stallMs:actionMode?operationStallMs:Infinity});}
+  try{const initial={...after,operation:operationStateFromEntries(await session.entries(),{afterSequence:operationBoundary})};return await finishOperation(adapter,before,initial,{...options,verifyPurchase:!actionMode,stallMs:actionMode?operationStallMs:Infinity,choiceDwellMs:actionMode?actionDwellMs:0,recoveryQuietMs:actionMode?actionDwellMs:1000,recoveryGapMs:actionMode?actionDwellMs:2000});}
   finally{operationBoundary=null;verificationBoundary=null;}
  },
  choose:async choice=>{
@@ -119,7 +119,7 @@ async function runStateExplorerImpl(controller,{gameUrl,artifactDir,maxActions=2
  };
  for(const [method,label] of Object.entries({snapshot:'adapter.snapshot',reset:'adapter.reset',click:'adapter.click',clickCenter:'adapter.continue',choose:'adapter.choose',advance:'adapter.advance',spinNormal:'adapter.probe',afterAction:'adapter.after-action',finishOperation:'adapter.finish',sleep:'wait.poll'})){const original=adapter[method];adapter[method]=(...args)=>measure(label,()=>original(...args));}
  let result,runError;
- try{return result=await exploreStates(adapter,{maxActions,maxDepth,deadline,onProgress,mode,maxRetries,maxRouteAttempts,maxWagerStepsPerRoute,wait:(a,b)=>measure('wait.transition',()=>waitTransition(a,b,{mode,deadline,...(actionMode?{quietMs:2000,activeMs:15000}: {})}))});}
+ try{return result=await exploreStates(adapter,{maxActions,maxDepth,deadline,onProgress,mode,maxRetries,maxRouteAttempts,maxWagerStepsPerRoute,wait:(a,b)=>measure('wait.transition',()=>waitTransition(a,b,{mode,deadline,...(actionMode?{quietMs:actionDwellMs,stableMs:actionDwellMs,activeMs:15000}: {})}))});}
  catch(error){runError=error;throw error;}
  finally{
   try{await close();if(result){result.retainedTabIds=[];result.cleanupPending=false;if(actionMode)result.branchCaptures=branchCaptures;}}
