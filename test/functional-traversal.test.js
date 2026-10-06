@@ -10,15 +10,15 @@ function fixture({throwChild=false}={}){
  const wait=async()=>({snapshot:s,reason:'STATE_CHANGED',elapsedMs:1});
  return {a,wait,clicked,get resets(){return resets;}};
 }
-test('action traversal follows a new menu child in its existing session before a root sibling',async()=>{
+test('action traversal keeps an already queued root sibling ahead of newly discovered menu children',async()=>{
  const f=fixture();const r=await exploreStates(f.a,{mode:'actions',maxActions:4,wait:f.wait});
- assert.deepEqual(f.clicked.slice(0,2),[[1,'open'],[1,'first']]);
+ assert.deepEqual(f.clicked.slice(0,2),[[1,'open'],[2,'other']]);
  assert.equal(r.edges.length,4);assert.equal(r.pending.length,0);
  assert(r.edges.some(e=>e.action==='second'));assert(r.edges.some(e=>e.action==='other'));
 });
-test('a failed inline child is not retried in the same session and does not lose siblings',async()=>{
+test('a failed BFS child is not retried in the same session and does not lose siblings',async()=>{
  const f=fixture({throwChild:true});const r=await exploreStates(f.a,{mode:'actions',maxActions:4,wait:f.wait});
- assert.deepEqual(f.clicked.slice(0,2),[[1,'open'],[1,'first']]);
+ assert.deepEqual(f.clicked.slice(0,2),[[1,'open'],[2,'other']]);
  assert.equal(f.clicked.filter(([,key])=>key==='first').length,1);
  assert(f.clicked.some(([session,key])=>session>1&&key==='second'));assert(f.clicked.some(([,key])=>key==='other'));
  assert(r.pending.some(p=>p.error==='uncertain click'));
