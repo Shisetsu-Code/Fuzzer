@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {pathToFileURL} from 'node:url';
 
 test('live runner selects exactly the requested manifest game and caps its budget',async()=>{
  const {readRunConfig,selectManifestGame}=await import('../scripts/ci/run-live-demo.mjs');
@@ -14,4 +15,13 @@ test('live runner rejects ambiguous identities and unsafe overlapping evidence d
  const {readRunConfig,selectManifestGame}=await import('../scripts/ci/run-live-demo.mjs');
  assert.throws(()=>selectManifestGame([{id:'same'},{id:'same'}],'same'),/CI_GAME_AMBIGUOUS/);
  assert.throws(()=>readRunConfig({HARDFIRE_ROOT:'/hardfire',FUZZER_GAME_ID:'new-game',FUZZER_ARTIFACT_DIR:'/private',FUZZER_OUTPUT_DIR:'/private/export'}),/CI_EVIDENCE_DIRECTORIES_OVERLAP/);
+});
+
+test('Electron flags before the entry file still start the runner, while an imported module stays inert',async()=>{
+ const {isRunnerEntry}=await import('../scripts/ci/run-live-demo.mjs');
+ const entry=pathToFileURL('/repo/scripts/ci/run-live-demo.mjs').href;
+ assert.equal(isRunnerEntry(['/electron','--no-sandbox','--use-gl=angle','--use-angle=swiftshader','/repo/scripts/ci/run-live-demo.mjs'],entry),true);
+ assert.equal(isRunnerEntry(['/node','/repo/scripts/ci/run-live-demo.mjs'],entry),true);
+ assert.equal(isRunnerEntry(['/electron','--no-sandbox','/repo/diagnostic.mjs','/repo/scripts/ci/run-live-demo.mjs'],entry),false);
+ assert.equal(isRunnerEntry(['/electron','-r','/repo/scripts/ci/run-live-demo.mjs','/repo/diagnostic.mjs'],entry),false);
 });

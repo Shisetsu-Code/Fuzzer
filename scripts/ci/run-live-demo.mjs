@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import {readFileSync,mkdirSync} from 'node:fs';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -30,9 +30,26 @@ export function selectManifestGame(manifest,id){
  const game=found[0];if(typeof game.title!=='string'||typeof game.url!=='string')throw Error('CI_GAME_INVALID');return {id:game.id,title:game.title,url:game.url};
 }
 
+// Electron's default app imports the selected file without moving it to
+// argv[1]. Match its option selection, so Chromium flags cannot skip main().
+export function isRunnerEntry(argv,entry){
+ let selected=null;
+ for(let index=1;index<argv.length;index++){
+  const arg=argv[index];
+  if(arg==='-r'||arg==='--require'){index++;continue;}
+  if(arg.startsWith('--app=')){selected=arg.slice('--app='.length);break;}
+  if(arg.startsWith('-'))continue;
+  selected=arg;break;
+ }
+ if(!selected)return false;
+ const filename=entry instanceof URL||String(entry).startsWith('file:')?fileURLToPath(entry):path.resolve(entry);
+ return path.resolve(selected)===filename;
+}
+
 async function main(){
  const config=readRunConfig(),game=selectManifestGame(JSON.parse(readFileSync(config.manifest,'utf8')),config.gameId);
  mkdirSync(config.artifactDir,{recursive:true});
+ writeFileSync(path.join(config.artifactDir,'runner-started.json'),JSON.stringify({timestamp:new Date().toISOString(),gameId:game.id}));
  // Electron must receive pre-ready configuration before the first async yield.
  const electron=createRequire(import.meta.url)('electron'),{app}=electron;
  // Preserve Chromium rendering under Xvfb, including background game rAF.
@@ -106,6 +123,6 @@ async function main(){
  host?.closeWindow();app.exit(error||result.status!=='EXHAUSTED_OBSERVED_CONTROLS'||exported.exportStatus!=='EXPORTED'?1:0);
 }
 
-if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
+if(isRunnerEntry(process.argv,import.meta.url)){
  main().catch(async error=>{log({event:'LIVE_RUNNER_FATAL',code:code(error)});process.exitCode=1;try{const {app}=await import('electron');if(safeToExit&&app?.isReady?.())app.exit(1);}catch{}});
 }

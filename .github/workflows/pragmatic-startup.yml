@@ -12,6 +12,10 @@ permissions:
 jobs:
   startup:
     name: Electron entry point / no game
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      actions: write
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -24,15 +28,42 @@ jobs:
           node-version: '24'
       - run: npm install --no-save --package-lock=false --no-audit --no-fund electron@44.4.0
       - name: Verify CLI argument layout without opening a game
+        id: entry
         run: |
           mkdir -p outputs
           cat > outputs/electron-entry-probe.mjs <<'NODE'
           import {app} from 'electron';
           import path from 'node:path';
           import {fileURLToPath} from 'node:url';
+          import fs from 'node:fs';
+          import {isRunnerEntry} from '../scripts/ci/run-live-demo.mjs';
           const entry = fileURLToPath(import.meta.url);
           const legacyGuardMatches = Boolean(process.argv[1] && path.resolve(process.argv[1]) === entry);
-          console.log('ELECTRON_ENTRY_PROBE=' + JSON.stringify({argv:process.argv,legacyGuardMatches,electron:process.versions.electron,defaultApp:process.defaultApp}));
-          app.exit(legacyGuardMatches ? 0 : 1);
+          const guardMatches = isRunnerEntry(process.argv, import.meta.url);
+          console.log('ELECTRON_ENTRY_PROBE=' + JSON.stringify({argv:process.argv,legacyGuardMatches,guardMatches,electron:process.versions.electron,defaultApp:process.defaultApp}));
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `legacy_guard=${legacyGuardMatches}\n`);
+          app.exit(guardMatches ? 0 : 1);
           NODE
           xvfb-run -a -s '-screen 0 1280x800x24' ./node_modules/.bin/electron --no-sandbox --use-gl=angle --use-angle=swiftshader outputs/electron-entry-probe.mjs
+      # One-time recovery of the exact idle attempt diagnosed by the real probe.
+      # Its entry guard never called main, so it created no game tabs or HAR.
+      - name: Retire the diagnosed idle attempt
+        if: steps.entry.outputs.legacy_guard == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'NODE'
+          const endpoint = 'https://api.github.com/repos/Shisetsu-Code/Fuzzer/actions/runs/37394763268';
+          const headers = {Authorization:`Bearer ${process.env.GH_TOKEN}`,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+          const response = await fetch(endpoint,{headers});
+          if (!response.ok) throw new Error(`Cannot inspect idle attempt: HTTP ${response.status}`);
+          const run = await response.json();
+          if (run.head_sha !== '0ccbd5a5744091baab26dfe0cba8cb18a4e90bfd' || run.path !== '.github/workflows/pragmatic-new5.yml') throw new Error('Idle attempt identity mismatch');
+          if (run.status === 'completed') {
+            console.log('Diagnosed idle attempt already ended.');
+          } else {
+            const cancelled = await fetch(endpoint + '/cancel',{method:'POST',headers});
+            if (!cancelled.ok) throw new Error(`Cannot retire idle attempt: HTTP ${cancelled.status}`);
+            console.log('Cancellation requested for diagnosed idle attempt 37394763268; no game had started.');
+          }
+          NODE

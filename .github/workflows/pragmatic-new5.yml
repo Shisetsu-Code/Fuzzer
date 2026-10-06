@@ -107,7 +107,27 @@ jobs:
       - name: Install the pinned Electron runtime
         run: npm install --no-save --package-lock=false --no-audit --no-fund electron@44.4.0
       - name: Explore the real official DEMO with Fuzzer and HardFire
-        run: xvfb-run -a -s '-screen 0 1280x800x24' ./node_modules/.bin/electron --no-sandbox --use-gl=angle --use-angle=swiftshader scripts/ci/run-live-demo.mjs
+        run: |
+          setsid xvfb-run -a -s '-screen 0 1280x800x24' ./node_modules/.bin/electron --no-sandbox --use-gl=angle --use-angle=swiftshader scripts/ci/run-live-demo.mjs &
+          fuzzer_pid=$!
+          for attempt in {1..30}; do
+            if test -s "$FUZZER_ARTIFACT_DIR/runner-started.json"; then break; fi
+            if ! kill -0 "$fuzzer_pid" 2>/dev/null; then
+              wait "$fuzzer_pid" || true
+              echo '::error::Electron exited before the runner startup marker was written.'
+              exit 1
+            fi
+            sleep 1
+          done
+          if ! test -s "$FUZZER_ARTIFACT_DIR/runner-started.json"; then
+            # main writes the marker before creating any window or game tab.
+            kill -- "-$fuzzer_pid" 2>/dev/null || true
+            wait "$fuzzer_pid" || true
+            echo '::error::Electron did not enter the runner within 30 seconds; no game was started.'
+            exit 1
+          fi
+          echo 'Fuzzer runner startup confirmed.'
+          wait "$fuzzer_pid"
       - name: Preserve the structured summary in the Actions log
         if: always()
         run: |
