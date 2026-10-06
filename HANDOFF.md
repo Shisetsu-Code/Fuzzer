@@ -115,3 +115,25 @@ La tanda anterior `37523912578` comprobó en Dragon que el muestreo contextual d
 Documento detallado: `docs/control-wager-followup-2026-10-06.md`.
 
 **Prioridad única inmediata:** diagnosticar con evidencia exacta la continuación posterior a `pur=0` de Dragon y corregir esa frontera sin ampliar timeouts ni reintroducir controles universales.
+
+
+## 10. Corrección BFS para elecciones anunciadas que aparecen tarde
+
+Commit funcional: `037d3439d84e333f978390b30453743f3e1ad8bc`.
+
+Dragon aclaró una propiedad del contrato: una respuesta completa con `na=b`, `na=m` o `na=fso` anuncia una **frontera de decisión abierta** aunque los botones todavía no estén dibujados. Esa espera no debe confundirse con una operación estancada.
+
+Antes, `finishOperation()` aplicaba el mismo presupuesto de inactividad de 15 s a cualquier operación. Si el panel de opciones aparecía después, la ruta terminaba `OPERATION_STALLED` antes de que el BFS pudiera registrar sus hijos.
+
+Ahora:
+- el watchdog corto de inactividad sigue aplicando a operaciones genéricas;
+- cuando el protocolo completo anuncia una decisión y todavía no hay elecciones visibles, se continúa observando hasta que aparezcan o hasta el límite absoluto/global;
+- al aparecer, se conservan todas las alternativas; se ejecuta una y las hermanas quedan representadas por `choicePlan` para reconstrucción desde la raíz;
+- Stop continúa fuera del árbol; no se convierte en elección por esperar un panel;
+- no se fabrican índices ni payloads: las opciones deben aparecer como controles observados/pickers soportados.
+
+Regresión TDD: una decisión anunciada permanece invisible 20 s, superando el stall genérico de 15 s, luego muestra dos botones. Antes del cambio la prueba terminaba `OPERATION_STALLED`; después registra ambas opciones y ejecuta una. La regresión genérica de no-progreso permanece válida usando una operación que no anuncia decisión.
+
+Verificación local sobre el source bundle de `77f59c8` más este cambio: **405/405 pruebas**, 0 fallos.
+
+Esta corrección alinea el motor con el modelo esperado: BFS sobre estados/opciones observadas. La primera ejecución descubre una bifurcación, sigue una alternativa y conserva las hermanas; cada hermana se reconstruye desde A en una sesión limpia. Un panel que aparece tarde amplía el árbol cuando aparece; no requiere que la compra se haya “cerrado” previamente.
