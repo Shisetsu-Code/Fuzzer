@@ -101,8 +101,8 @@ function treeHarness({failOpen=0, alwaysFail=false, mismatchOnce=false, cleanupF
  assert.equal(probes,0);
 });
 
-function operationHarness({choices=[],advance,choose,pollStep}={}) {
- let t=0;const op={sequence:1,kind:'purchase',transaction:{kind:'purchase',complete:true,status:200},protocolComplete:true,nextAction:'b'};
+function operationHarness({choices=[],advance,choose,pollStep,nextAction='b'}={}) {
+ let t=0;const op={sequence:1,kind:'purchase',transaction:{kind:'purchase',complete:true,status:200},protocolComplete:true,nextAction};
  const s={key:'feature',choices,controls:[],traffic:1,operation:op,flags:{canSpin:false},capture:{pending:false},wager:{menuOpen:false}};
  const a={now:()=>t,sleep:async ms=>{t+=pollStep||ms},snapshot:async()=>s,choose:choose|| (async()=>({ok:false})),advance:advance?async()=>advance(()=>{t=20000;}):undefined};
  return {a,s};
@@ -124,7 +124,7 @@ function operationHarness({choices=[],advance,choose,pollStep}={}) {
 });
 
  test('no-progress deadline stops repeated continuation polling before the absolute timeout',async()=>{
- const {a,s}=operationHarness();
+ const {a,s}=operationHarness({nextAction:'c'});
  const r=await finishOperation(a,{operation:{sequence:0}},s,{verifyPurchase:false,timeoutMs:180000,stallMs:10000});
  assert.equal(r.reason,'OPERATION_STALLED');assert(r.elapsedMs<=10500);assert.equal(r.submission.complete,true);
 });
