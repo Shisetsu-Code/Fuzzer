@@ -1,0 +1,789 @@
+{
+  "schema": "fuzzer/temporary-live-analysis/v1",
+  "artifacts": [
+    {
+      "artifact": "big-bass-blast",
+      "manifestSchema": "fuzzer/live-evidence/v1",
+      "exportStatus": "EXPORTED",
+      "integrity": {
+        "allListedFilesValid": true,
+        "listedFileCount": 7,
+        "files": [
+          {
+            "file": "screenshots/01.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "screenshots/02.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "screenshots/03.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "screenshots/04.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "result.json",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "protocol.har.gz",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "summary.json",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          }
+        ]
+      },
+      "completeGame": false,
+      "scope": "Captured attempts and observed options only; repeated attempts are not additional unique options.",
+      "game": {
+        "id": "big-bass-blast",
+        "title": "Big Bass Blast",
+        "url": "https://www.pragmaticplay.fun/en/slots/big-bass-blast/"
+      },
+      "status": "PARTIAL",
+      "actions": 2,
+      "nodes": 1,
+      "edges": 2,
+      "cleanupPending": false,
+      "summaryClaims": {
+        "purchaseCount": 0,
+        "verifiedPurchaseCount": 0,
+        "modifierCount": 0,
+        "choiceCount": 0,
+        "summaryRowsOmitted": 0
+      },
+      "execution": {
+        "sourceCommit": "571026fe225b5a511d804bb39a29a2fd7ab2e526",
+        "hardfireCommit": "adf6de5ec14e394f77fb1816d5f46e5deb250b0a",
+        "startedAt": "2026-10-06T01:40:27.849Z",
+        "finishedAt": "2026-10-06T01:43:56.436Z",
+        "elapsedMs": 208587,
+        "maxActions": 100,
+        "maxDepth": 8,
+        "timeoutMs": 1200000,
+        "versions": {
+          "node": "24.21.0",
+          "electron": "44.4.0",
+          "chrome": "152.0.7977.78"
+        },
+        "runtime": [
+          {
+            "tabId": 1,
+            "requestedSpeed": 4,
+            "observedSpeed": 4,
+            "frameKind": "demo"
+          },
+          {
+            "tabId": 2,
+            "requestedSpeed": 4,
+            "observedSpeed": 4,
+            "frameKind": "demo"
+          }
+        ]
+      },
+      "purchases": {
+        "attemptCount": 0,
+        "uniquePurCount": 0,
+        "uniquePurIndices": [],
+        "engineVerifiedAttempts": 0,
+        "internalAnchorClaimsConsistentAttempts": 0,
+        "harCorroboratedRequestsResponsesAttempts": 0,
+        "failedAttempts": 0,
+        "uniquePurWithAtLeastOneEngineVerifiedAttempt": 0,
+        "options": {},
+        "attempts": []
+      },
+      "modifiers": {
+        "attemptCount": 0,
+        "attempts": []
+      },
+      "choices": {
+        "decisionCount": 0,
+        "distinctObservedFamilyCount": 0,
+        "distinctSelectionsCount": 0,
+        "decisions": []
+      },
+      "pending": {
+        "count": 2,
+        "reasons": {
+          "ACTIVE_TIMEOUT": 2
+        },
+        "phaseCounts": {
+          "unspecified": 2
+        }
+      },
+      "protocol": {
+        "entryCount": 2,
+        "actions": {
+          "doInit": 2
+        },
+        "httpByAction": {
+          "doInit": {
+            "200": 2
+          }
+        },
+        "symbolsObserved": {
+          "vs10bbasblitz": [
+            "request:symbol"
+          ]
+        },
+        "purchaseSubmissionRequestCount": 0,
+        "uniquePurIndices": [],
+        "purchaseSubmissionRequests": [],
+        "missingBodies": {},
+        "incompleteSourceCount": 0,
+        "scope": "All captured sessions including preparation and replay; counts are not unique options or one chronological session."
+      },
+      "warnings": []
+    },
+    {
+      "artifact": "blazing-wilds-megaways",
+      "manifestSchema": "fuzzer/live-evidence/v1",
+      "exportStatus": "EXPORTED",
+      "integrity": {
+        "allListedFilesValid": true,
+        "listedFileCount": 6,
+        "files": [
+          {
+            "file": "screenshots/01.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "screenshots/02.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "screenshots/03.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "result.json",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "protocol.har.gz",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "summary.json",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          }
+        ]
+      },
+      "completeGame": false,
+      "scope": "Captured attempts and observed options only; repeated attempts are not additional unique options.",
+      "game": {
+        "id": "blazing-wilds-megaways",
+        "title": "Blazing Wilds Megaways™",
+        "url": "https://www.pragmaticplay.fun/en/slots/blazing-wilds-megaways/"
+      },
+      "status": "PARTIAL",
+      "actions": 1,
+      "nodes": 1,
+      "edges": 1,
+      "cleanupPending": false,
+      "summaryClaims": {
+        "purchaseCount": 0,
+        "verifiedPurchaseCount": 0,
+        "modifierCount": 0,
+        "choiceCount": 0,
+        "summaryRowsOmitted": 0
+      },
+      "execution": {
+        "sourceCommit": "571026fe225b5a511d804bb39a29a2fd7ab2e526",
+        "hardfireCommit": "adf6de5ec14e394f77fb1816d5f46e5deb250b0a",
+        "startedAt": "2026-10-06T01:44:15.478Z",
+        "finishedAt": "2026-10-06T01:45:50.772Z",
+        "elapsedMs": 95294,
+        "maxActions": 100,
+        "maxDepth": 8,
+        "timeoutMs": 1200000,
+        "versions": {
+          "node": "24.21.0",
+          "electron": "44.4.0",
+          "chrome": "152.0.7977.78"
+        },
+        "runtime": [
+          {
+            "tabId": 1,
+            "requestedSpeed": 4,
+            "observedSpeed": 4,
+            "frameKind": "demo"
+          }
+        ]
+      },
+      "purchases": {
+        "attemptCount": 0,
+        "uniquePurCount": 0,
+        "uniquePurIndices": [],
+        "engineVerifiedAttempts": 0,
+        "internalAnchorClaimsConsistentAttempts": 0,
+        "harCorroboratedRequestsResponsesAttempts": 0,
+        "failedAttempts": 0,
+        "uniquePurWithAtLeastOneEngineVerifiedAttempt": 0,
+        "options": {},
+        "attempts": []
+      },
+      "modifiers": {
+        "attemptCount": 0,
+        "attempts": []
+      },
+      "choices": {
+        "decisionCount": 0,
+        "distinctObservedFamilyCount": 0,
+        "distinctSelectionsCount": 0,
+        "decisions": []
+      },
+      "pending": {
+        "count": 1,
+        "reasons": {
+          "ACTIVE_TIMEOUT": 1
+        },
+        "phaseCounts": {
+          "unspecified": 1
+        }
+      },
+      "protocol": {
+        "entryCount": 1,
+        "actions": {
+          "doInit": 1
+        },
+        "httpByAction": {
+          "doInit": {
+            "200": 1
+          }
+        },
+        "symbolsObserved": {
+          "vswaysfirewmw": [
+            "request:symbol"
+          ]
+        },
+        "purchaseSubmissionRequestCount": 0,
+        "uniquePurIndices": [],
+        "purchaseSubmissionRequests": [],
+        "missingBodies": {},
+        "incompleteSourceCount": 0,
+        "scope": "All captured sessions including preparation and replay; counts are not unique options or one chronological session."
+      },
+      "warnings": []
+    },
+    {
+      "artifact": "dragon-s-gate-bonus-choice",
+      "manifestSchema": "fuzzer/live-evidence/v1",
+      "exportStatus": "EXPORTED",
+      "integrity": {
+        "allListedFilesValid": true,
+        "listedFileCount": 6,
+        "files": [
+          {
+            "file": "screenshots/01.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "screenshots/02.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "screenshots/03.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "result.json",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "protocol.har.gz",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "summary.json",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          }
+        ]
+      },
+      "completeGame": false,
+      "scope": "Captured attempts and observed options only; repeated attempts are not additional unique options.",
+      "game": {
+        "id": "dragon-s-gate-bonus-choice",
+        "title": "Dragon's Gate - Bonus Choice",
+        "url": "https://www.pragmaticplay.fun/en/slots/dragon-s-gate-bonus-choice/"
+      },
+      "status": "PARTIAL",
+      "actions": 1,
+      "nodes": 1,
+      "edges": 1,
+      "cleanupPending": false,
+      "summaryClaims": {
+        "purchaseCount": 0,
+        "verifiedPurchaseCount": 0,
+        "modifierCount": 0,
+        "choiceCount": 0,
+        "summaryRowsOmitted": 0
+      },
+      "execution": {
+        "sourceCommit": "571026fe225b5a511d804bb39a29a2fd7ab2e526",
+        "hardfireCommit": "adf6de5ec14e394f77fb1816d5f46e5deb250b0a",
+        "startedAt": "2026-10-06T01:37:35.388Z",
+        "finishedAt": "2026-10-06T01:40:13.634Z",
+        "elapsedMs": 158246,
+        "maxActions": 100,
+        "maxDepth": 8,
+        "timeoutMs": 1200000,
+        "versions": {
+          "node": "24.21.0",
+          "electron": "44.4.0",
+          "chrome": "152.0.7977.78"
+        },
+        "runtime": [
+          {
+            "tabId": 1,
+            "requestedSpeed": 4,
+            "observedSpeed": null,
+            "frameKind": "demo"
+          }
+        ]
+      },
+      "purchases": {
+        "attemptCount": 0,
+        "uniquePurCount": 0,
+        "uniquePurIndices": [],
+        "engineVerifiedAttempts": 0,
+        "internalAnchorClaimsConsistentAttempts": 0,
+        "harCorroboratedRequestsResponsesAttempts": 0,
+        "failedAttempts": 0,
+        "uniquePurWithAtLeastOneEngineVerifiedAttempt": 0,
+        "options": {},
+        "attempts": []
+      },
+      "modifiers": {
+        "attemptCount": 0,
+        "attempts": []
+      },
+      "choices": {
+        "decisionCount": 0,
+        "distinctObservedFamilyCount": 0,
+        "distinctSelectionsCount": 0,
+        "decisions": []
+      },
+      "pending": {
+        "count": 1,
+        "reasons": {
+          "ACTIVE_TIMEOUT": 1
+        },
+        "phaseCounts": {
+          "unspecified": 1
+        }
+      },
+      "protocol": {
+        "entryCount": 1,
+        "actions": {
+          "doInit": 1
+        },
+        "httpByAction": {
+          "doInit": {
+            "200": 1
+          }
+        },
+        "symbolsObserved": {
+          "vs50dragatebch": [
+            "request:symbol"
+          ]
+        },
+        "purchaseSubmissionRequestCount": 0,
+        "uniquePurIndices": [],
+        "purchaseSubmissionRequests": [],
+        "missingBodies": {},
+        "incompleteSourceCount": 0,
+        "scope": "All captured sessions including preparation and replay; counts are not unique options or one chronological session."
+      },
+      "warnings": []
+    },
+    {
+      "artifact": "hundreds-and-thousands",
+      "manifestSchema": "fuzzer/live-evidence/v1",
+      "exportStatus": "EXPORTED",
+      "integrity": {
+        "allListedFilesValid": true,
+        "listedFileCount": 7,
+        "files": [
+          {
+            "file": "screenshots/01.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "screenshots/02.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "screenshots/03.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "screenshots/04.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "result.json",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "protocol.har.gz",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "summary.json",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          }
+        ]
+      },
+      "completeGame": false,
+      "scope": "Captured attempts and observed options only; repeated attempts are not additional unique options.",
+      "game": {
+        "id": "hundreds-and-thousands",
+        "title": "Hundreds and Thousands",
+        "url": "https://www.pragmaticplay.fun/en/slots/hundreds-and-thousands/"
+      },
+      "status": "PARTIAL",
+      "actions": 2,
+      "nodes": 1,
+      "edges": 2,
+      "cleanupPending": false,
+      "summaryClaims": {
+        "purchaseCount": 0,
+        "verifiedPurchaseCount": 0,
+        "modifierCount": 0,
+        "choiceCount": 0,
+        "summaryRowsOmitted": 0
+      },
+      "execution": {
+        "sourceCommit": "571026fe225b5a511d804bb39a29a2fd7ab2e526",
+        "hardfireCommit": "adf6de5ec14e394f77fb1816d5f46e5deb250b0a",
+        "startedAt": "2026-10-06T01:41:14.782Z",
+        "finishedAt": "2026-10-06T01:44:48.251Z",
+        "elapsedMs": 213469,
+        "maxActions": 100,
+        "maxDepth": 8,
+        "timeoutMs": 1200000,
+        "versions": {
+          "node": "24.21.0",
+          "electron": "44.4.0",
+          "chrome": "152.0.7977.78"
+        },
+        "runtime": [
+          {
+            "tabId": 1,
+            "requestedSpeed": 4,
+            "observedSpeed": 4,
+            "frameKind": "demo"
+          },
+          {
+            "tabId": 2,
+            "requestedSpeed": 4,
+            "observedSpeed": 4,
+            "frameKind": "demo"
+          }
+        ]
+      },
+      "purchases": {
+        "attemptCount": 0,
+        "uniquePurCount": 0,
+        "uniquePurIndices": [],
+        "engineVerifiedAttempts": 0,
+        "internalAnchorClaimsConsistentAttempts": 0,
+        "harCorroboratedRequestsResponsesAttempts": 0,
+        "failedAttempts": 0,
+        "uniquePurWithAtLeastOneEngineVerifiedAttempt": 0,
+        "options": {},
+        "attempts": []
+      },
+      "modifiers": {
+        "attemptCount": 0,
+        "attempts": []
+      },
+      "choices": {
+        "decisionCount": 0,
+        "distinctObservedFamilyCount": 0,
+        "distinctSelectionsCount": 0,
+        "decisions": []
+      },
+      "pending": {
+        "count": 2,
+        "reasons": {
+          "ACTIVE_TIMEOUT": 2
+        },
+        "phaseCounts": {
+          "unspecified": 2
+        }
+      },
+      "protocol": {
+        "entryCount": 2,
+        "actions": {
+          "doInit": 2
+        },
+        "httpByAction": {
+          "doInit": {
+            "200": 2
+          }
+        },
+        "symbolsObserved": {
+          "vs100hsandks": [
+            "request:symbol"
+          ]
+        },
+        "purchaseSubmissionRequestCount": 0,
+        "uniquePurIndices": [],
+        "purchaseSubmissionRequests": [],
+        "missingBodies": {},
+        "incompleteSourceCount": 0,
+        "scope": "All captured sessions including preparation and replay; counts are not unique options or one chronological session."
+      },
+      "warnings": []
+    },
+    {
+      "artifact": "inca-queen",
+      "manifestSchema": "fuzzer/live-evidence/v1",
+      "exportStatus": "EXPORTED",
+      "integrity": {
+        "allListedFilesValid": true,
+        "listedFileCount": 7,
+        "files": [
+          {
+            "file": "screenshots/01.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "screenshots/02.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "screenshots/03.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "screenshots/04.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "result.json",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "protocol.har.gz",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "summary.json",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          }
+        ]
+      },
+      "completeGame": false,
+      "scope": "Captured attempts and observed options only; repeated attempts are not additional unique options.",
+      "game": {
+        "id": "inca-queen",
+        "title": "Inca Queen",
+        "url": "https://www.pragmaticplay.fun/en/slots/inca-queen/"
+      },
+      "status": "PARTIAL",
+      "actions": 2,
+      "nodes": 1,
+      "edges": 2,
+      "cleanupPending": false,
+      "summaryClaims": {
+        "purchaseCount": 0,
+        "verifiedPurchaseCount": 0,
+        "modifierCount": 0,
+        "choiceCount": 0,
+        "summaryRowsOmitted": 0
+      },
+      "execution": {
+        "sourceCommit": "571026fe225b5a511d804bb39a29a2fd7ab2e526",
+        "hardfireCommit": "adf6de5ec14e394f77fb1816d5f46e5deb250b0a",
+        "startedAt": "2026-10-06T01:37:36.910Z",
+        "finishedAt": "2026-10-06T01:41:00.197Z",
+        "elapsedMs": 203287,
+        "maxActions": 100,
+        "maxDepth": 8,
+        "timeoutMs": 1200000,
+        "versions": {
+          "node": "24.21.0",
+          "electron": "44.4.0",
+          "chrome": "152.0.7977.78"
+        },
+        "runtime": [
+          {
+            "tabId": 1,
+            "requestedSpeed": 4,
+            "observedSpeed": 4,
+            "frameKind": "demo"
+          },
+          {
+            "tabId": 2,
+            "requestedSpeed": 4,
+            "observedSpeed": 4,
+            "frameKind": "demo"
+          }
+        ]
+      },
+      "purchases": {
+        "attemptCount": 0,
+        "uniquePurCount": 0,
+        "uniquePurIndices": [],
+        "engineVerifiedAttempts": 0,
+        "internalAnchorClaimsConsistentAttempts": 0,
+        "harCorroboratedRequestsResponsesAttempts": 0,
+        "failedAttempts": 0,
+        "uniquePurWithAtLeastOneEngineVerifiedAttempt": 0,
+        "options": {},
+        "attempts": []
+      },
+      "modifiers": {
+        "attemptCount": 0,
+        "attempts": []
+      },
+      "choices": {
+        "decisionCount": 0,
+        "distinctObservedFamilyCount": 0,
+        "distinctSelectionsCount": 0,
+        "decisions": []
+      },
+      "pending": {
+        "count": 2,
+        "reasons": {
+          "ACTIVE_TIMEOUT": 2
+        },
+        "phaseCounts": {
+          "unspecified": 2
+        }
+      },
+      "protocol": {
+        "entryCount": 2,
+        "actions": {
+          "doInit": 2
+        },
+        "httpByAction": {
+          "doInit": {
+            "200": 2
+          }
+        },
+        "symbolsObserved": {
+          "vs20thunder": [
+            "request:symbol"
+          ]
+        },
+        "purchaseSubmissionRequestCount": 0,
+        "uniquePurIndices": [],
+        "purchaseSubmissionRequests": [],
+        "missingBodies": {},
+        "incompleteSourceCount": 0,
+        "scope": "All captured sessions including preparation and replay; counts are not unique options or one chronological session."
+      },
+      "warnings": []
+    }
+  ]
+}

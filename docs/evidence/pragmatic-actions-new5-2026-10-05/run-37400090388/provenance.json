@@ -1,0 +1,98 @@
+{
+  "schema": "fuzzer/ci-artifact-provenance/v1",
+  "runId": 37400090388,
+  "runUrl": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37400090388",
+  "sourceCommit": "571026fe225b5a511d804bb39a29a2fd7ab2e526",
+  "verifiedAt": "2026-10-06T01:51:14Z",
+  "artifactRetentionDays": 1,
+  "evidenceStoredInRepository": true,
+  "jobs": [
+    {
+      "id": 112065125231,
+      "name": "DEMO / Dragon's Gate - Bonus Choice",
+      "url": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37400090388/job/112065125231",
+      "startedAt": "2026-10-06T01:37:27Z",
+      "completedAt": "2026-10-06T01:40:17Z",
+      "conclusion": "failure"
+    },
+    {
+      "id": 112065125242,
+      "name": "DEMO / Big Bass Blast",
+      "url": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37400090388/job/112065125242",
+      "startedAt": "2026-10-06T01:40:19Z",
+      "completedAt": "2026-10-06T01:44:01Z",
+      "conclusion": "failure"
+    },
+    {
+      "id": 112065125283,
+      "name": "DEMO / Hundreds and Thousands",
+      "url": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37400090388/job/112065125283",
+      "startedAt": "2026-10-06T01:41:07Z",
+      "completedAt": "2026-10-06T01:44:52Z",
+      "conclusion": "failure"
+    },
+    {
+      "id": 112065125293,
+      "name": "DEMO / Inca Queen",
+      "url": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37400090388/job/112065125293",
+      "startedAt": "2026-10-06T01:37:27Z",
+      "completedAt": "2026-10-06T01:41:05Z",
+      "conclusion": "failure"
+    },
+    {
+      "id": 112065125346,
+      "name": "DEMO / Blazing Wilds Megaways\u2122",
+      "url": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37400090388/job/112065125346",
+      "startedAt": "2026-10-06T01:44:03Z",
+      "completedAt": "2026-10-06T01:45:55Z",
+      "conclusion": "failure"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 11385142048,
+      "name": "pragmatic-blazing-wilds-megaways-37400090388-1",
+      "bytes": 314599,
+      "sha256": "sha256:7e03572688663ca364b3c1d1e0a2ca9860479fa90944c408b4336e27da00a4ac",
+      "createdAt": "2026-10-06T01:45:52Z",
+      "zipDigestVerified": true
+    },
+    {
+      "id": 11385091959,
+      "name": "pragmatic-big-bass-blast-37400090388-1",
+      "bytes": 480210,
+      "sha256": "sha256:b24bc185effc42b104431d60b08645de73ed23479208c3984df20c0718e9bebd",
+      "createdAt": "2026-10-06T01:43:58Z",
+      "zipDigestVerified": true
+    },
+    {
+      "id": 11384956554,
+      "name": "pragmatic-dragon-s-gate-bonus-choice-37400090388-1",
+      "bytes": 340158,
+      "sha256": "sha256:8d89a8fe1734864f48413726bf7dcc122a69e8b5574bb609fd5f3d3ba707ab61",
+      "createdAt": "2026-10-06T01:40:15Z",
+      "zipDigestVerified": true
+    },
+    {
+      "id": 11384947331,
+      "name": "pragmatic-hundreds-and-thousands-37400090388-1",
+      "bytes": 374450,
+      "sha256": "sha256:c468e316ded6dd896acdf7758952acd6f9948e3e6b888d60e114573d8ffd2237",
+      "createdAt": "2026-10-06T01:44:51Z",
+      "zipDigestVerified": true
+    },
+    {
+      "id": 11384444345,
+      "name": "pragmatic-inca-queen-37400090388-1",
+      "bytes": 504887,
+      "sha256": "sha256:7046feabeb1bb6b40849ceab05b37ada0088875fb4729ba79e2cb7048dd4c3e0",
+      "createdAt": "2026-10-06T01:41:01Z",
+      "zipDigestVerified": true
+    }
+  ],
+  "limitations": [
+    "All five results are PARTIAL with ACTIVE_TIMEOUT; no purchase or normal-spin request was captured.",
+    "The preserved HAR is the sanitized /gameService subset. It does not include background requests or debugger events, so it cannot identify which activity source prevented quietness.",
+    "A UI screenshot showing a confirmation dialog is not evidence of a submitted purchase."
+  ]
+}

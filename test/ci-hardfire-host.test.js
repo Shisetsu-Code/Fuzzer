@@ -108,6 +108,43 @@ test('recording startup rejection preserves its cause after concurrent saved-tab
  assert.equal(tab.wc.debugger.listenerCount('message'),0);assert.deepEqual(host.openTabIds(),[]);
 });
 
+test('activity diagnostics expose only method counters and bounded metadata without changing traffic',async t=>{
+ let clock=10000;t.mock.method(Date,'now',()=>clock);
+ const {host}=await fixture();const first=await host.controller.tabs.new({});const scoped=host.controller.withTab(first.id);await scoped.recordStart();const tab=host.controller.tabs.resolve(first.id);
+ tab.recorder.toJSON=()=>({log:{entries:[{request:{url:'https://private.invalid/?token=private-token',postData:{text:'token=private-token'}},response:{status:200,content:{text:'private-response'}}}]}});
+ tab.wc.debugger.emit('message',{},'Network.dataReceived',{requestId:'private-request-id',url:'https://private.invalid',data:'private-data'});
+ tab.wc.debugger.emit('message',{},'Runtime.consoleAPICalled',{message:'private-console'});
+ const marker=JSON.stringify(scoped.networkEvents());clock+=2000;assert.equal(JSON.stringify(scoped.networkEvents()),marker);
+ const activity=(await host.runtimeStatus())[0].activity;
+ assert.ok(activity,'runtime status exposes activity diagnostics');
+ assert.deepEqual(activity.methodCounts,{'Network.dataReceived':1});assert.equal(activity.samples.length,2);
+ assert.deepEqual(Object.keys(activity.samples[0]).sort(),['elapsedMs','entryCount','markerHash','networkEvents','pendingBodies','webEvents','wsFrames'].sort());
+ assert.deepEqual({...activity.samples[0],markerHash:undefined},{elapsedMs:0,networkEvents:1,webEvents:0,wsFrames:0,pendingBodies:0,entryCount:1,markerHash:undefined});
+ assert.match(activity.samples[0].markerHash,/^[a-f0-9]{64}$/);assert.equal(activity.samples[1].markerHash,activity.samples[0].markerHash);
+ const published=JSON.stringify(activity);for(const privateText of ['private-','https://','requestId','Runtime.console','token='])assert.ok(!published.includes(privateText),privateText);
+});
+
+test('activity retains at most 32 samples spaced two seconds apart and resets for each recording',async t=>{
+ let clock=10000;t.mock.method(Date,'now',()=>clock);
+ const {host}=await fixture();const first=await host.controller.tabs.new({});const scoped=host.controller.withTab(first.id);await scoped.recordStart();
+ scoped.networkEvents();clock+=1999;scoped.networkEvents();const initial=(await host.runtimeStatus())[0].activity;assert.ok(initial,'runtime status exposes activity diagnostics');assert.equal(initial.samples.length,1);
+ for(let i=1;i<70;i++){clock=10000+i*2000;scoped.networkEvents();}
+ const samples=(await host.runtimeStatus())[0].activity.samples;assert.equal(samples.length,32);assert.equal(samples[0].elapsedMs,76000);assert.equal(samples.at(-1).elapsedMs,138000);
+ clock=150000;await scoped.recordStart();scoped.networkEvents();
+ const reset=(await host.runtimeStatus())[0].activity;assert.equal(reset.samples.length,1);assert.equal(reset.samples[0].elapsedMs,0);assert.deepEqual(reset.methodCounts,{});
+});
+
+test('runtime activity is an independent copy and its hashes identify the changed marker',async t=>{
+ let clock=10000;t.mock.method(Date,'now',()=>clock);
+ const {host}=await fixture();const first=await host.controller.tabs.new({});const scoped=host.controller.withTab(first.id);await scoped.recordStart();const tab=host.controller.tabs.resolve(first.id);
+ scoped.networkEvents();const before=(await host.runtimeStatus())[0].activity;assert.ok(before,'runtime status exposes activity diagnostics');
+ tab.wc.debugger.emit('message',{},'Network.webSocketFrameReceived',{});tab.recorder.pendingBodies.add('private-body');clock+=2000;scoped.networkEvents();
+ const after=(await host.runtimeStatus())[0].activity;assert.notEqual(after.samples.at(-1).markerHash,before.samples[0].markerHash);assert.equal(after.samples.at(-1).pendingBodies,1);
+ after.samples[0].markerHash='mutated';after.samples.pop();after.methodCounts['Network.webSocketFrameReceived']=999;
+ const fresh=(await host.runtimeStatus())[0].activity;assert.equal(fresh.samples.length,2);assert.match(fresh.samples[0].markerHash,/^[a-f0-9]{64}$/);assert.equal(fresh.methodCounts['Network.webSocketFrameReceived'],1);
+ assert.equal(before.samples.length,1);assert.deepEqual(before.methodCounts,{});
+});
+
 test('recorded game speed comes from its actual DEMO frame and never from the catalog',async()=>{
  const {host}=await fixture();const first=await host.controller.tabs.new({});const wc=host.controller.tabs.resolve(first.id).view.webContents;
  wc.executeJavaScript=async()=>1;

@@ -302,5 +302,401 @@
     "Current host order blocks on Page.addScriptToEvaluateOnNewDocument before tabs.new can return.",
     "Navigating about:blank first permits runtime installation, renderer evaluation, recorder start, screenshot and persistence of an empty HAR.",
     "Blank-first still fails during tab_close; startup success alone does not prove lifecycle completion."
-  ]
+  ],
+  "verificationAfterFix": {
+    "runId": 37399548934,
+    "runUrl": "https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37399548934",
+    "sourceCommit": "52ac3aa3da65bec618e76ada493b6182977ec32d",
+    "scope": "No-game lifecycle including runtime, renderer, screenshot, empty HAR persistence and confirmed tab closure",
+    "cases": [
+      {
+        "variant": "current",
+        "artifactId": 11383623482,
+        "archiveSha256": "88f3a80a63511644945c5d7caf273c7e62aa5b4f1ebba0b7da25462a32c9d652",
+        "archiveDigestVerified": true,
+        "result": {
+          "variant": "current",
+          "status": "PASSED",
+          "events": [
+            {
+              "variant": "current",
+              "elapsedMs": 0,
+              "phase": "bootstrap",
+              "status": "done",
+              "hardfireCommit": "adf6de5ec14e394f77fb1816d5f46e5deb250b0a",
+              "versions": {
+                "electron": "44.4.0",
+                "node": "24.21.0",
+                "chrome": "152.0.7977.78"
+              }
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 11,
+              "phase": "app_ready",
+              "status": "begin"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 367,
+              "phase": "app_ready",
+              "status": "done"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 422,
+              "phase": "host_created",
+              "status": "done"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 422,
+              "phase": "tab_new",
+              "status": "begin"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 587,
+              "phase": "runtime_start",
+              "status": "begin"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 589,
+              "phase": "cdp_command",
+              "status": "begin",
+              "method": "Page.addScriptToEvaluateOnNewDocument"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 596,
+              "phase": "cdp_command",
+              "status": "done",
+              "method": "Page.addScriptToEvaluateOnNewDocument"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 597,
+              "phase": "cdp_command",
+              "status": "begin",
+              "method": "Runtime.evaluate"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 600,
+              "phase": "cdp_command",
+              "status": "done",
+              "method": "Runtime.evaluate"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 600,
+              "phase": "cdp_command",
+              "status": "begin",
+              "method": "Network.enable"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 601,
+              "phase": "cdp_command",
+              "status": "done",
+              "method": "Network.enable"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 602,
+              "phase": "runtime_start",
+              "status": "done"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 602,
+              "phase": "tab_new",
+              "status": "done"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 604,
+              "phase": "renderer_evaluate",
+              "status": "begin"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 606,
+              "phase": "renderer_evaluate",
+              "status": "done"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 606,
+              "phase": "record_start",
+              "status": "begin"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 609,
+              "phase": "record_start",
+              "status": "done"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 609,
+              "phase": "blank_screenshot",
+              "status": "begin"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 635,
+              "phase": "blank_screenshot",
+              "status": "done"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 636,
+              "phase": "save_owned_har",
+              "status": "begin"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 2154,
+              "phase": "save_owned_har",
+              "status": "done"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 2154,
+              "phase": "har_persisted",
+              "status": "done",
+              "entries": 0,
+              "complete": true
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 2154,
+              "phase": "tab_close",
+              "status": "begin"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 2154,
+              "phase": "tab_close",
+              "status": "begin"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 2179,
+              "phase": "tab_close",
+              "status": "done"
+            },
+            {
+              "variant": "current",
+              "elapsedMs": 2179,
+              "phase": "probe_complete",
+              "status": "done"
+            }
+          ]
+        }
+      },
+      {
+        "variant": "blank-first",
+        "artifactId": 11384499519,
+        "archiveSha256": "f7a8d9509ab2bc9fe8f94b7566e95aa8fb4806404d2ad8a09c6fa2eb01f30d15",
+        "archiveDigestVerified": true,
+        "result": {
+          "variant": "blank-first",
+          "status": "PASSED",
+          "events": [
+            {
+              "variant": "blank-first",
+              "elapsedMs": 0,
+              "phase": "bootstrap",
+              "status": "done",
+              "hardfireCommit": "adf6de5ec14e394f77fb1816d5f46e5deb250b0a",
+              "versions": {
+                "electron": "44.4.0",
+                "node": "24.21.0",
+                "chrome": "152.0.7977.78"
+              }
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 5,
+              "phase": "app_ready",
+              "status": "begin"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 369,
+              "phase": "app_ready",
+              "status": "done"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 408,
+              "phase": "host_created",
+              "status": "done"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 410,
+              "phase": "tab_new",
+              "status": "begin"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 503,
+              "phase": "blank_before_runtime",
+              "status": "begin"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 528,
+              "phase": "blank_before_runtime",
+              "status": "done"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 528,
+              "phase": "runtime_start",
+              "status": "begin"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 529,
+              "phase": "cdp_command",
+              "status": "begin",
+              "method": "Page.addScriptToEvaluateOnNewDocument"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 531,
+              "phase": "cdp_command",
+              "status": "done",
+              "method": "Page.addScriptToEvaluateOnNewDocument"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 531,
+              "phase": "cdp_command",
+              "status": "begin",
+              "method": "Runtime.evaluate"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 531,
+              "phase": "cdp_command",
+              "status": "done",
+              "method": "Runtime.evaluate"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 532,
+              "phase": "cdp_command",
+              "status": "begin",
+              "method": "Network.enable"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 532,
+              "phase": "cdp_command",
+              "status": "done",
+              "method": "Network.enable"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 532,
+              "phase": "runtime_start",
+              "status": "done"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 532,
+              "phase": "tab_new",
+              "status": "done"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 532,
+              "phase": "renderer_evaluate",
+              "status": "begin"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 533,
+              "phase": "renderer_evaluate",
+              "status": "done"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 533,
+              "phase": "record_start",
+              "status": "begin"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 534,
+              "phase": "record_start",
+              "status": "done"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 534,
+              "phase": "blank_screenshot",
+              "status": "begin"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 563,
+              "phase": "blank_screenshot",
+              "status": "done"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 564,
+              "phase": "save_owned_har",
+              "status": "begin"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 2082,
+              "phase": "save_owned_har",
+              "status": "done"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 2082,
+              "phase": "har_persisted",
+              "status": "done",
+              "entries": 0,
+              "complete": true
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 2082,
+              "phase": "tab_close",
+              "status": "begin"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 2082,
+              "phase": "tab_close",
+              "status": "begin"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 2108,
+              "phase": "tab_close",
+              "status": "done"
+            },
+            {
+              "variant": "blank-first",
+              "elapsedMs": 2108,
+              "phase": "probe_complete",
+              "status": "done"
+            }
+          ]
+        }
+      }
+    ]
+  }
 }

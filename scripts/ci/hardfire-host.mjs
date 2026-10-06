@@ -70,7 +70,13 @@ export async function createHardFireHost({electron,hardfireRoot,components=loadH
     // messages. Track only Network events, including chunks and open sockets
     // that are not yet represented in its game-only HAR.
     tab.networkEventCount=0;
-    const debuggerApi=tab.wc.debugger,onMessage=(_event,method)=>{if(recorder.recording&&typeof method==='string'&&method.startsWith('Network.'))tab.networkEventCount++;};
+    const activity={startedAt:Date.now(),methodCounts:{},samples:[]};tab.activity=activity;
+    const debuggerApi=tab.wc.debugger,onMessage=(_event,method)=>{
+     if(recorder.recording&&typeof method==='string'&&method.startsWith('Network.')){
+      tab.networkEventCount++;
+      if(/^Network\.[A-Za-z][A-Za-z0-9]{0,95}$/.test(method))activity.methodCounts[method]=(activity.methodCounts[method]||0)+1;
+     }
+    };
     debuggerApi.on('message',onMessage);
     const detach=()=>{debuggerApi.removeListener('message',onMessage);if(tab.detachTrafficListener===detach)tab.detachTrafficListener=null;};
     tab.detachTrafficListener=detach;
@@ -83,7 +89,15 @@ export async function createHardFireHost({electron,hardfireRoot,components=loadH
   // explorer needs ongoing recorder activity, including pending body changes.
   scoped.networkEvents=()=>{
    const recorder=tab.recorder,hash=value=>value===undefined?null:createHash('sha256').update(String(value)).digest('hex');
-   return {networkEvents:tab.networkEventCount||0,webEvents:recorder?.webEvents||0,wsFrames:recorder?.wsFrames||0,pendingBodies:recorder?.pendingBodies?.size||0,events:(recorder?.toJSON().log.entries||[]).map((entry,index)=>({index,startedDateTime:entry.startedDateTime||null,status:entry.response?.status??null,requestHash:hash(entry.request?.postData?.text),bodyHash:hash(entry.response?.content?.text),bodyLength:entry.response?.content?.text?.length??null,captureState:entry.response?.content?._bodyCaptureStatus||null,bodyError:!!entry.response?.content?._bodyCaptureError}))};
+   const marker={networkEvents:tab.networkEventCount||0,webEvents:recorder?.webEvents||0,wsFrames:recorder?.wsFrames||0,pendingBodies:recorder?.pendingBodies?.size||0,events:(recorder?.toJSON().log.entries||[]).map((entry,index)=>({index,startedDateTime:entry.startedDateTime||null,status:entry.response?.status??null,requestHash:hash(entry.request?.postData?.text),bodyHash:hash(entry.response?.content?.text),bodyLength:entry.response?.content?.text?.length??null,captureState:entry.response?.content?._bodyCaptureStatus||null,bodyError:!!entry.response?.content?._bodyCaptureError}))};
+   // Keep diagnostics outside the marker: observing it must not create traffic.
+   // At two-second intervals, 32 samples retain roughly the last minute.
+   const activity=tab.activity,elapsedMs=activity?Math.max(0,Date.now()-activity.startedAt):0;
+   if(activity&&(!activity.samples.length||elapsedMs-activity.samples.at(-1).elapsedMs>=2000)){
+    activity.samples.push({elapsedMs,networkEvents:marker.networkEvents,webEvents:marker.webEvents,wsFrames:marker.wsFrames,pendingBodies:marker.pendingBodies,entryCount:marker.events.length,markerHash:hash(JSON.stringify(marker))});
+    if(activity.samples.length>32)activity.samples.shift();
+   }
+   return marker;
   };
   tab.scoped=scoped;return scoped;
  }};
@@ -91,7 +105,7 @@ export async function createHardFireHost({electron,hardfireRoot,components=loadH
   runtimeStatus:async()=>Promise.all([...tabs.values()].map(async tab=>{
    const frame=(tab.wc.isDestroyed()?[]:tab.wc.mainFrame?.framesInSubtree||[]).find(frame=>{try{const url=new URL(frame.url);return url.protocol==='https:'&&(url.hostname==='demogamesfree.pragmaticplay.net'||url.hostname.endsWith('.demogamesfree.pragmaticplay.net'));}catch{return false;}});
    const observedSpeed=frame?await boundedDiagnostic(()=>frame.executeJavaScript('window.__HAR_BROWSER_SPEED__ ?? null')):null;
-   return {tabId:tab.id,requestedSpeed:tab.speed,observedSpeed,frameKind:frame?'demo':null};
+   return {tabId:tab.id,requestedSpeed:tab.speed,observedSpeed,frameKind:frame?'demo':null,activity:tab.activity?{methodCounts:{...tab.activity.methodCounts},samples:tab.activity.samples.map(sample=>({...sample}))}:null};
   })),
   closeWindow:()=>{if(tabs.size)throw Error('CI_OWNED_TABS_RETAINED');window.close();}};
 }

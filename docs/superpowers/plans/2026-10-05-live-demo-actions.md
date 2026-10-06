@@ -68,7 +68,7 @@
 ## Task 4: Real validation and report
 
 - [x] Review the combined host, exporter and workflow.
-- [ ] Publish the exact tested files to the existing draft PR with `[live-demo:all]` in the commit message.
+- [x] Publish the exact tested files to the existing draft PR with `[live-demo:all]` in the commit message (source `571026fe225b5a511d804bb39a29a2fd7ab2e526`, corrected run `37400090388`).
 - [ ] Observe the five Actions jobs, recover artifacts and inspect per-game protocol/screenshots.
 - [ ] Fix concrete infrastructure or engine defects only when evidence identifies the cause; rerun only affected cases when needed.
 - [ ] Save a report with each game's actual status, elapsed time, observed/verified actions and unresolved coverage.

@@ -69,6 +69,16 @@ Node.js 22 o posterior. `node --test test/*.test.js` ejecuta las pruebas sin ins
 
 El workflow `Tests` ejecuta `npm test` en Linux y Windows con Node 22 y 24. Las pruebas de integración del explorador ejecutan su lógica real y sustituyen los límites de Electron/captura/sesión; no cargan juegos ni equivalen a una certificación en vivo. El mock de módulos experimental se activa solo en sus procesos de prueba hijos. Los resultados de cada tanda se documentan junto a sus cambios.
 
+### DEMOs reales en GitHub Actions
+
+El workflow `Pragmatic live DEMOs` ejecuta el explorador existente con Electron y los módulos reales de HardFire fijados a un commit. El host de CI aporta una pestaña aislada de 1280 × 720 por trabajo; admite dos trabajos simultáneos y guarda el HAR antes de cerrar cada pestaña. Solicita velocidad 4× y registra por separado la velocidad observada dentro del frame DEMO.
+
+La tanda se define en `docs/evidence/pragmatic-actions-new5-2026-10-05-manifest.json`. En una PR del mismo repositorio, el mensaje del último commit debe incluir `[live-demo:all]` para ejecutar los cinco o `[live-demo:inca-queen]` para repetir únicamente ese id. Un commit sin ese marcador no vuelve a jugar la tanda. También existe `workflow_dispatch` con `game_id`, cuando el workflow está disponible en la rama predeterminada.
+
+Cada juego tiene un presupuesto de 100 acciones, profundidad 8 y 20 minutos. El artefacto conserva `result.json`, `summary.json`, un `protocol.har.gz` saneado y hasta ocho capturas JPEG65; la retención es de un día. El resumen también queda en el log con el prefijo `FUZZER_SUMMARY_JSON=`. Los HAR crudos y los perfiles de sesión quedan fuera de la subida.
+
+El estado del juego y la exportación se informan por separado. `PARTIAL` conserva lo recorrido y sus pendientes; `EXHAUSTED_OBSERVED_CONTROLS` sólo significa que se agotaron los controles observados dentro de esa exploración. El resultado siempre mantiene `completeGame:false`. Un fallo de entrada no cuenta como juego recorrido, y HTTP 200 por sí solo no verifica el cierre de una compra.
+
 `npm run pragmatic -- TAB_ID URL_PUBLICA execute` inicia un trabajo desde la consola. Usa el SDK MCP ya instalado en HardFire; `HARDFIRE_HOME` permite elegir su directorio y `MCP_URL` el endpoint local.
 
 El catálogo comprobado es el MCP local de HardFire. No se publican estas funciones mediante Firetrace ni se despliega un servicio Cloudflare nuevo.
