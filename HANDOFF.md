@@ -91,3 +91,27 @@ Dar el repositorio y pedir: «Lee HANDOFF.md en codex/explorer-reliability, comp
 Pruebas: `npm test` (Node >=22). CI: `.github/workflows/test.yml` ejecuta Node 22/24 en Windows/Linux. `.github/workflows/pragmatic-new5.yml` requiere marcador explícito `[live-demo:<game-id>]` o `[live-demo:all]`, o workflow_dispatch. No contar los jobs omitidos como DEMOs aprobados. Manifiesto de juegos: `docs/evidence/pragmatic-actions-new5-2026-10-05-manifest.json`.
 
 Cuando la red del contenedor no permite clonar, usar el conector GitHub y el workflow de source bundle; verificar SHA256, commit de origen y árbol antes de editar. No inventar credenciales ni rutas locales. Los artefactos expiran: preservar informes saneados y hashes en el repo; nunca tokens/cookies o lanzamientos de sesión completos.
+
+
+## 9. Actualización posterior verificada — controles y apuesta
+
+La implementación posterior al punto de partida ya está en la rama. Estado verificado más reciente antes de esta actualización documental: `77f59c8165f057b5359d054d4d32bfc4b7b8af8f`.
+
+Cambios funcionales posteriores:
+- `4b5eea1d7d04b625da325fd4534282ab7cab242f`: menús V2 observados, muestreo acotado de +/- y decisiones físicas soportadas.
+- `77f59c8165f057b5359d054d4d32bfc4b7b8af8f`: diferencia modal abierto/listo, restringe fondo durante compra y añade recuperación física protegida de Stop.
+
+Los controles universales excluidos siguen fuera del árbol por diseño. Aceptar/cancelar dentro del modal no se consideran universales y deben descubrirse. Los +/- solo se habilitan como configuración contextual de compra, con un paso arriba/abajo por ruta y cobertura explícitamente parcial.
+
+Validación determinista del último cambio: **404/404** en Node 22/24 sobre Windows/Linux.
+
+Resultado dirigido `37527476771`:
+- Hundreds and Thousands: la brecha de aceptar/cancelar quedó corregida. `ButtonYes0` llegó al grafo y envió `pur=0` con HTTP 200. Resultado `PARTIAL` por deadline porque la operación posterior no terminó.
+- Dragon's Gate: compra `pur=0` aceptada; continúa bloqueado en `STOP_ACTIVE/PROTOCOL_NOT_READY` y sin decisión de bonus acreditada. La recuperación física de Stop pasa regresiones pero esta ejecución real no demostró cierre.
+- Ambos cerraron sus sesiones; el rojo del workflow corresponde a resultados `PARTIAL`, no a un crash de infraestructura.
+
+La tanda anterior `37523912578` comprobó en Dragon que el muestreo contextual de apuesta cambia 2 -> 3 y 2 -> 1.8, y el precio de compra 100 -> 150/90. Son importes de una misma ruta, no modalidades adicionales.
+
+Documento detallado: `docs/control-wager-followup-2026-10-06.md`.
+
+**Prioridad única inmediata:** diagnosticar con evidencia exacta la continuación posterior a `pur=0` de Dragon y corregir esa frontera sin ampliar timeouts ni reintroducir controles universales.
