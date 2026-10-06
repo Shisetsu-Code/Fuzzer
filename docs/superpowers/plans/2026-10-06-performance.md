@@ -10,7 +10,9 @@ Objetivo: medir subpasos y comparar concurrencia acotada sin modificar la semán
 - [x] Ejercitar el adaptador con benchmark activado en modo secuencial y paralelo, incluidos errores y solicitudes pendientes.
 - [x] Regresión adicional: respuesta que cambia durante snapshot. Reproducida en ambos modos y corregida manteniendo el marcador anterior a la lectura.
 - [x] Añadir microbenchmark reproducible, selección A/B y tabla de fases en Actions.
-- [ ] Revisar suite completa, publicar con lease del SHA remoto y validar Actions.
-- [ ] Recoger resultados A/B y documentar tiempos observados sin extrapolarlos a todo el catálogo.
+- [x] Revisar suite completa, publicar con lease del SHA remoto y validar Actions.
+- [x] Recoger resultados A/B y documentar tiempos observados sin extrapolarlos a todo el catálogo.
 
 Decisión: CPU JPEG no se mueve a workers en esta tanda; primero medir su peso. Se paralelizan sólo operaciones independientes hasta cuatro, esperando todas las ya iniciadas ante un error. No se cambian las esperas ni los criterios de validez para aparentar velocidad.
+
+- [x] Corregir la allowlist de recuperación para preservar performance.json validado; regresión roja/verde y comprobación sobre ambos artefactos reales.

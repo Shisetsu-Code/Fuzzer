@@ -18,3 +18,22 @@ test('a profiler symlink outside the owned evidence root is not published',async
   assert(!out.files.some(f=>f.path==='performance.json'));assert(out.warnings.some(w=>w.code==='PERFORMANCE_UNAVAILABLE'));
  }finally{await fs.rm(temp,{recursive:true,force:true});}
 });
+
+test('recovery preserves a valid benchmark export byte-for-byte instead of inventing interruption',async()=>{
+ const {writeRecoveryCheckpoint,recoverLiveEvidence}=await import('../scripts/ci/recover-live-evidence.mjs');
+ const temp=await fs.mkdtemp(path.join(os.tmpdir(),'perf-recovery-'));try{
+  const artifactDir=path.join(temp,'private'),outputDir=path.join(temp,'public');await fs.mkdir(artifactDir);
+  const result={status:'PARTIAL',nodes:[],edges:[],pending:[{reason:'ACTION_LIMIT'}],actions:0,cleanupPending:false};
+  await fs.writeFile(path.join(artifactDir,'performance.json'),JSON.stringify({schema:'fuzzer/performance/v1',stages:[],trace:[]}));
+  writeRecoveryCheckpoint({artifactDir,outputDir,game,observedResult:result,progressObserved:true,cleanupConfirmed:true,lastOwnedTabIds:[],exportStarted:true});
+  await exportLiveEvidence({game,result,artifactDir,outputDir});
+  const names=await fs.readdir(outputDir),before=await Promise.all(names.map(n=>fs.readFile(path.join(outputDir,n))));
+  const recovery=await recoverLiveEvidence({artifactDir,outputDir,gameId:game.id});
+  assert.equal(recovery.recovered,false);
+  assert.deepEqual(await Promise.all(names.map(n=>fs.readFile(path.join(outputDir,n)))),before);
+  assert(!(await fs.readdir(artifactDir)).some(n=>n.startsWith('incomplete-export-')));
+  // Allowlisting a metrics file must not turn off its checksum validation.
+  await fs.appendFile(path.join(outputDir,'performance.json'),'\n');
+  assert.equal((await recoverLiveEvidence({artifactDir,outputDir,gameId:game.id})).recovered,true);
+ }finally{await fs.rm(temp,{recursive:true,force:true});}
+});

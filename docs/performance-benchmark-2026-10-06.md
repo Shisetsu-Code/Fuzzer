@@ -40,6 +40,45 @@ Base: 316 pruebas aprobadas. Pruebas añadidas: estadísticas anidadas con hijos
 
 El microbenchmark alterna el orden de los modos, descarta una iteración de calentamiento y verifica por hash los 24 archivos de 64 KiB de cada iteración. Incluye cuatro esperas controladas de 10 ms para aislar el scheduling. En esta máquina dio aproximadamente 44,4 ms secuencial frente a 12,4 ms paralelo (medianas de cinco repeticiones): **esto NO es una mejora medida del juego, de screenshots ni de la red real**.
 
-## Resultado DEMO
+## Resultado DEMO instrumentado
 
-Pendiente de la ejecución A/B instrumentada. Ningún resultado parcial se convierte en completo por disponer de un benchmark.
+[Actions 37446711832](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37446711832), código `9fb8e7ead6cf40a5b62f72eaa9457ed410281cca`, Dragon’s Gate, dos acciones nuevas por modo y 240.000 ms de presupuesto. Se ejecutaron dos sesiones aisladas en runners distintos. El [resumen numérico y procedencia](evidence/performance-2026-10-06/comparison.json) permite contrastar cada valor con los artefactos de Actions; los ZIP y todos los archivos enumerados en sus manifiestos se verificaron por SHA-256.
+
+| Medición | Secuencial | Paralelo |
+|---|---:|---:|
+| Tiempo total del explorador | 269,503 s | 269,871 s |
+| Capturas para comprobar pintura, acumulado | 139,470 s / 26 llamadas | 142,692 s / 28 llamadas |
+| Capturas JPEG de evidencia, acumulado | 78,227 s / 12 llamadas | 75,919 s / 11 llamadas |
+| Ambas capturas como proporción del tiempo de pared | 80,78% | 81,01% |
+| Mediana de una captura de pintura | 6,717 s | 6,423 s |
+| Mediana de una captura JPEG de evidencia | 6,849 s | 7,406 s |
+| Lecturas agrupadas por snapshot, promedio | 352,934 ms | 175,779 ms |
+| Snapshot completo, promedio | 17,935 s | 17,488 s |
+| Recortes y guardado de recortes, acumulado | 154,923 ms | 160,698 ms |
+| Espera del lock de superficie, acumulado | 0,631 ms | 0,149 ms |
+
+Los porcentajes de captura se calcularon como unión de intervalos de `paint.capture` y `capture.jpeg`; no se sumaron padres e hijos. La traza no se truncó y no quedaron spans activos. `capture.jpeg` incluye obtener la imagen del navegador y convertirla a JPEG; no aísla la codificación de la captura completa. La codificación de todos los recortes sí está aislada: 64,803 ms y 74,390 ms en total.
+
+**Hallazgo: alrededor del 81% del tiempo medido espera la captura de imágenes.** No es tiempo de analizar nombres de controles ni de escribir recortes. Las lecturas agrupadas se solaparon útilmente en esta muestra, pero el total no mejoró. No es correcto extrapolar el factor 3,60 del microbenchmark al juego real.
+
+Ambos modos intentaron dos acciones nuevas, reprodujeron una acción previa y pulsaron una tirada de comprobación. Sólo la apertura de menú quedó como transición válida; el segundo resultado quedó sin confirmar al agotarse el presupuesto. No se verificó ningún recorrido completo. El tiempo extra sobre 240 segundos incluye operaciones ya en curso y cierre: el presupuesto no cancela un `capturePage` iniciado. El guardado y cierre del explorador terminaron, con `cleanupPending:false`.
+
+La muestra es una pareja A/B, no una distribución de rendimiento de todo el catálogo. Las capturas por modo no fueron idénticas en cantidad y hubo diferencias de respuesta/temporización; las medianas son descriptivas, no una conclusión estadística de velocidad.
+
+### Incidencia de recuperación descubierta y corregida
+
+El runner imprimió su resumen y el perfil completo antes de salir. Después, `recover-live-evidence.mjs` no reconoció `performance.json` en su allowlist de archivos válidos: regeneró el export y añadió erróneamente `CI_ELECTRON_INTERRUPTED`. Los artefactos originales conservan esa etiqueta y advertencias `HAR_UNAVAILABLE` para temporales ya consolidados; el secuencial además conserva `BODY_UNAVAILABLE`. No se reescriben esas pruebas históricas ni se presentan como exports perfectos.
+
+La allowlist ahora acepta el archivo de métricas **manteniendo la comprobación de tamaño, ruta y SHA-256**. Una regresión primero reprodujo la sustitución indebida y después confirmó que el export permanece byte a byte; alterar el archivo todavía activa recuperación. Se probó además con los dos ZIP reales descargados: ambos se reconocen sin regenerarse. Es una corrección de validación del export, no una nueva ejecución del juego.
+
+### Prioridad que señalan las mediciones
+
+La siguiente optimización de impacto debe reducir las capturas redundantes y medir alternativas de captura/compositor, preservando una imagen reciente y controles revalidados antes de cada clic. Lanzar más capturas del mismo frame en paralelo puede aumentar la cola y no se implementó como supuesto remedio. El lock no mostró contención con una sola sesión por proceso; relajarlo no solucionaría esta muestra.
+
+La CPU registrada (10,47 s y 10,62 s) pertenece sólo al proceso principal. No identifica si el bloqueo de captura está en GPU, renderer, compositor, IPC o una política de temporización; se necesitaría instrumentar esa frontera antes de atribuirle una causa más específica.
+
+## Verificación final de esta tanda
+
+La implementación inicial pasó 340 pruebas locales y la matriz [Node 22/24 × Ubuntu/Windows](https://github.com/Shisetsu-Code/Fuzzer/actions/runs/37446711750) terminó verde. Se revisaron los totales del job Node 24 Windows: 340 aprobadas, cero fallos, canceladas u omitidas. Tras la corrección de recuperación, la suite local pasó **341 pruebas, cero fallos ni omitidas**; sus seis pruebas específicas de export/recuperación también pasaron.
+
+Revisión inline del diff y del saneado; no se ejecutó un revisor independiente en este entorno. Ninguna suite de regresión certifica el recorrido DEMO como completo.

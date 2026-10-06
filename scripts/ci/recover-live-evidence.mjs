@@ -36,7 +36,7 @@ async function validExport(outputDir,gameId){
   if(manifest.schema!=='fuzzer/live-evidence/v1'||manifest.gameId!==gameId||!['EXPORTED','PARTIAL_EXPORT'].includes(manifest.exportStatus)||!Array.isArray(manifest.files)||manifest.files.length>12)return false;
   let total=0;const names=new Set();
   for(const file of manifest.files){
-   if(typeof file.path!=='string'||!(/^(result\.json|summary\.json|protocol\.har\.gz|screenshots\/\d{2}\.jpg)$/.test(file.path))||names.has(file.path)||!Number.isInteger(file.bytes)||file.bytes<0)return false;
+   if(typeof file.path!=='string'||!(/^(result\.json|summary\.json|performance\.json|protocol\.har\.gz|screenshots\/\d{2}\.jpg)$/.test(file.path))||names.has(file.path)||!Number.isInteger(file.bytes)||file.bytes<0)return false;
    names.add(file.path);total+=file.bytes;if(total>maxExportBytes)return false;
    if(file.path.startsWith('screenshots/')){const shots=await fs.lstat(path.join(outputDir,'screenshots'));if(!shots.isDirectory()||shots.isSymbolicLink())return false;}
    const resolved=await fs.realpath(path.join(outputDir,file.path));if(!within(await fs.realpath(outputDir),resolved))return false;
@@ -64,7 +64,7 @@ export async function recoverLiveEvidence({artifactDir,outputDir,gameId}){
   if(!checkpoint.exportStarted)throw Error('CI_RECOVERY_OUTPUT_NOT_OWNED');
   await fs.rename(output,path.join(sourceRoot,`incomplete-export-${randomUUID()}`));
  }
- const retainedTabIds=Array.isArray(checkpoint.lastOwnedTabIds)?checkpoint.lastOwnedTabIds.filter(id=>typeof id==='string'||Number.isSafeInteger(id)):[];
+ const retainedTabIds=Array.isArray(checkpoint.lastOwnedTabIds)?checkpoint.lastOwnedTabIds.filter(id=>typeof id==='string'||Number.isSafeInteger(id)):[ ];
  const reason=label(checkpoint.error?.code),observed=checkpoint.observedResult;
  if(observed&&(!Array.isArray(observed.nodes)||!Array.isArray(observed.edges)||!Array.isArray(observed.pending)||!Number.isInteger(observed.actions)))throw Error('CI_RECOVERY_RESULT_INVALID');
  const result=observed&&checkpoint.progressObserved!==false?{...structuredClone(observed),status:'PARTIAL',completeGame:false,pending:[...observed.pending,{phase:'runner',reason}]}:{status:'ERROR',completeGame:false,actions:0,nodes:[],edges:[],pending:[{phase:'runner',reason:'NO_OBSERVED_PROGRESS'}]};
