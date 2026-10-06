@@ -30,23 +30,27 @@
 
 Files: providers/pragmatic/state-explorer.js; test/route-recovery.test.js.
 
-- [ ] Escribir regresiones de timeout, replay transitorio, fallo permanente, presupuesto y cierre fallido; comprobar que fallan en la base.
-- [ ] Añadir reintentos acotados por ruta al final de la cola, con historial separado; eliminar pendientes recuperados sin borrar evidencia histórica.
-- [ ] Hacer que las estadísticas distingan intentos, rutas válidas, rutas bloqueadas y fin por presupuesto.
-- [ ] Ejecutar las pruebas específicas y toda la suite antes de publicar.
+- [x] Escribir regresiones de timeout, replay transitorio, fallo permanente, presupuesto y cierre fallido; comprobar que fallan en la base.
+- [x] Añadir reintentos acotados por ruta al final de la cola, con historial separado; eliminar pendientes recuperados sin borrar evidencia histórica.
+- [x] Hacer que las estadísticas distingan intentos, rutas válidas, rutas bloqueadas y fin por presupuesto.
+- [x] Ejecutar las pruebas específicas y toda la suite antes de publicar.
 
 ## Task 2 — Frontera de observación y ejecución
 
 Files: integrations/hardfire/state-explorer.js; providers/pragmatic/operation-completion.js; test/route-recovery.test.js y pruebas de integración existentes.
 
-- [ ] Reproducir fallos de identidad de menú, decisiones y checks pre-clic presentes en la versión inspeccionada.
-- [ ] Aplicar cambios mínimos solo donde las pruebas demuestren el problema; conservar revalidación de controles/protocolo.
-- [ ] Probar deadline, control deshabilitado, petición pendiente y resultado tardío; no hacer Promise.race que deje clics huérfanos.
+- [x] Reproducir fallos de identidad de menú, decisiones y checks pre-clic presentes en la versión inspeccionada.
+- [x] Aplicar cambios mínimos solo donde las pruebas demuestren el problema; conservar revalidación de controles/protocolo.
+- [x] Probar deadline, control deshabilitado, petición pendiente y resultado tardío; no hacer Promise.race que deje clics huérfanos.
 
 ## Task 3 — Evaluación y documentación
 
 Files: README.md; docs/objective-and-recovery-2026-10-06.md; scripts/ci/export-live-evidence.mjs si necesita exponer las métricas nuevas.
 
-- [ ] Documentar objetivo, flujo, criterio de parada, límites, riesgos y lecciones del benchmark.
-- [ ] Publicar resultados verificables de pruebas Node 22/24 Linux/Windows y DEMOs dirigidos con el commit exacto.
-- [ ] Separar cobertura demostrada por simulación, evidencia DEMO y bloqueos no resueltos. No presentar un reintento como corrección del bloqueo subyacente.
+- [x] Documentar objetivo, flujo, criterio de parada, límites, riesgos y lecciones del benchmark.
+- [ ] Revisar resultados finales de pruebas Node 22/24 Linux/Windows y DEMOs del commit 61561dba5e41b2efb300c03b6c6c780b6d3add98.
+- [x] Separar cobertura demostrada por simulación, evidencia DEMO y bloqueos no resueltos. No presentar un reintento como corrección del bloqueo subyacente.
+
+## Registro de ejecución
+
+Base: 346 pruebas. Correcciones RED/GREEN de recuperación, estados, decisiones, captura incierta y deadlines: 370/370 locales. Se añadió recuperación física de decisiones a partir de la captura de Dragon, sin nombres particulares. La suite completa detectó el rearme duplicado de una elección por respuesta tardía; corregido antes de publicar. Ruling: conservar strict sin reintentos por defecto para no modificar inadvertidamente el contrato económico; actions utiliza dos. Revisión propia, sin revisor independiente disponible.
