@@ -21,7 +21,9 @@ export function readRunConfig(env=process.env){
  const artifactDir=path.resolve(env.FUZZER_ARTIFACT_DIR),outputDir=path.resolve(env.FUZZER_OUTPUT_DIR);
  const contains=(a,b)=>{const rel=path.relative(a,b);return !rel||!rel.startsWith('..'+path.sep)&&rel!=='..'&&!path.isAbsolute(rel);};
  if(contains(artifactDir,outputDir)||contains(outputDir,artifactDir))throw Error('CI_EVIDENCE_DIRECTORIES_OVERLAP');
- return {hardfireRoot,gameId,artifactDir,outputDir,manifest:path.resolve(env.FUZZER_MANIFEST||path.join(root,'docs/evidence/pragmatic-actions-new5-2026-10-05-manifest.json')),
+ const performanceMode=env.FUZZER_PERFORMANCE_MODE||'parallel';if(!['sequential','parallel'].includes(performanceMode))throw Error('CI_INVALID_PERFORMANCE_MODE');
+ if(env.FUZZER_BENCHMARK!==undefined&&!['0','1'].includes(env.FUZZER_BENCHMARK))throw Error('CI_INVALID_BENCHMARK');
+ return {hardfireRoot,gameId,artifactDir,outputDir,performanceMode,benchmark:env.FUZZER_BENCHMARK==='1',manifest:path.resolve(env.FUZZER_MANIFEST||path.join(root,'docs/evidence/pragmatic-actions-new5-2026-10-05-manifest.json')),
   maxActions:integer(env.FUZZER_MAX_ACTIONS,100,100,'MAX_ACTIONS'),maxDepth:integer(env.FUZZER_MAX_DEPTH,8,8,'MAX_DEPTH'),timeoutMs:integer(env.FUZZER_TIMEOUT_MS,1200000,1200000,'TIMEOUT')};
 }
 export function selectManifestGame(manifest,id){
@@ -117,7 +119,7 @@ async function main(){
   sampleTimer=setInterval(()=>{void sample().catch(()=>{});},5000);
   const {runStateExplorer}=await import('../../integrations/hardfire/state-explorer.js');
   log({event:'LIVE_START',gameId:game.id,hardfireCommit:HARDFIRE_COMMIT,maxActions:config.maxActions,maxDepth:config.maxDepth,timeoutMs:config.timeoutMs,requestedSpeed:4});
-  const run=runStateExplorer(host.controller,{gameUrl:game.url,artifactDir:config.artifactDir,mode:'actions',maxActions:config.maxActions,maxDepth:config.maxDepth,timeoutMs:config.timeoutMs,
+  const run=runStateExplorer(host.controller,{gameUrl:game.url,artifactDir:config.artifactDir,mode:'actions',maxActions:config.maxActions,maxDepth:config.maxDepth,timeoutMs:config.timeoutMs,benchmark:config.benchmark,performanceMode:config.performanceMode,
    onOwnedTab:(id,closeOwned)=>{owned.set(id,closeOwned);persist();},onClosedTab:id=>{owned.delete(id);persist();},
    onProgress:async progress=>{checkpoint.record(progress);persist();log({event:'LIVE_PROGRESS',gameId:game.id,actions:progress.actions,nodes:progress.nodes?.length??0,edges:progress.edges?.length??0,pending:progress.pending?.length??0,queued:progress.queued?.length??0,phase:progress.inFlight?.phase||'settled'});}});
   // The engine has its own operation deadlines. This extra budget covers a

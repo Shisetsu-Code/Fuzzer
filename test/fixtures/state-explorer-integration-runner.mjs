@@ -8,7 +8,7 @@ import {performance} from 'node:perf_hooks';
 const scenario=process.argv[2],wallStart=performance.now();
 const artifactDir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-integration-'));
 let clock=1000000,creates=0,closes=0,phase='root',normalSpins=0,centerClicks=0,raced=false,freshGuardArmed=false;
-const owned=new Set(),clicks=[],entries=[];
+const owned=new Set(),clicks=[],entries=[];let stateReads=0;
 const rect=(x)=>({x,y:10,width:20,height:20});
 const button=(name,x,event)=>({root:0,path:`Game/${name}`,name,labels:[],sprite_names:[name],handlers:[{kind:'XTButton',index:x,event}],drawn_rect:rect(x),hit_rect:rect(x),enabled:true,clickable:'RUNTIME_COLLIDER'});
 const spin=button('StartSpin_Button',70,'Evt_DataToCode_Pressed_Spin');
@@ -36,7 +36,7 @@ const controller={tabs:{activate:async id=>{assert.equal(id,42);}},withTab:id=>{
 // namedExports works in both Node 22 and 24; the newer exports option is unavailable in Node 22.
 mock.module(new URL('../../integrations/hardfire/session.js',import.meta.url).href,{namedExports:{createHardFireSession:async(_controller,options)=>{
  creates++;assert.equal(creates,1,'cleanup failure must never authorize another session');
- const session={tabId:42,provider:{protocolState:async()=>({canSpin:true,stages:[],pickerControls:[],logicIsFreeSpin:false,respinInProgress:false,spinBlockingFeatureIsRunning:false,stopActive:false,lastWinIsCounting:false,waitInResultForBigWin:false})},
+ const session={tabId:42,provider:{protocolState:async()=>{if(scenario==='action-snapshot-race'&&++stateReads===2)entries.push(exchange());return {canSpin:true,stages:[],pickerControls:[],logicIsFreeSpin:false,respinInProgress:false,spinBlockingFeatureIsRunning:false,stopActive:false,lastWinIsCounting:false,waitInResultForBigWin:false};}},
  frame:{evaluate:async fn=>{
   if(fn.name==='inspectDrawnButtons'){if(scenario==='observation-failure')throw Error('runtime observation failed');return raw();}
   assert.equal(fn.name,'readRuntimeBalance');return {balance:100000,balanceSource:'runtime:BalanceDisplayed.GetDouble',candidates:[]};
@@ -67,7 +67,7 @@ mock.method(Date,'now',()=>clock);
 mock.method(globalThis,'setTimeout',(fn,ms,...args)=>{clock+=ms;queueMicrotask(()=>fn(...args));return 1;});
 try{
  if(scenario==='action-probe')entries.push({request:{url:'https://demogamesfree.pragmaticplay.net/gs2c/gameService',postData:{text:'action=doInit'}},response:{status:200,content:{text:'na=s&balance=100000'}}});
- const options={mode:isAction?'actions':'strict',gameUrl:'https://www.pragmaticplay.fun/en/slots/example/',artifactDir,maxActions:5,timeoutMs:60000,onOwnedTab:id=>owned.add(id),onClosedTab:id=>owned.delete(id)};
+ const options={benchmark:process.env.PERF_TEST==='1',performanceMode:process.env.PERF_MODE||'parallel',mode:isAction?'actions':'strict',gameUrl:'https://www.pragmaticplay.fun/en/slots/example/',artifactDir,maxActions:5,timeoutMs:60000,onOwnedTab:id=>owned.add(id),onClosedTab:id=>owned.delete(id)};
  if(scenario==='observation-failure'){
   await assert.rejects(runStateExplorer(controller,options),error=>{
    assert.equal(error.message,'runtime observation failed');assert.equal(error.cleanupError,'HAR write failed');assert.deepEqual(error.retainedTabIds,[42]);return true;
@@ -75,8 +75,9 @@ try{
   assert.equal(creates,1);assert.equal(closes,1);assert.deepEqual([...owned],[42]);assert.deepEqual(clicks,[]);
  }else{
   const result=await runStateExplorer(controller,options);
-  assert.equal(creates,1);assert.equal(result.completeGame,false);
-  if(isAction){
+  assert.equal(creates,1);assert.equal(result.completeGame,false);if(process.env.PERF_TEST==='1'){assert(result.performance.stages.some(s=>s.name==='adapter.snapshot'));const perf=JSON.parse(await fs.readFile(path.join(artifactDir,'performance.json'),'utf8'));assert.equal(perf.active.length,0);assert.equal(perf.mode,process.env.PERF_MODE);assert(perf.trace.length>0);}
+  if(scenario==='action-snapshot-race'){assert.equal(result.actions,0);assert.deepEqual(clicks,[]);assert(result.pending.some(p=>p.error==='ACTION_PROTOCOL_CHANGED'));}
+  else if(isAction){
    assert.equal(result.status,'EXHAUSTED_OBSERVED_CONTROLS');assert.equal(result.edges.length,1);assert.equal(result.nodes.length,1);assert.equal(result.edges[0].validity.valid,true);
    assert.equal(result.edges[0].operation.ok,true);assert.equal(result.edges[0].operation.verificationRequired,false);
    assert.equal(normalSpins,scenario==='action-probe'?1:0);assert.equal(result.edges[0].operation.normalSpinVerified,scenario==='action-probe');

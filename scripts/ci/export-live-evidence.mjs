@@ -130,6 +130,15 @@ export async function exportLiveEvidence({game,result,error,artifactDir,outputDi
   let bytes=Buffer.from(json(har));if(bytes.length>budget.maxProtocolUncompressedBytes){warn('PROTOCOL_BODY_BUDGET');for(const row of entries){row.response.content.text='';row.response.content._bodyUnavailable='PROTOCOL_BODY_BUDGET';}bytes=Buffer.from(json(har));}
   const compressed=gzipSync(bytes,{level:9});if(bytes.length>budget.maxProtocolUncompressedBytes||compressed.length>budget.maxProtocolCompressedBytes)warn('PROTOCOL_TOO_LARGE');else protocolHarPath=await write('protocol.har.gz',compressed);
  }catch(caught){warn(['SOURCE_HAR_TOO_LARGE','HAR_OUTSIDE_ROOT'].includes(caught.message)?caught.message:'HAR_UNAVAILABLE');}
+ // Benchmarking must not expose raw evidence or bypass the export budget.
+ try{
+  const perfPath=await fs.realpath(path.join(sourceRoot,'performance.json'));
+  if(!within(sourceRoot,perfPath))throw Error('PERFORMANCE_OUTSIDE_ROOT');
+  const stat=await fs.stat(perfPath);if(!stat.isFile()||stat.size>256*1024)throw Error('PERFORMANCE_TOO_LARGE');
+  const perf=JSON.parse(await fs.readFile(perfPath,'utf8'));
+  if(perf.schema!=='fuzzer/performance/v1')throw Error('PERFORMANCE_INVALID');
+  await write('performance.json',json(clean(perf,false,images,sourceRoot)));
+ }catch(error){if(error.code!=='ENOENT')warn('PERFORMANCE_UNAVAILABLE');}
  const summary=clean(summaryFor(clean(game),sanitizedResult,error,warnings),false,images,sourceRoot);
  const summaryPath=await write('summary.json',json(summary),true);if(!summaryPath)failed=true;
  const exportStatus=failed?'EXPORT_FAILED':warnings.length?'PARTIAL_EXPORT':'EXPORTED';

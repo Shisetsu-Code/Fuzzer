@@ -41,6 +41,7 @@ export async function selectDemoFrame(wc){
  }
  throw new Error('Pragmatic DEMO runtime not found in this tab');
 }
+import {measure} from '../../lib/performance.js';
 export async function createHardFireSession(controller,{gameUrl,deadline=Date.now()+45000,artifactDir=path.join(os.homedir(),'.hardfire','fuzzer'),entryOnly=false,liveProtocol=false,onOwnedTab,onClosedTab}={}){
  gameUrl=assertDemoUrl(gameUrl);
  // Fork a public launcher, never an authenticated html5Game URL or copied session.
@@ -51,9 +52,9 @@ export async function createHardFireSession(controller,{gameUrl,deadline=Date.no
    const symbol=launcher.searchParams.get('gameSymbol');
    if(launcher.hostname!=='demogamesfree.pragmaticplay.net'||launcher.pathname!=='/hub-demo/openGame.do'||launcher.hash||!symbol||!/^vs[a-zA-Z0-9]+$/.test(symbol)||keys.some(k=>!allowed.has(k))||new Set(keys).size!==keys.length||launcher.searchParams.has('websiteUrl')&&launcher.searchParams.get('websiteUrl')!=='https://clienthub.pragmaticplay.com/')throw new Error('A public DEMO launcher without session credentials is required');
  }
- const created=await controller.tabs.new({url:'about:blank',activate:false});
+ const created=await measure('session.new-tab',()=>controller.tabs.new({url:'about:blank',activate:false}));
  let target,scoped,session,closed=false,lastPaintCheck=0,harSnapshot,savedHar,cleanupAttempt,saveRequired=false;
- const closeOwnedTab=async()=>{if(closed)return;await controller.tabs.close(created.id);closed=true;onClosedTab?.(created.id);};
+ const closeOwnedTab=async()=>{if(closed)return;await measure('session.close-tab',()=>controller.tabs.close(created.id));closed=true;onClosedTab?.(created.id);};
  const saveHar=async()=>{
    saveRequired=true;
    savedHar=await saveOwnedHar(target.recorder,{artifactDir,tabId:created.id,gameUrl,snapshot:harSnapshot,onCaptured:value=>{harSnapshot=value;},onSaved:target.onHarSaved});
@@ -91,7 +92,7 @@ export async function createHardFireSession(controller,{gameUrl,deadline=Date.no
  try{
    target=controller.tabs.resolve(created.id);scoped=controller.withTab(created.id);
    if(!target.sessionIsolated){await closeOwnedTab();throw new Error('An isolated DEMO tab is required');}
-   await scoped.recordStart();await scoped.open(gameUrl);
+   await measure('session.recorder',()=>scoped.recordStart());await measure('session.navigate',()=>scoped.open(gameUrl));
    let frame;
    while(Date.now()<deadline){
      const consent=await dismissCatalogConsent(scoped._wc());
@@ -149,7 +150,7 @@ export async function createHardFireSession(controller,{gameUrl,deadline=Date.no
      },saveHar,close:cleanupOwned});
    session.tabId=created.id;
    if(liveProtocol)session.protocolCapture=readProtocol;
-   if(entryOnly){const initDeadline=Date.now()+30000;do{await session.syncInit();if(session.initial)break;await sleep(200);}while(Date.now()<initDeadline);const ready=await session.provider.waitReady(session.frame,30000);if(!ready?.ok)throw Error('DEMO intro did not reach a ready state');}
+   if(entryOnly){const initDeadline=Date.now()+30000;do{await session.syncInit();if(session.initial)break;await sleep(200);}while(Date.now()<initDeadline);const ready=await measure('session.ready',()=>session.provider.waitReady(session.frame,30000));if(!ready?.ok)throw Error('DEMO intro did not reach a ready state');}
    else await session.prepare();return session;
  }catch(error){
    error.screenshot=await captureFailure({reason:'SESSION_STARTUP_FAILED'});

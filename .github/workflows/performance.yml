@@ -1,0 +1,120 @@
+name: Performance benchmark
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      game_id:
+        description: 'Optional manifest game id for live A/B; blank runs only the microbenchmark'
+        required: false
+        default: ''
+        type: string
+permissions:
+  contents: read
+# Share the global DEMO slot with the existing live workflow, never cancel it.
+concurrency:
+  group: pragmatic-live-demos
+  cancel-in-progress: false
+jobs:
+  select:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    outputs:
+      game: ${{ steps.config.outputs.game }}
+      source_sha: ${{ steps.config.outputs.source_sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+      - id: config
+        env:
+          REQUESTED_GAME: ${{ inputs.game_id }}
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const sha=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+          const message=execFileSync('git',['log','-1','--format=%B'],{encoding:'utf8'});
+          const game=process.env.GITHUB_EVENT_NAME==='workflow_dispatch'?(process.env.REQUESTED_GAME||''):(message.match(/\[benchmark-live:([a-z0-9-]+)\]/)?.[1]||'');
+          const manifest=JSON.parse(fs.readFileSync('docs/evidence/pragmatic-actions-new5-2026-10-05-manifest.json','utf8'));
+          if(game&&!manifest.games.some(g=>g.id===game))throw Error('BENCHMARK_GAME_NOT_IN_MANIFEST');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,`game=${game}\nsource_sha=${sha}\n`);
+          NODE
+  microbenchmark:
+    needs: select
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ needs.select.outputs.source_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+      - run: node scripts/benchmark-performance.mjs outputs/performance/microbenchmark.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: performance-micro-${{ github.run_id }}
+          path: outputs/performance/
+          retention-days: 7
+          if-no-files-found: error
+  live:
+    name: Live A/B / ${{ matrix.mode }}
+    needs: [select, microbenchmark]
+    if: needs.select.outputs.game != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        mode: [sequential, parallel]
+    env:
+      HARDFIRE_ROOT: ${{ github.workspace }}/hardfire
+      FUZZER_GAME_ID: ${{ needs.select.outputs.game }}
+      FUZZER_MANIFEST: ${{ github.workspace }}/docs/evidence/pragmatic-actions-new5-2026-10-05-manifest.json
+      FUZZER_ARTIFACT_DIR: ${{ github.workspace }}/outputs/private-${{ matrix.mode }}
+      FUZZER_OUTPUT_DIR: ${{ github.workspace }}/outputs/public-${{ matrix.mode }}
+      FUZZER_SOURCE_SHA: ${{ needs.select.outputs.source_sha }}
+      FUZZER_MAX_ACTIONS: '2'
+      FUZZER_MAX_DEPTH: '8'
+      FUZZER_TIMEOUT_MS: '240000'
+      FUZZER_BENCHMARK: '1'
+      FUZZER_PERFORMANCE_MODE: ${{ matrix.mode }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ needs.select.outputs.source_sha }}
+          persist-credentials: false
+      - name: Checkout pinned HardFire
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: Shisetsu-Code/HardFire
+          ref: adf6de5ec14e394f77fb1816d5f46e5deb250b0a
+          path: hardfire
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+      - run: npm install --no-save --package-lock=false --no-audit --no-fund electron@44.4.0
+      - name: Run instrumented real DEMO
+        run: xvfb-run -a -s '-screen 0 1280x800x24' ./node_modules/.bin/electron --no-sandbox --use-gl=angle --use-angle=swiftshader scripts/ci/run-live-demo.mjs
+      - name: Recover saved evidence
+        if: always()
+        run: node scripts/ci/recover-live-evidence.mjs
+      - name: Phase timing table
+        if: always()
+        run: node scripts/ci/print-performance.mjs
+      - name: Upload sanitized benchmark and game evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: performance-live-${{ matrix.mode }}-${{ github.run_id }}
+          path: ${{ env.FUZZER_OUTPUT_DIR }}/
+          retention-days: 7
+          if-no-files-found: warn
