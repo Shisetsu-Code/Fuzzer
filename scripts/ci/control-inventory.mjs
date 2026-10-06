@@ -8,6 +8,7 @@ export function inspectControlInventory(){
  const safe=fn=>{try{return fn();}catch{return null;}};
  const roots=globalThis.globalRuntime?.sceneRoots||[];
  const output=[];const seen=new Set();
+ const legacyMenuOpen=safe(()=>globalThis.Vars?.FeaturePurchaseWindowIsOpen===undefined?null:globalThis.XT.GetBool(globalThis.Vars.FeaturePurchaseWindowIsOpen)===true);
  for(const [rootIndex,root]of roots.entries())for(const kind of ['XTButton','CATButton','UIButton','FeaturePurchaseOption','BuyFeature_BetButtons','BoxCollider']){
   const ctor=globalThis[kind];if(!ctor)continue;
   for(const [index,item]of (safe(()=>root.GetComponentsInChildren(ctor,true))||[]).entries()){
@@ -19,8 +20,8 @@ export function inspectControlInventory(){
    output.push({kind,root:rootIndex,index,controlPath,name:String(go.name||''),enabled:item.enabled!==false,xtEnabled:item.xtEnabled!==false,collider:!!go.collider,colliderEnabled:go.collider?.enabled!==false,layer:go.layer,widgets,parents,
     event:safe(()=>item.eventToCode?.name),catLinks:['catEventPress','catEventRelease','catEventClick'].map(k=>({kind:k,present:!!item[k],event:safe(()=>item[k]?.name),linked:!!item[k]?.cat})),
     methods:['OnClick','OnPress','Click'].filter(k=>typeof item[k]==='function'),keys:Object.keys(item).filter(k=>/click|press|event|collid|target|button|enable|option|type/i.test(k)).slice(0,30)});
-   if(output.length>=120)return {candidates:output,truncated:true};
+   if(output.length>=120)return {legacyMenuOpen,candidates:output,truncated:true};
   }
  }
- return {candidates:output,truncated:false};
+ return {legacyMenuOpen,candidates:output,truncated:false};
 }

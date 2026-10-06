@@ -21,28 +21,30 @@ export async function waitTransition(a,before,{quietMs=10000,activeMs=60000,poll
 export function createNavigationKey({controls=[],unresolved=[],wager={}}={}){
  const buttons=controls.map(b=>({path:b.key??b.path,labels:b.labels||[],sprites:b.sprite_names||[],enabled:b.enabled!==false})).sort((a,b)=>String(a.path).localeCompare(String(b.path)));
  const missing=unresolved.map(c=>({path:c.path,reason:c.reason})).sort((a,b)=>String(a.path).localeCompare(String(b.path)));
- return createHash('sha256').update(JSON.stringify({buttons,missing,betLevelIndex:wager.betLevelIndex??null,menuOpen:wager.menuOpen===true})).digest('hex').slice(0,20);
+ return createHash('sha256').update(JSON.stringify({buttons,missing,betLevelIndex:wager.betLevelIndex??null,menuOpen:wager.menuOpen===true,betAmount:wager.betAmount??null,betSource:wager.betSource??null})).digest('hex').slice(0,20);
 }
 
 const recoverableReasons=new Set([
  'ACTIVE_TIMEOUT','QUIET_TIMEOUT','NO_TRANSITION','REPLAY_MISMATCH','CONTROL_UNAVAILABLE',
  'OPERATION_TIMEOUT','OPERATION_STALLED','OPERATION_SUBMISSION_UNAVAILABLE',
  'CHOICE_NOT_OBSERVED','CHOICE_NOT_AVAILABLE','CHOICE_ACTION_FAILED',
- 'ACTION_PROTOCOL_CHANGED','ACTION_CLICK_UNCONFIRMED','CONTINUATION_ACTION_UNCONFIRMED'
+ 'ACTION_PROTOCOL_CHANGED','ACTION_CONFIGURATION_CHANGED','ACTION_CLICK_UNCONFIRMED','CONTINUATION_ACTION_UNCONFIRMED'
 ]);
 const taskId=task=>createHash('sha256').update(JSON.stringify([task.state,task.route,task.action,task.choicePlan||[]])).digest('hex').slice(0,24);
 
-export async function exploreStates(a,{maxActions=20,maxDepth=4,wait=waitTransition,onProgress=async()=>{},deadline=Infinity,mode='strict',maxRetries=mode==='actions'?2:0,maxRouteAttempts=maxActions*(maxRetries+1)}={}){
+export async function exploreStates(a,{maxActions=20,maxDepth=4,wait=waitTransition,onProgress=async()=>{},deadline=Infinity,mode='strict',maxRetries=mode==='actions'?2:0,maxRouteAttempts=maxActions*(maxRetries+1),maxWagerStepsPerRoute=1}={}){
+ if(!Number.isInteger(maxWagerStepsPerRoute)||maxWagerStepsPerRoute<0||maxWagerStepsPerRoute>3)throw Error('INVALID_WAGER_STEP_LIMIT');
  if(!Number.isInteger(maxRetries)||maxRetries<0||maxRetries>5)throw Error('INVALID_RETRY_LIMIT');
  if(!Number.isInteger(maxRouteAttempts)||maxRouteAttempts<1||maxRouteAttempts>10000)throw Error('INVALID_ROUTE_ATTEMPT_LIMIT');
  const now=()=>a.now?.()??Date.now();
+ const scopeOmissions=[];const coverage={wagerSampling:maxWagerStepsPerRoute===1?'one-step-per-route':'bounded-per-route',maxWagerStepsPerRoute,allAmountsTested:false,scopeOmissions};
  const nodes=new Map(),routes=new Map(),edges=[],pending=[],queue=[],retryQueue=[],attemptHistory=[],operationPlans=new Set();
  let actions=0,attemptedActions=0,routeAttempts=0,cleanupFailure=null,inFlight=null,reuseTask=null;
  const recovery=()=>({maxRetries,routeAttempts,retries:[...routes.values()].reduce((sum,r)=>sum+Math.max(0,r.attempts-1),0),
   discoveredRoutes:routes.size,validRoutes:[...routes.values()].filter(r=>r.valid).length,
   resolvedRoutes:[...routes.values()].filter(r=>r.resolved).length,recoveredRoutes:[...routes.values()].filter(r=>r.resolved&&r.attempts>1).length,
   blockedRoutes:pending.filter(p=>p.disposition==='blocked').length,deferredRoutes:pending.filter(p=>p.disposition==='deferred').length});
- const progress=()=>onProgress({nodes:[...nodes.values()],edges,pending,queued:[...queue,...retryQueue],inFlight,actions,attemptedActions,recovery:recovery(),attemptHistory,...cleanupFailure});
+ const progress=()=>onProgress({nodes:[...nodes.values()],edges,pending,queued:[...queue,...retryQueue],inFlight,actions,attemptedActions,recovery:recovery(),coverage,attemptHistory,...cleanupFailure});
  const budget=()=>{if(now()>=deadline)throw Object.assign(Error('DEADLINE'),{code:'DEADLINE'});};
  const register=task=>{
   const fresh={state:task.state,route:task.route,action:task.action,...(task.choicePlan?.length?{choicePlan:task.choicePlan}:{})};
@@ -98,10 +100,11 @@ export async function exploreStates(a,{maxActions=20,maxDepth=4,wait=waitTransit
  };
  const observe=(s,route)=>{
   if(nodes.has(s.key))return null;
-  const discovered=[];nodes.set(s.key,{key:s.key,controls:s.controls,unresolved:s.unresolved||[],evidence:s.evidence,route});
+  const discovered=[];nodes.set(s.key,{key:s.key,controls:s.controls,unresolved:s.unresolved||[],evidence:s.evidence,route,wager:s.wager,excludedControls:s.excludedControls||[]});
   for(const c of s.unresolved||[])pending.push({state:s.key,route,action:c.path,reason:c.reason==='NO_PROJECTED_HIT_RECT'?'UNRESOLVED_HIT_AREA':'UNRESOLVED_DRAWING',detail:c.reason,evidence:s.evidence,disposition:'blocked'});
   for(const b of s.controls){
    if(b.enabled===false)continue;
+   if(b.role==='wager-adjustment'&&route.filter(step=>step.role==='wager-adjustment').length>=maxWagerStepsPerRoute){scopeOmissions.push({state:s.key,action:b.key,reason:'WAGER_SAMPLING_LIMIT'});continue;}
    if(route.length>=maxDepth){pending.push({state:s.key,route,action:b.key,reason:'DEPTH_LIMIT',disposition:'deferred'});continue;}
    const task=register({state:s.key,route,action:b.key});if(task)discovered.push(task);
   }
@@ -125,7 +128,7 @@ export async function exploreStates(a,{maxActions=20,maxDepth=4,wait=waitTransit
     if(s.key!==step.from){learnVariant(s,actualRoute);failed=true;break;}
     const b=s.controls.find(b=>b.key===step.action&&b.enabled!==false);if(!b){failed=true;break;}
     const from=s.key;await dispatch(task,b,'replay');const replay=await measure('settle.replay',()=>settle(s));s=replay.snapshot;
-    actualRoute.push({from,to:s.key,action:step.action});
+    actualRoute.push({from,to:s.key,action:step.action,...(b.role?{role:b.role}:{})});
     replayTrace.push({action:step.action,expected:step.to,observed:s.key,reason:replay.reason,evidence:s.evidence});
     if(replay.reason==='ACTIVE_TIMEOUT'||replay.operation?.ok===false){replayFailure=replay.reason||'OPERATION_INCOMPLETE';break;}
     if(s.key!==step.to){learnVariant(s,actualRoute);failed=true;break;}
@@ -137,6 +140,7 @@ export async function exploreStates(a,{maxActions=20,maxDepth=4,wait=waitTransit
    attemptedActions++;await dispatch(task,b,'action');actions++;
    const outcome=await measure('settle.action',()=>settle(s,task.choicePlan)),next=outcome.snapshot;
    const edge={routeId:task.routeId,attempt:meta.attempts,from:s.key,to:outcome.operation?null:next.key,action:b.key,reason:outcome.reason,followup:outcome.followup,operation:outcome.operation,choicePlan:task.choicePlan||[],continuationClicks:outcome.continuationClicks||0,elapsedMs:outcome.elapsedMs,attemptElapsedMs:now()-started,evidence:next.evidence};
+   if(b.role==='wager-adjustment')edge.configurationChange={direction:b.wagerDirection,before:s.wager?.betAmount??null,after:next.wager?.betAmount??null,source:next.wager?.betSource??null,labels:next.controls.flatMap(c=>c.labels||[])};
    if(mode==='actions'){
     const accepted=outcome.operation?.submission?.complete===true&&outcome.operation.submission.status===200;
     const changed=outcome.reason==='STATE_CHANGED'&&next.key!==s.key,probed=outcome.followup?.performed===true&&outcome.followup?.result?.status===200;
@@ -146,7 +150,7 @@ export async function exploreStates(a,{maxActions=20,maxDepth=4,wait=waitTransit
    edges.push(edge);
    if(outcome.operation){queueChoices(task,outcome.operation);if(!outcome.operation.ok)failure(task,outcome.reason,{evidence:next.evidence});else meta.resolved=true;}
    else if(outcome.reason==='ACTIVE_TIMEOUT'||next.key===s.key)failure(task,outcome.reason||'NO_TRANSITION',{evidence:next.evidence});
-   else{meta.resolved=true;reuseTask=observe(next,[...task.route,{from:s.key,to:next.key,action:b.key}]);}
+   else{meta.resolved=true;reuseTask=observe(next,[...task.route,{from:s.key,to:next.key,action:b.key,...(b.role?{role:b.role}:{})}]);}
   }catch(e){
    const retained=e.retainedTabIds||[];
    if(e.code==='SESSION_CLEANUP_FAILED'||retained.length){
@@ -158,5 +162,5 @@ export async function exploreStates(a,{maxActions=20,maxDepth=4,wait=waitTransit
  const stopReason=cleanupFailure?'CLEANUP_FAILED':now()>=deadline?'DEADLINE':(queue.length||retryQueue.length)&&attemptedActions>=maxActions?'ACTION_LIMIT':(queue.length||retryQueue.length)&&routeAttempts>=maxRouteAttempts?'ROUTE_ATTEMPT_LIMIT':pending.length?'BLOCKED_ROUTES':'EXHAUSTED_OBSERVED_CONTROLS';
  const queued=[...queue,...retryQueue];
  for(const task of queued){const meta=routes.get(task.routeId);pending.push({...task,reason:cleanupFailure?'SESSION_CLEANUP_FAILED':stopReason,attempts:meta.attempts,lastFailure:meta.lastFailure,disposition:'deferred'});}
- return {status:pending.length?'PARTIAL':'EXHAUSTED_OBSERVED_CONTROLS',stopReason,nodes:[...nodes.values()],edges,pending,queued,attemptHistory,recovery:recovery(),actions,attemptedActions,completeGame:false,...cleanupFailure};
+ return {status:pending.length?'PARTIAL':'EXHAUSTED_OBSERVED_CONTROLS',stopReason,nodes:[...nodes.values()],edges,pending,queued,attemptHistory,recovery:recovery(),coverage,actions,attemptedActions,completeGame:false,...cleanupFailure};
 }

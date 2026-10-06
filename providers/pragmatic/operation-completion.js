@@ -136,7 +136,7 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
          readyTicks=0;
        }
      }else if(verificationAvailable&&verification?.kind==='spin'&&verification.complete===true){phase='complete';return result(true,'OPERATION_COMPLETE');}
-   }else if(choices.length&&current.capture?.pending!==true&&current.capture?.uncertain!==true&&(verifyPurchase||!busy)){
+   }else if(choices.length&&current.capture?.pending!==true&&current.capture?.uncertain!==true&&(verifyPurchase||!busy||op.protocolComplete===true&&['b','fso'].includes(op.nextAction))){
      const layout=JSON.stringify(choices.map(c=>[c.key,c.labels||[]])),sequence=op.protocolSequence??op.sequence;
      // A response that says spin/collect can precede disappearance of the old
      // panel. Only a completed exchange asking for another choice re-arms it.
@@ -170,7 +170,8 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
    // An awaited continuation may consume the deadline or change the UI.
    // Never dispatch a second input using its predecessor's observation.
    if(a.now()>=until)break;
-   if(!choices.length)choiceMarker=null;
+   // Preserve the click latch across a transiently hidden panel. Only a new
+   // layout or a completed new choice exchange can rearm this decision.
    // StageSpin can remain active behind an intro overlay. Neither that flag
    // nor unrelated background controls may suppress "click to continue".
    if(!advanced&&recoveryAllowed&&now-lastCenter>=5000&&now-lastTraffic>=1000&&lastCenterProgress!==progressKey){const r=await a.clickCenter?.();continuations.push(continuationOutcome('CENTER_CLICK',r,now-started));lastCenter=now;lastCenterProgress=progressKey;}

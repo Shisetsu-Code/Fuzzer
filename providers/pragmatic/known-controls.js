@@ -18,13 +18,33 @@ export function knownControlKind(control){
  if(/MoneyAndCoinsSwitcher|BalanceDisplay|CreditDisplay/i.test(text))return 'balance_display';
  return null;
 }
-export function filterKnownControls(controls,{requireHitRect=false}={}){
+/** Adjustment controls are configuration only, and only in an observed menu. */
+export function wagerAdjustmentDirection(control){
+ const text=[control.name,...(control.handlers||[]).flatMap(h=>[h.event,h.catEventPress,h.catEventRelease,h.catEventClick])].filter(Boolean).join(' ');
+ if(/(?:smart)?increasebet|Bet(?:Up|Plus)_Button/i.test(text))return 'increase';
+ if(/(?:smart)?decreasebet|Bet(?:Down|Minus)_Button/i.test(text))return 'decrease';
+ return null;
+}
+export function filterKnownControls(controls,{requireHitRect=false,includeWagerAdjustments=false,menuOpen=false}={}){
  const keep=[],discarded=[],unresolved=[];
- for(const control of controls){
-  const kind=knownControlKind(control),rect=control.hit_rect;
-  if(kind)discarded.push({...control,discard_reason:kind});
+ for(const original of controls){
+  const kind=knownControlKind(original),direction=kind==='base_bet'&&includeWagerAdjustments&&menuOpen?wagerAdjustmentDirection(original):null;
+  const control=direction?{...original,role:'wager-adjustment',wagerDirection:direction}:original,rect=control.hit_rect;
+  if(kind&&!direction)discarded.push({...control,discard_reason:kind});
   else if(requireHitRect&&(!rect||![rect.x,rect.y,rect.width,rect.height].every(Number.isFinite)||rect.width<=0||rect.height<=0))unresolved.push({...control,reason:'NO_PROJECTED_HIT_RECT'});
   else keep.push(control);
  }
+ keep.sort((a,b)=>Number(a.role==='wager-adjustment')-Number(b.role==='wager-adjustment'));
  return {keep,discarded,unresolved};
+}
+
+/** Legacy and V2 menus differ in their runtime flags. Projected, enabled
+ * purchase-window controls are direct evidence; the entry button is not. */
+export function purchaseMenuContext(controls,reported={}){
+ const modal=(controls||[]).some(c=>{
+  const r=c.hit_rect;
+  return c.enabled!==false&&r&&[r.x,r.y,r.width,r.height].every(Number.isFinite)&&r.width>0&&r.height>0&&
+   (c.handlers||[]).length>0&&/\/FeaturePurchase\/(?:FSPurchaseWindow|FSPurchaseOptions)(?:\/|$)/i.test(String(c.path||''));
+ });
+ return {...reported,open:reported.open===true||modal,source:modal?'OBSERVED_PURCHASE_CONTROLS':reported.open===true?'RUNTIME_FLAG':'NOT_OBSERVED'};
 }
