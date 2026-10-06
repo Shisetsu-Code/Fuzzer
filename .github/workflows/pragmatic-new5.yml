@@ -82,8 +82,8 @@ jobs:
       HARDFIRE_ROOT: ${{ github.workspace }}/hardfire
       FUZZER_GAME_ID: ${{ matrix.id }}
       FUZZER_MANIFEST: ${{ github.workspace }}/docs/evidence/pragmatic-actions-new5-2026-10-05-manifest.json
-      FUZZER_ARTIFACT_DIR: ${{ runner.temp }}/fuzzer-private/${{ matrix.id }}
-      FUZZER_OUTPUT_DIR: ${{ runner.temp }}/fuzzer-evidence/${{ matrix.id }}
+      FUZZER_ARTIFACT_DIR: ${{ github.workspace }}/outputs/live-private/${{ matrix.id }}
+      FUZZER_OUTPUT_DIR: ${{ github.workspace }}/outputs/live-evidence/${{ matrix.id }}
       FUZZER_MAX_ACTIONS: '100'
       FUZZER_MAX_DEPTH: '8'
       FUZZER_TIMEOUT_MS: '1200000'
@@ -130,7 +130,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pragmatic-${{ matrix.id }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/fuzzer-evidence/${{ matrix.id }}/
+          path: ${{ env.FUZZER_OUTPUT_DIR }}/
           if-no-files-found: warn
           retention-days: 1
           compression-level: 1
