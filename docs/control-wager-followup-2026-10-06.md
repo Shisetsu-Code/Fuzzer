@@ -143,3 +143,10 @@ El workflow dirigido figura rojo porque ambos resultados son `PARTIAL` y el runn
 ## Continuidad
 
 Leer primero `HANDOFF.md`, luego este archivo y `docs/objective-and-recovery-2026-10-06.md`. La PR #1 sigue en borrador. No declarar cobertura total porque un job termine o porque se vacíe una cola; revisar `pending`, `deferredRoutes`, decisiones y solicitudes reales.
+
+
+## Ventana de estabilidad añadida
+
+El recorrido real usa 4 s de estabilidad continua antes de aceptar/clicar estados nuevos y elecciones. Si UI o protocolo cambian durante esa ventana, el contador reinicia. Una elección anunciada por `na=b/m/fso` bloquea Stop y clic central mientras el panel se anima. Las recuperaciones genéricas también esperan 4 s de quietud antes de input.
+
+El navegador continúa en 4×. Esto acelera las animaciones, pero no reduce los 4 s de estabilidad: se mantiene un margen deliberado contra parpadeos de controles base.
