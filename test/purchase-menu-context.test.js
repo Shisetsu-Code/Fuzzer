@@ -14,3 +14,14 @@ test('purchase entry alone, hidden or disabled controls never establish a ready 
 test('legacy menu readiness remains conservative when no usable projected controls exist',()=>{
  assert.equal(typeof known.purchaseMenuContext,'function');assert.equal(known.purchaseMenuContext([],{open:true}).open,true);
 });
+
+test('a backdrop is an open menu, not a ready purchase confirmation',()=>{
+ const backdrop=control('Blocker');const context=known.purchaseMenuContext([backdrop],{open:false});
+ assert.equal(context.open,true);assert.equal(context.ready,false);
+ assert.equal(known.purchaseMenuContext([backdrop,control('ButtonYes0')],{open:false}).ready,true);
+});
+test('a purchase modal excludes still-active background controls and generic bet arrows',()=>{
+ const result=known.filterKnownControls([control('ButtonYes0'),{path:'Game/AnteBet/Level0',name:'AnteBet',handlers:[{event:'AnteBet'}],hit_rect:{x:0,y:0,width:1,height:1}},{path:'GUI/RightGroup/BetButtons/BetUp_Button',name:'BetUp_Button',handlers:[{event:'SmartIncreaseBet'}],hit_rect:{x:0,y:0,width:1,height:1}}],{menuOpen:true,restrictToPurchaseMenu:true,includeWagerAdjustments:true});
+ assert.deepEqual(result.keep.map(c=>c.name),['ButtonYes0']);
+ assert.deepEqual(result.discarded.map(c=>c.discard_reason),['modal_background','modal_background']);
+});

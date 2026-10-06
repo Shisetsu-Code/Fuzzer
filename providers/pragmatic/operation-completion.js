@@ -162,8 +162,8 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
    const recoveryAllowed=current.capture?.pending!==true&&current.capture?.uncertain!==true&&!verificationRequestPending&&!choices.length&&!current.wager?.menuOpen&&(!normalReady||controlUnavailable);
    let advanced=false;
    if(a.now()>=until)break;
-   if(!busy&&recoveryAllowed&&op.protocolComplete&&now-lastTraffic>=1000&&now-lastAdvance>=2000&&lastAdvanceProgress!==progressKey){
-     const r=await a.advance?.(current);if(r)continuations.push(continuationOutcome(typeof r.kind==='string'&&/^[A-Za-z0-9_-]{1,64}$/.test(r.kind)?r.kind:'UNKNOWN',r,now-started));lastAdvance=now;
+   if((!busy||!verifyPurchase&&current.flags?.stopActive===true)&&recoveryAllowed&&op.protocolComplete&&now-lastTraffic>=1000&&now-lastAdvance>=2000&&lastAdvanceProgress!==progressKey){
+     const r=await a.advance?.(current,{deadline:until});if(r)continuations.push(continuationOutcome(typeof r.kind==='string'&&/^[A-Za-z0-9_-]{1,64}$/.test(r.kind)?r.kind:'UNKNOWN',r,now-started));lastAdvance=now;
      if(r?.clicked===true&&r.ok!==true)return result(false,'CONTINUATION_ACTION_UNCONFIRMED');
      advanced=r?.ok===true&&r.kind!=='WAIT';if(advanced)lastAdvanceProgress=progressKey;
    }

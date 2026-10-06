@@ -25,9 +25,10 @@ export function wagerAdjustmentDirection(control){
  if(/(?:smart)?decreasebet|Bet(?:Down|Minus)_Button/i.test(text))return 'decrease';
  return null;
 }
-export function filterKnownControls(controls,{requireHitRect=false,includeWagerAdjustments=false,menuOpen=false}={}){
+export function filterKnownControls(controls,{requireHitRect=false,includeWagerAdjustments=false,menuOpen=false,restrictToPurchaseMenu=false}={}){
  const keep=[],discarded=[],unresolved=[];
  for(const original of controls){
+  if(menuOpen&&restrictToPurchaseMenu&&!/\/FeaturePurchase\/(?:FSPurchaseWindow|FSPurchaseOptions)(?:\/|$)|\/Buy_BetButtons\//i.test(String(original.path||''))){discarded.push({...original,discard_reason:'modal_background'});continue;}
   const kind=knownControlKind(original),direction=kind==='base_bet'&&includeWagerAdjustments&&menuOpen?wagerAdjustmentDirection(original):null;
   const control=direction?{...original,role:'wager-adjustment',wagerDirection:direction}:original,rect=control.hit_rect;
   if(kind&&!direction)discarded.push({...control,discard_reason:kind});
@@ -41,10 +42,11 @@ export function filterKnownControls(controls,{requireHitRect=false,includeWagerA
 /** Legacy and V2 menus differ in their runtime flags. Projected, enabled
  * purchase-window controls are direct evidence; the entry button is not. */
 export function purchaseMenuContext(controls,reported={}){
- const modal=(controls||[]).some(c=>{
+ const modal=(controls||[]).filter(c=>{
   const r=c.hit_rect;
   return c.enabled!==false&&r&&[r.x,r.y,r.width,r.height].every(Number.isFinite)&&r.width>0&&r.height>0&&
    (c.handlers||[]).length>0&&/\/FeaturePurchase\/(?:FSPurchaseWindow|FSPurchaseOptions)(?:\/|$)/i.test(String(c.path||''));
  });
- return {...reported,open:reported.open===true||modal,source:modal?'OBSERVED_PURCHASE_CONTROLS':reported.open===true?'RUNTIME_FLAG':'NOT_OBSERVED'};
+ const ready=modal.some(c=>knownControlKind(c)!=='base_bet'&&!/^Blocker(?:Extra|[0-9]*)?$/i.test(String(c.name||'')));
+ return {...reported,open:reported.open===true||modal.length>0,ready,source:modal.length?'OBSERVED_PURCHASE_CONTROLS':reported.open===true?'RUNTIME_FLAG':'NOT_OBSERVED'};
 }
