@@ -108,7 +108,10 @@ export async function exploreStates(a,{maxActions=20,maxDepth=4,wait=waitTransit
    if(route.length>=maxDepth){pending.push({state:s.key,route,action:b.key,reason:'DEPTH_LIMIT',disposition:'deferred'});continue;}
    const task=register({state:s.key,route,action:b.key});if(task)discovered.push(task);
   }
-  if(mode==='actions')queue.unshift(...discovered);else queue.push(...discovered);
+  // FIFO keeps the traversal breadth-first: newly discovered children wait
+  // behind already queued siblings. The current session is reused only when
+  // that first child is already the next BFS task.
+  queue.push(...discovered);
   return discovered[0]||null;
  };
  const learnVariant=(s,route)=>{
