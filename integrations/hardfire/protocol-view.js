@@ -7,7 +7,10 @@ function relevant(e){
  try{const u=new URL(e.request?.url);return u.protocol==='https:'&&(u.hostname==='demogamesfree.pragmaticplay.net'||u.hostname.endsWith('.demogamesfree.pragmaticplay.net'))&&u.pathname.endsWith('/gameService')&&e.request?.method!=='OPTIONS';}catch{return false;}
 }
 const same=(a,b)=>a.request?.url===b.request?.url&&a.request?.method===b.request?.method&&Math.abs(Date.parse(a.startedDateTime)-Date.parse(b.startedDateTime))<=2500&&(fingerprint(a)===null||fingerprint(b)===null||fingerprint(a)===fingerprint(b));
-const bodyReady=e=>typeof e.response?.content?.text==='string'&&e.response.content.text.length>0&&!/pending|awaiting|streaming|unavailable/.test(e.response.content._bodyCaptureStatus||'')&&!e.response?._error;
+// Electron includes the success sentinel in onCompleted.error as well. Keep
+// all other errors blocking; never modify the original recorder evidence.
+const transportFailed=e=>!!e.response?._error&&e.response._error!=='net::OK';
+const bodyReady=e=>typeof e.response?.content?.text==='string'&&e.response.content.text.length>0&&!/pending|awaiting|streaming|unavailable/.test(e.response.content._bodyCaptureStatus||'')&&!transportFailed(e);
 
 /** Read-only live view. It never intercepts, replays, or edits a network request.
  * IDs survive active -> finalized and a late second observer. Ambiguous pairing
@@ -44,18 +47,18 @@ export function createProtocolView(recorder,{onDiagnostic=diagnostic=>{if(proces
    if(new Set(rows.map(fingerprint).filter(v=>v!==null)).size>1){uncertain=true;pending=true;}
    const req=rows.find(e=>typeof requestText(e)==='string'&&new URLSearchParams(requestText(e)).has('action'))||rows[0];
    const response=rows.find(bodyReady)||rows.find(e=>e.response?.status)||rows[0];
-   const failed=rows.some(e=>e.response?._error||e.response?.status>=400);
+   const failed=rows.some(e=>transportFailed(e)||e.response?.status>=400);
    const incomplete=sources.some(s=>!s.finalized)||!fingerprint(req)||!new URLSearchParams(requestText(req)).has('action')||!bodyReady(response)||failed;
    pending||=incomplete;
    return {startedDateTime:rows[0].startedDateTime,_fuzzerRequestId:group.id,_fuzzerPending:incomplete,
     request:{...req.request,postData:req.request?.postData?{...req.request.postData}:undefined},
-    response:{...response.response,content:{...response.response?.content},...(failed?{_error:'CAPTURE_OR_TRANSPORT_FAILED'}:{})}};
+    response:{...response.response,content:{...response.response?.content},_error:failed?'CAPTURE_OR_TRANSPORT_FAILED':undefined}};
   });
   const marker=digest(JSON.stringify({uncertain,pending,entries:entries.map(e=>[e._fuzzerRequestId,e._fuzzerPending,digest(requestText(e)),e.response?.status,digest(e.response?.content?.text),e.response?.content?._bodyCaptureStatus,e.response?._error])}));
   if(marker!==lastDiagnostic&&diagnostics<4){
    lastDiagnostic=marker;diagnostics++;
    const label=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{1,50}$/.test(value)?value:null;
-   onDiagnostic({pending,uncertain,recording:recorder.recording===true,requests:groups.length,sources:rows.slice(-8).map(({e,source,finalized})=>({source,finalized,status:e.response?.status||0,hasAction:new URLSearchParams(requestText(e)).has('action'),postStatus:label(e.request?._postDataCaptureStatus),bodyStatus:label(e.response?.content?._bodyCaptureStatus),bodyBytes:e.response?.content?.text?.length||0,bodyReady:bodyReady(e),failed:!!e.response?._error}))});
+   onDiagnostic({pending,uncertain,recording:recorder.recording===true,requests:groups.length,sources:rows.slice(-8).map(({e,source,finalized})=>({source,finalized,status:e.response?.status||0,hasAction:new URLSearchParams(requestText(e)).has('action'),postStatus:label(e.request?._postDataCaptureStatus),bodyStatus:label(e.response?.content?._bodyCaptureStatus),bodyBytes:e.response?.content?.text?.length||0,bodyReady:bodyReady(e),failed:transportFailed(e),successSentinel:e.response?._error==='net::OK'}))});
   }
   return {entries,marker,pending,uncertain};
  };
