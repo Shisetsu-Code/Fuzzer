@@ -118,6 +118,7 @@ async function main(){
   safeToExit=false;
   sampleTimer=setInterval(()=>{void sample().catch(()=>{});},5000);
   const {runStateExplorer}=await import('../../integrations/hardfire/state-explorer.js');
+  // Delayed provider-advertised choices remain a traversal frontier; the runner budget is only the outer safety bound.
   log({event:'LIVE_START',gameId:game.id,hardfireCommit:HARDFIRE_COMMIT,maxActions:config.maxActions,maxDepth:config.maxDepth,timeoutMs:config.timeoutMs,requestedSpeed:4});
   const run=runStateExplorer(host.controller,{gameUrl:game.url,artifactDir:config.artifactDir,mode:'actions',maxActions:config.maxActions,maxDepth:config.maxDepth,timeoutMs:config.timeoutMs,benchmark:config.benchmark,performanceMode:config.performanceMode,
    onOwnedTab:(id,closeOwned)=>{owned.set(id,closeOwned);persist();},onClosedTab:id=>{owned.delete(id);persist();},
