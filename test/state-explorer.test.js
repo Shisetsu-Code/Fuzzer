@@ -70,3 +70,21 @@ test('action traversal is breadth-first: siblings are explored before grandchild
  const r=await exploreStates(a,{mode:'actions',maxActions:10,maxRetries:0,wait:async()=>({snapshot:await a.snapshot(),reason:'STATE_CHANGED'})});
  assert.deepEqual(r.edges.map(e=>e.action),['open','a','b','a1']);
 });
+
+
+test('action transition ignores a transient main-screen flash and requires four seconds of stable state',async()=>{
+ let t=0;
+ const a={
+  now:()=>t,
+  sleep:async ms=>{t+=ms},
+  snapshot:async()=>{
+   const flash=t>=500&&t<1500,real=t>=2500;
+   const key=flash?'flash':real?'menu':'root';
+   const marker=flash?'flash-marker':real?'menu-marker':'root-marker';
+   return {key,controls:key==='root'?[]:[{key:'button'}],traffic:marker,inputReady:true,capture:{marker,pending:false,uncertain:false}};
+  }
+ };
+ const before={key:'root',controls:[],traffic:'root-marker',capture:{marker:'root-marker',pending:false,uncertain:false}};
+ const result=await waitTransition(a,before,{mode:'actions',pollMs:500,quietMs:2000,stableMs:4000,activeMs:15000});
+ assert.equal(result.snapshot.key,'menu');assert(t>=6500,`state was accepted too early at ${t}ms`);
+});
