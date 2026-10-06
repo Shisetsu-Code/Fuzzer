@@ -13,8 +13,8 @@ const bodyReady=e=>typeof e.response?.content?.text==='string'&&e.response.conte
  * IDs survive active -> finalized and a late second observer. Ambiguous pairing
  * is a reason to stop input, never to merge two possibly distinct operations.
  */
-export function createProtocolView(recorder){
- const owners=new WeakMap(),groups=[];let uncertain=false;
+export function createProtocolView(recorder,{onDiagnostic=diagnostic=>{if(process.env.GITHUB_ACTIONS==='true')console.log(JSON.stringify({event:'PROTOCOL_CAPTURE_DIAGNOSTIC',...diagnostic}));}}={}){
+ const owners=new WeakMap(),groups=[];let uncertain=false,lastDiagnostic=null,diagnostics=0;
  return ()=>{
   if(!recorder)return {entries:[],marker:'NO_RECORDER',pending:true,uncertain:true};
   const rows=[];
@@ -52,6 +52,11 @@ export function createProtocolView(recorder){
     response:{...response.response,content:{...response.response?.content},...(failed?{_error:'CAPTURE_OR_TRANSPORT_FAILED'}:{})}};
   });
   const marker=digest(JSON.stringify({uncertain,pending,entries:entries.map(e=>[e._fuzzerRequestId,e._fuzzerPending,digest(requestText(e)),e.response?.status,digest(e.response?.content?.text),e.response?.content?._bodyCaptureStatus,e.response?._error])}));
+  if(marker!==lastDiagnostic&&diagnostics<4){
+   lastDiagnostic=marker;diagnostics++;
+   const label=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{1,50}$/.test(value)?value:null;
+   onDiagnostic({pending,uncertain,recording:recorder.recording===true,requests:groups.length,sources:rows.slice(-8).map(({e,source,finalized})=>({source,finalized,status:e.response?.status||0,hasAction:new URLSearchParams(requestText(e)).has('action'),postStatus:label(e.request?._postDataCaptureStatus),bodyStatus:label(e.response?.content?._bodyCaptureStatus),bodyBytes:e.response?.content?.text?.length||0,bodyReady:bodyReady(e),failed:!!e.response?._error}))});
+  }
   return {entries,marker,pending,uncertain};
  };
 }

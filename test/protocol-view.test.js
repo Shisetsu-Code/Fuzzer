@@ -47,3 +47,8 @@ test('late request body disagreement makes the paired evidence uncertain',()=>{
  const r=recorder(),c=entry(),w=entry();delete w.request.postData;r.active.set('c',c);r.webActive.set('w',w);const v=view(r);v();
  w.request.postData={text:'action=doSpin&index=2'};done(w);done(c);const s=v();assert.equal(s.pending,true);assert.equal(s.uncertain,true);
 });
+test('pending capture diagnostics identify lifecycle blockers without request or body secrets',()=>{
+ const r=recorder(),e=entry('action=doSpin&mgckey=private-token');r.active.set('1',e);
+ const notices=[];const v=api.createProtocolView(r,{onDiagnostic:d=>notices.push(d)});v();v();
+ assert.equal(notices.length,1);assert.equal(notices[0].pending,true);assert.equal(notices[0].sources[0].finalized,false);assert(!JSON.stringify(notices).includes('private-token'));
+});
