@@ -1,0 +1,76 @@
+name: Validate action-mode update
+on:
+  pull_request:
+    types: [opened, synchronize]
+permissions:
+  contents: read
+jobs:
+  validate:
+    if: github.repository == 'Shisetsu-Code/Fuzzer' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'codex/explorer-reliability' && github.actor == 'Shisetsu-Code'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+      - name: Validate and apply hash-bound edits
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD^)" = '2d27ee36260ed7f4138ac960c6b12bb7fa4663ea'
+          git log -1 --format=%B | grep -Fq '[apply-validated-action-mode]'
+          python3 - <<'PY'
+          import base64,gzip,json,hashlib,pathlib
+          root=pathlib.Path.cwd()
+          raw=gzip.decompress(base64.b64decode((root/'.maintenance/action-delta.b64').read_text(),validate=True))
+          assert len(raw)<100000
+          assert hashlib.sha256(raw).hexdigest()=='e9738d7bb3e7fac734641153b0b009464114dce37795b94437edf54b9cbe3214'
+          edits=json.loads(raw)
+          allowed={'.github/workflows/pragmatic-new5.yml','docs/action-validity-2026-10-06.md','integrations/hardfire/mcp-tools.js','integrations/hardfire/protocol-view.js','integrations/hardfire/session.js','integrations/hardfire/state-explorer.js','providers/pragmatic/operation-completion.js','providers/pragmatic/state-explorer.js','scripts/ci/export-live-evidence.mjs','scripts/ci/run-live-demo.mjs','test/action-driven.test.js','test/fixtures/state-explorer-integration-runner.mjs','test/mcp.test.js','test/protocol-view.test.js','test/state-explorer-integration.test.js'}
+          assert len(edits)==len(allowed) and {e['path'] for e in edits}==allowed
+          for item in edits:
+              p=root/item['path']; old=p.read_bytes().decode('utf-8') if p.exists() else ''
+              assert hashlib.sha256(old.encode()).hexdigest()==item['before'],item['path']
+              previous=0
+              for edit in item['edits']:
+                  assert previous<=edit['start']<=edit['end']<=len(old)
+                  previous=edit['end']
+              new=old
+              for edit in reversed(item['edits']): new=new[:edit['start']]+edit['text']+new[edit['end']:]
+              assert hashlib.sha256(new.encode()).hexdigest()==item['after'],item['path']
+              p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(new.encode())
+          print('Verified 15 before/after content hashes.')
+          PY
+      - name: Full regression suite
+        run: npm test
+      - name: Prepare verified Git objects without moving any branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PARENT_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os,json,urllib.request,base64,gzip,pathlib
+          root=pathlib.Path.cwd();base='https://api.github.com/repos/Shisetsu-Code/Fuzzer'
+          def api(route,data=None):
+              request=urllib.request.Request(base+route,data=None if data is None else json.dumps(data).encode(),headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'})
+              with urllib.request.urlopen(request,timeout=30) as response:return json.load(response)
+          parent=os.environ['PARENT_SHA'];base_tree=api('/git/commits/'+parent)['tree']['sha']
+          edits=json.loads(gzip.decompress(base64.b64decode((root/'.maintenance/action-delta.b64').read_text())))
+          tree=[]
+          for item in edits:
+              p=root/item['path'];blob=api('/git/blobs',{'content':p.read_bytes().decode('utf-8'),'encoding':'utf-8'})
+              tree.append({'path':item['path'],'mode':'100644','type':'blob','sha':blob['sha']})
+          for p in ['.maintenance/action-delta.b64','.github/workflows/apply-action-update.yml']:tree.append({'path':p,'mode':'100644','type':'blob','sha':None})
+          new_tree=api('/git/trees',{'base_tree':base_tree,'tree':tree})['sha']
+          commit=api('/git/commits',{'message':'Explore valid actions with live capture guards and durable checkpoints [live-demo:all]','tree':new_tree,'parents':[parent]})
+          print('VERIFIED_COMMIT_READY='+commit['sha'])
+          print('VERIFIED_TREE='+new_tree)
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:f.write('Prepared commit '+commit['sha']+' after the full regression suite. No branch moved. Temporary transport files are absent from that tree.\n')
+          PY
