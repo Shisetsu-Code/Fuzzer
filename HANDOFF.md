@@ -137,3 +137,12 @@ Regresión TDD: una decisión anunciada permanece invisible 20 s, superando el s
 Verificación local sobre el source bundle de `77f59c8` más este cambio: **405/405 pruebas**, 0 fallos.
 
 Esta corrección alinea el motor con el modelo esperado: BFS sobre estados/opciones observadas. La primera ejecución descubre una bifurcación, sigue una alternativa y conserva las hermanas; cada hermana se reconstruye desde A en una sesión limpia. Un panel que aparece tarde amplía el árbol cuando aparece; no requiere que la compra se haya “cerrado” previamente.
+
+
+### FIFO BFS estricto
+
+Además se corrigió el orden del planificador en `32e3516b339ffeec803b9c6937e39afc2afa4e54`. Antes, `actions` insertaba hijos nuevos al frente de la cola con `unshift()`, por lo que un nieto podía adelantarse a un hermano: por ejemplo `open -> a -> a1 -> b`. Eso era profundidad primero parcial.
+
+Ahora todos los controles nuevos se agregan al final de la cola FIFO. El orden probado es `open -> a -> b -> a1`: los hermanos ya observados se ejecutan antes que los descendientes recién descubiertos. Cada ruta que requiere volver a un estado anterior se reconstruye desde A en una sesión limpia. La reutilización de sesión solo ocurre si el hijo recién observado ya es realmente el próximo elemento de la cola BFS; nunca adelanta un hijo sobre trabajo previamente encolado.
+
+Verificación local combinando esta corrección con la espera de decisiones anunciadas: **406/406 pruebas**, cero fallos.
