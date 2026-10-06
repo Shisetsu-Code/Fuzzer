@@ -8,6 +8,9 @@ export function knownControlKind(control){
  if(/autoplay/i.test(text))return 'autoplay';
  if(/paytable|pay.?table|playtable/i.test(text))return 'paytable';
  if(/smart(?:increase|decrease)bet|(?:increase|decrease)bet|bet(?:up|down|plus|minus)[_\s/]|\/BetButtons\//i.test(text))return 'base_bet';
+ // Stop may appear only after a purchase response, before the picker. It is
+ // base animation input, not a new branch; operation recovery owns its use.
+ if(/Evt_DataToCode_Pressed_Stop\b/i.test(events)||/^StopSpin_Button$/i.test(name))return 'stop';
  if(/Evt_DataToCode_Pressed_Spin\b/i.test(events)||/^(?:StartSpin_Button|SpinButton|Spin_Button)$/i.test(name))return 'spin';
  if(/Pressed_SoundBtn|SoundButtons|SoundOn|SoundOff|MuteButton|VolumeButton/i.test(text))return 'sound';
  if(/\/(?:GameSpeed|HyperPlay)\/|\/Turbo(?:Buttons)?\//i.test(path)||/^(?:TurboButton|QuickSpinButton|HiperPlayDisabled)$/i.test(name))return 'speed';
