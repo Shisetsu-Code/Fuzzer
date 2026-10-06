@@ -146,3 +146,22 @@ Además se corrigió el orden del planificador en `32e3516b339ffeec803b9c6937e39
 Ahora todos los controles nuevos se agregan al final de la cola FIFO. El orden probado es `open -> a -> b -> a1`: los hermanos ya observados se ejecutan antes que los descendientes recién descubiertos. Cada ruta que requiere volver a un estado anterior se reconstruye desde A en una sesión limpia. La reutilización de sesión solo ocurre si el hijo recién observado ya es realmente el próximo elemento de la cola BFS; nunca adelanta un hijo sobre trabajo previamente encolado.
 
 Verificación local combinando esta corrección con la espera de decisiones anunciadas: **406/406 pruebas**, cero fallos.
+
+
+## 11. Ventana de estabilidad de UI y ritmo de inputs
+
+Implementación: `0bc05bf`, `8edcf2e`, `03ccf7b`.
+
+El modo DEMO `actions` usa ahora **4.000 ms de estabilidad continua** antes de aceptar un nuevo estado interactivo o pulsar una elección. No es un `sleep` ciego: el explorador continúa leyendo UI y protocolo durante la ventana. Si cambia la clave de navegación o el marcador de captura, la ventana se reinicia.
+
+Reglas:
+- un parpadeo breve de controles de la pantalla principal no se convierte en un nodo accionable;
+- un modal nuevo debe permanecer estable 4 s antes de que el BFS lo acepte;
+- una elección de bonus visible debe mantener el mismo layout, secuencia y marcador de captura durante 4 s antes del primer clic;
+- si el servidor ya anunció `na=b`, `na=m` o `na=fso` y todavía no aparecen las opciones, se espera sin pulsar Stop ni el centro;
+- una recuperación física no anunciada como elección exige al menos 4 s de quietud antes del input;
+- cualquier input sigue revalidando geometría, enabled, importe y marcador de protocolo justo antes del clic.
+
+El host permanece en **4×** (`speed:4`, `requestedSpeed:4`). La aceleración reduce la duración de animaciones del juego; la ventana de estabilidad sigue medida en tiempo real y no se divide por cuatro. Esto es deliberado: velocidad de animación y margen contra UI transitoria son controles distintos.
+
+TDD: tres regresiones fallaron antes del arreglo: flash transitorio aceptado, elección pulsada inmediatamente al aparecer y Stop/centro usados mientras una elección anunciada todavía estaba entrando. Después del arreglo esas regresiones pasan. Sobre el source bundle base más estos cambios, la suite local dio **407/407**; la rama actual incluye además las regresiones BFS previas, por lo que CI debe reportar un total mayor.
