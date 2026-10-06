@@ -1,17 +1,26 @@
 import {createHash} from 'node:crypto';
 import {measure} from '../../lib/performance.js';
 /** Bounded traversal of observed controls; action mode follows children inline. */
-export async function waitTransition(a,before,{quietMs=10000,activeMs=60000,pollMs=500,mode='strict',deadline=Infinity}={}){
- const start=a.now();let lastTraffic=start,lastContinuation=start,traffic=before.traffic,current=before,changed=null,hadTraffic=false,continuationClicks=0;
+export async function waitTransition(a,before,{quietMs=10000,activeMs=60000,pollMs=500,mode='strict',deadline=Infinity,stableMs=0}={}){
+ const start=a.now();let lastTraffic=start,lastContinuation=start,traffic=before.traffic,current=before,changed=null,changedAt=null,hadTraffic=false,continuationClicks=0;
  while(a.now()-start<activeMs&&a.now()<deadline){await a.sleep(pollMs);current=await a.snapshot();const now=a.now();
  if(now>=deadline)return {snapshot:current,reason:'DEADLINE',continuationClicks,elapsedMs:now-start};
  const observedTraffic=mode==='actions'?current.capture?.marker:current.traffic;
- if(observedTraffic!==traffic){traffic=observedTraffic;lastTraffic=now;hadTraffic=true;}
+ if(observedTraffic!==traffic){traffic=observedTraffic;lastTraffic=now;hadTraffic=true;if(mode==='actions'&&changed!==null)changedAt=now;}
  const inputReady=mode!=='actions'||current.inputReady===true&&current.capture?.pending===false&&current.capture?.uncertain!==true;
  if(a.operationStarted?.(before,current))return {snapshot:current,reason:'OPERATION_STARTED',continuationClicks,elapsedMs:now-start};
- if(current.key!==before.key){if(changed===current.key&&inputReady&&(mode==='actions'||!hadTraffic||now-lastTraffic>=quietMs)&&current.controls.length)return {snapshot:current,reason:'STATE_CHANGED',continuationClicks,elapsedMs:now-start};changed=current.key;}else changed=null;
+ if(current.key!==before.key){
+  const sameCandidate=changed===current.key;
+  if(!sameCandidate){changed=current.key;changedAt=now;}
+  const stable=mode==='actions'?(stableMs>0?sameCandidate&&now-(changedAt??now)>=stableMs:sameCandidate):sameCandidate&&(!hadTraffic||now-lastTraffic>=quietMs);
+  if(stable&&inputReady&&current.controls.length)return {snapshot:current,reason:'STATE_CHANGED',continuationClicks,elapsedMs:now-start};
+ }else{changed=null;changedAt=null;}
  if(mode!=='actions'&&!current.controls.length&&now-lastContinuation>=5000){await a.clickCenter?.();continuationClicks++;lastContinuation=now;}
- if(inputReady&&now-start>=quietMs&&(mode==='actions'||now-lastTraffic>=quietMs))return {snapshot:current,reason:current.key!==before.key?'STATE_CHANGED':'QUIET_TIMEOUT',continuationClicks,elapsedMs:now-start};
+ const quietSettled=mode==='actions'?(stableMs>0?(!hadTraffic||now-lastTraffic>=stableMs):true):(!hadTraffic||now-lastTraffic>=quietMs);
+ if(inputReady&&now-start>=quietMs&&quietSettled){
+  if(current.key===before.key)return {snapshot:current,reason:'QUIET_TIMEOUT',continuationClicks,elapsedMs:now-start};
+  if(mode!=='actions'||stableMs===0)return {snapshot:current,reason:'STATE_CHANGED',continuationClicks,elapsedMs:now-start};
+ }
  }
  return {snapshot:current,reason:'ACTIVE_TIMEOUT',continuationClicks,elapsedMs:a.now()-start};
 }
