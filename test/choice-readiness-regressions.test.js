@@ -26,7 +26,7 @@ test('hiding and reappearing old choices does not rearm their click without prot
 });
 
 test('completed response permits the observed Stop recovery during StageSpin in action mode',async()=>{
- let advanced=0;const {a,s}=operationHarness();s.flags={canSpin:false,stopActive:true,stages:['StageSpin']};
+ let advanced=0;const {a,s}=operationHarness();s.flags={canSpin:false,stopActive:true,stages:['StageSpin']};s.operation.nextAction='c';
  a.advance=async()=>{advanced++;s.flags={canSpin:true,stopActive:false,stages:[]};s.operation.nextAction='s';return {ok:true,clicked:true,kind:'OBSERVED_STOP'};};
  const result=await finishOperation(a,{operation:{sequence:0}},s,{verifyPurchase:false,timeoutMs:5000});
  assert.equal(advanced,1);assert.equal(result.ok,true);
