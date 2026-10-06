@@ -48,9 +48,13 @@ Files: integrations/hardfire/state-explorer.js; providers/pragmatic/operation-co
 Files: README.md; docs/objective-and-recovery-2026-10-06.md; scripts/ci/export-live-evidence.mjs si necesita exponer las métricas nuevas.
 
 - [x] Documentar objetivo, flujo, criterio de parada, límites, riesgos y lecciones del benchmark.
-- [ ] Revisar resultados finales de pruebas Node 22/24 Linux/Windows y DEMOs del commit 61561dba5e41b2efb300c03b6c6c780b6d3add98.
+- [x] Revisar resultados finales de pruebas Node 22/24 Linux/Windows, los cinco DEMOs de 61561dba y la repetición dirigida de Dragon de 9ea1c18c.
 - [x] Separar cobertura demostrada por simulación, evidencia DEMO y bloqueos no resueltos. No presentar un reintento como corrección del bloqueo subyacente.
 
 ## Registro de ejecución
 
 Base: 346 pruebas. Correcciones RED/GREEN de recuperación, estados, decisiones, captura incierta y deadlines: 370/370 locales. Se añadió recuperación física de decisiones a partir de la captura de Dragon, sin nombres particulares. La suite completa detectó el rearme duplicado de una elección por respuesta tardía; corregido antes de publicar. Ruling: conservar strict sin reintentos por defecto para no modificar inadvertidamente el contrato económico; actions utiliza dos. Revisión propia, sin revisor independiente disponible.
+
+## Cierre de evaluación
+
+373/373 en la verificación local final; matriz de cuatro entornos aprobada. Se inspeccionaron y verificaron los hashes de cinco artefactos de 61561dba y uno de 9ea1c18c. El ensayo real detectó la clasificación errónea de Stop como decisión; se reprodujo con tres pruebas RED/GREEN y se corrigió. La repetición eliminó esa falsa decisión pero no completó el bonus. La recuperación es funcional y tiene una ruta recuperada en Blazing y otra en Dragon; el objetivo general sigue parcial por detección y continuaciones. Informes: `docs/validation-route-recovery-2026-10-06.md` y `docs/validation-dragon-followup-2026-10-06.md`. No se fusionó la PR.
