@@ -63,7 +63,7 @@ export function visibleOperationChoices(pickers,drawings,{fallback=false,exclude
 }
 
 /** Complete one submitted operation. Only choice alternatives form a family; reels/results do not. */
-export async function finishOperation(a,before,initial,{choicePlan=[],deadline=Infinity,timeoutMs=180000,pollMs=500,verifyPurchase=true,stallMs=Infinity}={}){
+export async function finishOperation(a,before,initial,{choicePlan=[],deadline=Infinity,timeoutMs=180000,pollMs=500,verifyPurchase=true,stallMs=Infinity,choiceDwellMs=0,recoveryQuietMs=1000,recoveryGapMs=2000}={}){
  if(!(stallMs>0)||!(Number.isFinite(stallMs)||stallMs===Infinity))throw Error('INVALID_STALL_LIMIT');
  const started=a.now(),until=Math.min(started+timeoutMs,deadline),sequenceBefore=before?.operation?.sequence||0;
  const initialOperation=initial.operation||{},anchored=Object.hasOwn(initialOperation,'submission');
@@ -72,7 +72,7 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
  const kind=submission?.kind||initialOperation.kind||'spin';
  const decisions=[],verificationChoices=[],continuations=[];
  let current=initial,assessedSnapshot=initial,assessedAt=null,traffic=initial.traffic,lastTraffic=started,lastCenter=started,lastAdvance=started,choiceMarker=null,readyTicks=0,verificationSequence=null,verification=null,verificationAvailable=false,controlUnavailable=false,lastSpinAt=-Infinity,lastSpinAttempt=null,phase='operation_completion';
- let lastProgress=started,progressKey=null,lastCenterProgress=null,lastAdvanceProgress=null;
+ let lastProgress=started,progressKey=null,lastCenterProgress=null,lastAdvanceProgress=null,choiceCandidate=null;
  const completion=()=>{
    const f=current.flags||{},o=current.operation||{},blockers=normalControlBlockers(current);
    if(!submission||submission.sequence!==sequenceBefore+1||anchored&&o.submission?.sequence!==submission.sequence)blockers.push('SUBMISSION_NOT_OBSERVED');
@@ -142,32 +142,35 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
        }
      }else if(verificationAvailable&&verification?.kind==='spin'&&verification.complete===true){phase='complete';return result(true,'OPERATION_COMPLETE');}
    }else if(choices.length&&current.capture?.pending!==true&&current.capture?.uncertain!==true&&(verifyPurchase||!busy||op.protocolComplete===true&&['b','fso'].includes(op.nextAction))){
-     const layout=JSON.stringify(choices.map(c=>[c.key,c.labels||[]])),sequence=op.protocolSequence??op.sequence;
+     const layout=JSON.stringify(choices.map(c=>[c.key,c.labels||[]])),sequence=op.protocolSequence??op.sequence,captureMarker=current.capture?.marker??null;
      // A response that says spin/collect can precede disappearance of the old
      // panel. Only a completed exchange asking for another choice re-arms it.
      const nextDecision=op.protocolComplete===true&&['b','m','fso'].includes(op.nextAction);
      if(layout!==choiceMarker?.layout||nextDecision&&sequence!==choiceMarker?.sequence){
-       const planned=verificationSequence===null?choicePlan[decisions.length]:null;
-       const selected=planned?choices.find(c=>c.key===planned):choices[0];
-       const family=verificationSequence===null?decisions:verificationChoices;
-       const id=JSON.stringify(family.map(d=>d.selected));
-       const decision={id,parent:family.at(-1)?.id??null,options:choices.map(({key,name,event,labels})=>({key,name,event,labels})),selected:null,attempted:selected?.key??null,evidence:current.evidence};
-       // Discovery precedes execution: even an unavailable/uncertain choice
-       // must leave all its observed siblings available to the replay scheduler.
-       family.push(decision);
-       if(!selected)return result(false,'CHOICE_NOT_AVAILABLE');
-       if(a.now()>=until)break;
-       let action;try{action=await a.choose(selected);}catch{action={ok:false};}if(action?.ok!==true)return result(false,'CHOICE_ACTION_FAILED');
-       decision.selected=selected.key;choiceMarker={layout,sequence};lastCenter=lastAdvance=now;
-     }
-   }
+       if(choiceCandidate?.layout!==layout||choiceCandidate?.sequence!==sequence||choiceCandidate?.captureMarker!==captureMarker)choiceCandidate={layout,sequence,captureMarker,since:now};
+       if(now-choiceCandidate.since>=choiceDwellMs){
+         const planned=verificationSequence===null?choicePlan[decisions.length]:null;
+         const selected=planned?choices.find(c=>c.key===planned):choices[0];
+         const family=verificationSequence===null?decisions:verificationChoices;
+         const id=JSON.stringify(family.map(d=>d.selected));
+         const decision={id,parent:family.at(-1)?.id??null,options:choices.map(({key,name,event,labels})=>({key,name,event,labels})),selected:null,attempted:selected?.key??null,evidence:current.evidence};
+         // Discovery precedes execution: even an unavailable/uncertain choice
+         // must leave all its observed siblings available to the replay scheduler.
+         family.push(decision);
+         if(!selected)return result(false,'CHOICE_NOT_AVAILABLE');
+         if(a.now()>=until)break;
+         let action;try{action=await a.choose(selected);}catch{action={ok:false};}if(action?.ok!==true)return result(false,'CHOICE_ACTION_FAILED');
+         decision.selected=selected.key;choiceMarker={layout,sequence};choiceCandidate=null;lastCenter=lastAdvance=now;
+       }
+     }else choiceCandidate=null;
+   }else choiceCandidate=null;
    // An accepted click may still have an uncaptured request. Never advance on
    // the preceding protocol exchange while that verification boundary is empty.
    const verificationRequestPending=verificationSequence!==null&&!verificationAvailable;
-   const recoveryAllowed=current.capture?.pending!==true&&current.capture?.uncertain!==true&&!verificationRequestPending&&!choices.length&&!current.wager?.menuOpen&&(!normalReady||controlUnavailable);
+   const recoveryAllowed=!advertisedChoicePending&&current.capture?.pending!==true&&current.capture?.uncertain!==true&&!verificationRequestPending&&!choices.length&&!current.wager?.menuOpen&&(!normalReady||controlUnavailable);
    let advanced=false;
    if(a.now()>=until)break;
-   if((!busy||!verifyPurchase&&current.flags?.stopActive===true)&&recoveryAllowed&&op.protocolComplete&&now-lastTraffic>=1000&&now-lastAdvance>=2000&&lastAdvanceProgress!==progressKey){
+   if((!busy||!verifyPurchase&&current.flags?.stopActive===true)&&recoveryAllowed&&op.protocolComplete&&now-lastTraffic>=recoveryQuietMs&&now-lastAdvance>=recoveryGapMs&&lastAdvanceProgress!==progressKey){
      const r=await a.advance?.(current,{deadline:until});if(r)continuations.push(continuationOutcome(typeof r.kind==='string'&&/^[A-Za-z0-9_-]{1,64}$/.test(r.kind)?r.kind:'UNKNOWN',r,now-started));lastAdvance=now;
      if(r?.clicked===true&&r.ok!==true)return result(false,'CONTINUATION_ACTION_UNCONFIRMED');
      advanced=r?.ok===true&&r.kind!=='WAIT';if(advanced)lastAdvanceProgress=progressKey;
