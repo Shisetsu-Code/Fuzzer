@@ -5,6 +5,8 @@ import {fileURLToPath} from 'node:url';
 
 const fixture=fileURLToPath(new URL('./fixtures/state-explorer-integration-runner.mjs',import.meta.url));
 const scenarios=[
+ ['action-v2-menu','the adapter follows V2 confirmation controls despite a false legacy open flag'],
+ ['action-wager-race','an amount changed without network invalidates the pre-click wager guard'],
  ['action-generic-choice','the real adapter clicks unnamed observed bonus decisions and queues siblings'],
  ['action-disabled-control','fresh disabled controls cannot be dispatched'],
  ['action-uncertain-capture','uncertainty appearing during pre-click capture cannot authorize a click'],
