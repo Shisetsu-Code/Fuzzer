@@ -19,15 +19,16 @@ gamma.hit_rect={x:10,y:40,width:20,height:20};gamma.drawn_rect={...gamma.hit_rec
 const isReset=scenario==='reset-failure'||scenario==='reset-recovered';
 const protocolRaces=new Map([['verification-nonspin-race','NORMAL_SPIN_PROTOCOL_CHANGED'],['verification-response-race','NORMAL_SPIN_PROTOCOL_NOT_READY'],['verification-cascade-race','NORMAL_SPIN_CASCADE_ACTIVE'],['verification-body-pending','NORMAL_SPIN_RESPONSE_INCOMPLETE']]);
 const isAction=scenario.startsWith('action-');
-const isPurchase=['action-capture','delayed-purchase','normal-flags-overlay','verification-no-request','verification-click-error','verification-race'].includes(scenario)||protocolRaces.has(scenario);
+const isPurchase=['action-generic-choice','action-capture','delayed-purchase','normal-flags-overlay','verification-no-request','verification-click-error','verification-race'].includes(scenario)||protocolRaces.has(scenario);
 const continuation={...button('FullScreenContinue',0,'Evt_Continue'),labels:['PRESS ANYWHERE TO CONTINUE'],hit_rect:{x:0,y:0,width:100,height:100},drawn_rect:{x:0,y:0,width:100,height:100}};
-const raw=()=>({supported:true,viewport:{width:100,height:100},controls:[...(phase==='overlay'?[continuation]:[spin]),...(scenario==='hitless'?[{...alpha,hit_rect:null,clickable:'UNKNOWN'}]:isReset?(phase==='root'?[alpha,beta,gamma]:[]):isPurchase||isAction?[alpha]:[])],unresolved:[]});
+const raw=()=>({supported:true,viewport:{width:100,height:100},controls:scenario==='action-generic-choice'&&phase==='choice'?[button('UnlabelledLeft',10,'Evt_A'),button('UnlabelledRight',35,'Evt_B')]:[...(phase==='overlay'?[continuation]:[spin]),...(scenario==='hitless'?[{...alpha,hit_rect:null,clickable:'UNKNOWN'}]:isReset?(phase==='root'?[alpha,beta,gamma]:[]):isPurchase||isAction?[alpha]:[])],unresolved:[]});
 const exchange=(extra='')=>({request:{url:'https://demogamesfree.pragmaticplay.net/gs2c/gameService?token=private',postData:{text:`action=doSpin&c=0.1&l=20&${extra}`}},response:{status:200,content:{text:'na=s&balance=100000'}}});
 const controller={tabs:{activate:async id=>{assert.equal(id,42);}},withTab:id=>{
  assert.equal(id,42);
  return {networkEvents:()=>entries.map((_,i)=>({sequence:i+1})),click:async(x,y)=>{
+  if(scenario==='action-generic-choice'&&phase==='choice'){clicks.push('decision');entries.push({request:{url:'https://demogamesfree.pragmaticplay.net/gs2c/gameService',postData:{text:'action=doBonus&ind=0'}},response:{status:200,content:{text:'na=s&balance=99900'}}});phase='done';return {ok:true};}
   if(x>=70){normalSpins++;clicks.push('spin');if(scenario==='verification-click-error')throw Error('click transport uncertain');if(scenario!=='verification-no-request')entries.push(exchange());}
-  else{clicks.push('alpha');if(isPurchase){entries.push(exchange('pur=2&mgckey=private'));if(scenario==='delayed-purchase')entries.push(exchange());if(scenario==='normal-flags-overlay')phase='overlay';}else phase='done';}
+  else{clicks.push('alpha');if(isPurchase){entries.push(exchange('pur=2&mgckey=private'));if(scenario==='delayed-purchase')entries.push(exchange());if(scenario==='normal-flags-overlay')phase='overlay';if(scenario==='action-generic-choice'){phase='choice';entries.at(-1).response.content.text='na=b&balance=99900';}}else phase='done';}
  }};
 }};
 
@@ -40,7 +41,7 @@ mock.module(new URL('../../integrations/hardfire/session.js',import.meta.url).hr
  frame:{evaluate:async fn=>{
   if(fn.name==='inspectDrawnButtons'){if(scenario==='observation-failure')throw Error('runtime observation failed');return raw();}
   assert.equal(fn.name,'readRuntimeBalance');return {balance:100000,balanceSource:'runtime:BalanceDisplayed.GetDouble',candidates:[]};
- }},protocolCapture:()=>({entries,marker:JSON.stringify(entries),pending:false,uncertain:false}),entries:async()=>{
+ }},protocolCapture:()=>({entries,marker:JSON.stringify(entries),pending:false,uncertain:scenario==='action-uncertain-capture'&&raced}),entries:async()=>{
   if(freshGuardArmed&&!raced){
    raced=true;
    if(scenario==='verification-nonspin-race')entries.push({request:{url:'https://demogamesfree.pragmaticplay.net/gs2c/gameService',postData:{text:'action=doCollect'}},response:{status:0,content:{text:''}}});
@@ -55,9 +56,10 @@ mock.module(new URL('../../integrations/hardfire/session.js',import.meta.url).hr
  options.onOwnedTab?.(42,()=>session.close());return session;
 }}});
 mock.module(new URL('../../integrations/hardfire/drawn-buttons.js',import.meta.url).href,{namedExports:{captureDrawnButtons:async(_controller,_id,_dir,options)=>{
+ if(scenario==='action-uncertain-capture'&&options?.includeUniversal)raced=true;
  if(scenario==='verification-race'&&options?.includeUniversal&&entries.length&&!raced){raced=true;entries.push(exchange());}
  if(protocolRaces.has(scenario)&&options?.includeUniversal&&entries.length&&!raced)freshGuardArmed=true;
- return {capture_id:'capture-1',full_path:path.join(artifactDir,'screen.jpg'),artifact_dir:artifactDir,image_size:{width:100,height:100},controls:raw().controls.map(b=>({...b,center:b.hit_rect?{x:(b.hit_rect.x+b.hit_rect.width/2)/100,y:(b.hit_rect.y+b.hit_rect.height/2)/100}:null}))};
+ return {capture_id:'capture-1',full_path:path.join(artifactDir,'screen.jpg'),artifact_dir:artifactDir,image_size:{width:100,height:100},controls:raw().controls.map(b=>({...b,...(scenario==='action-disabled-control'&&options?.includeUniversal?{enabled:false}:{}),center:b.hit_rect?{x:(b.hit_rect.x+b.hit_rect.width/2)/100,y:(b.hit_rect.y+b.hit_rect.height/2)/100}:null}))};
 }}});
 mock.module(new URL('../../integrations/hardfire/paint-guard.js',import.meta.url).href,{namedExports:{withSurfaceLock:async fn=>fn(),ensurePainted:async()=>({ok:true})}});
 const {runStateExplorer}=await import('../../integrations/hardfire/state-explorer.js');
@@ -67,7 +69,7 @@ mock.method(Date,'now',()=>clock);
 mock.method(globalThis,'setTimeout',(fn,ms,...args)=>{clock+=ms;queueMicrotask(()=>fn(...args));return 1;});
 try{
  if(scenario==='action-probe')entries.push({request:{url:'https://demogamesfree.pragmaticplay.net/gs2c/gameService',postData:{text:'action=doInit'}},response:{status:200,content:{text:'na=s&balance=100000'}}});
- const options={benchmark:process.env.PERF_TEST==='1',performanceMode:process.env.PERF_MODE||'parallel',mode:isAction?'actions':'strict',gameUrl:'https://www.pragmaticplay.fun/en/slots/example/',artifactDir,maxActions:5,timeoutMs:60000,onOwnedTab:id=>owned.add(id),onClosedTab:id=>owned.delete(id)};
+ const options={benchmark:process.env.PERF_TEST==='1',performanceMode:process.env.PERF_MODE||'parallel',mode:isAction?'actions':'strict',maxRetries:0,gameUrl:'https://www.pragmaticplay.fun/en/slots/example/',artifactDir,maxActions:scenario==='action-generic-choice'?1:5,timeoutMs:60000,onOwnedTab:id=>owned.add(id),onClosedTab:id=>owned.delete(id)};
  if(scenario==='observation-failure'){
   await assert.rejects(runStateExplorer(controller,options),error=>{
    assert.equal(error.message,'runtime observation failed');assert.equal(error.cleanupError,'HAR write failed');assert.deepEqual(error.retainedTabIds,[42]);return true;
@@ -77,6 +79,8 @@ try{
   const result=await runStateExplorer(controller,options);
   assert.equal(creates,1);assert.equal(result.completeGame,false);if(process.env.PERF_TEST==='1'){assert(result.performance.stages.some(s=>s.name==='adapter.snapshot'));const perf=JSON.parse(await fs.readFile(path.join(artifactDir,'performance.json'),'utf8'));assert.equal(perf.active.length,0);assert.equal(perf.mode,process.env.PERF_MODE);assert(perf.trace.length>0);}
   if(scenario==='action-snapshot-race'){assert.equal(result.actions,0);assert.deepEqual(clicks,[]);assert(result.pending.some(p=>p.error==='ACTION_PROTOCOL_CHANGED'));}
+  else if(scenario==='action-generic-choice'){assert.deepEqual(clicks,['alpha','decision']);assert.equal(result.edges[0].operation.decisions[0].options.length,2);assert(result.pending.some(p=>p.choicePlan?.length===1));assert.equal(result.edges[0].operation.ok,true);}
+  else if(scenario==='action-disabled-control'||scenario==='action-uncertain-capture'){assert.equal(result.actions,0);assert.deepEqual(clicks,[]);assert.equal(result.pending.length,1);}
   else if(isAction){
    assert.equal(result.status,'EXHAUSTED_OBSERVED_CONTROLS');assert.equal(result.edges.length,1);assert.equal(result.nodes.length,1);assert.equal(result.edges[0].validity.valid,true);
    assert.equal(result.edges[0].operation.ok,true);assert.equal(result.edges[0].operation.verificationRequired,false);

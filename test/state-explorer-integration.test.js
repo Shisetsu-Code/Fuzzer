@@ -5,6 +5,9 @@ import {fileURLToPath} from 'node:url';
 
 const fixture=fileURLToPath(new URL('./fixtures/state-explorer-integration-runner.mjs',import.meta.url));
 const scenarios=[
+ ['action-generic-choice','the real adapter clicks unnamed observed bonus decisions and queues siblings'],
+ ['action-disabled-control','fresh disabled controls cannot be dispatched'],
+ ['action-uncertain-capture','uncertainty appearing during pre-click capture cannot authorize a click'],
  ['action-capture','action mode captures an accepted operation without an extra verification spin'],
  ['action-probe','action mode uses exactly one probe without requiring an ante classification'],
  ['delayed-purchase','the real adapter anchors a delayed purchase and verifies one fresh normal spin'],
