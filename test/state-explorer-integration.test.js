@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 const fixture=fileURLToPath(new URL('./fixtures/state-explorer-integration-runner.mjs',import.meta.url));
 const scenarios=[
@@ -41,4 +44,20 @@ test('the real adapter continues three campaign slices and consolidates every se
  const child=spawnSync(process.execPath,['--experimental-test-module-mocks',fixture],{encoding:'utf8',timeout:5000});
  assert.equal(child.status,0,child.stderr||child.stdout||String(child.error));
  assert.deepEqual(JSON.parse(child.stdout),{scenario:'campaign',creates:3,closes:3,actions:3,slices:3,harEntries:3});
+});
+
+
+test('canonical HAR references remain valid when the temporary directory uses a path alias',t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'fuzzer-path-alias-'));
+ t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+ const canonical=path.join(root,'canonical'),alias=path.join(root,'alias');
+ fs.mkdirSync(canonical);
+ fs.symlinkSync(canonical,alias,process.platform==='win32'?'junction':'dir');
+ const child=spawnSync(process.execPath,['--experimental-test-module-mocks',fixture,'action-capture'],{
+  encoding:'utf8',timeout:5000,env:{...process.env,TMPDIR:alias,TMP:alias,TEMP:alias,PERF_TEST:'0'}
+ });
+ assert.equal(child.status,0,child.stderr||child.stdout||String(child.error));
+ const evidence=JSON.parse(child.stdout);
+ assert.equal(evidence.scenario,'action-capture');
+ assert.equal(evidence.creates,1);assert.equal(evidence.closes,1);assert.equal(evidence.normalSpins,0);
 });

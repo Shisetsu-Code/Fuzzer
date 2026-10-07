@@ -127,7 +127,7 @@ try{
   const retained=scenario==='reset-failure'||scenario==='final-failure';assert.deepEqual([...owned],retained?[42]:[]);
   const reference=JSON.parse(await fs.readFile(path.join(artifactDir,'har-reference.json'),'utf8'));
   if(retained)assert.equal(reference.path,null);
-  else{assert.equal(reference.path,path.join(artifactDir,'all-branches.har'));const saved=JSON.parse(await fs.readFile(reference.path,'utf8'));assert.equal(saved.log.entries.length,entries.length);}
+  else{assert.equal(reference.path,path.join(await fs.realpath(artifactDir),'all-branches.har'));const saved=JSON.parse(await fs.readFile(reference.path,'utf8'));assert.equal(saved.log.entries.length,entries.length);}
  }
  console.log(JSON.stringify({scenario,creates,closes,normalSpins,centerClicks,wallMs:performance.now()-wallStart}));
 }finally{mock.restoreAll();await fs.rm(artifactDir,{recursive:true,force:true});}
