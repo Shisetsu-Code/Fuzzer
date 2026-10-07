@@ -1,0 +1,72 @@
+name: Observed exit probe validation
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/exit-probe-live.yml'
+      - 'integrations/hardfire/**'
+      - 'providers/pragmatic/**'
+      - 'scripts/ci/assert-exit-probe.mjs'
+permissions:
+  contents: read
+concurrency:
+  group: pragmatic-live-demos
+  cancel-in-progress: false
+  queue: max
+jobs:
+  probe:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      HARDFIRE_ROOT: ${{ github.workspace }}/hardfire
+      FUZZER_GAME_ID: dragon-s-gate-bonus-choice
+      FUZZER_ARTIFACT_DIR: ${{ github.workspace }}/outputs/exit-private
+      FUZZER_OUTPUT_DIR: ${{ github.workspace }}/outputs/exit-public
+      FUZZER_MAX_ACTIONS: '3'
+      FUZZER_MAX_DEPTH: '8'
+      FUZZER_TIMEOUT_MS: '300000'
+      FUZZER_BENCHMARK: '1'
+      FUZZER_SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+      HARDFIRE_SOURCE_SHA: adf6de5ec14e394f77fb1816d5f46e5deb250b0a
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - id: request
+        name: Require explicit live probe marker
+        run: |
+          if git log -1 --pretty=%B | grep -Fq '[exit-probe-live]'; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        if: steps.request.outputs.enabled == 'true'
+        with:
+          repository: Shisetsu-Code/HardFire
+          ref: adf6de5ec14e394f77fb1816d5f46e5deb250b0a
+          path: hardfire
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        if: steps.request.outputs.enabled == 'true'
+        with:
+          node-version: '24'
+      - name: Install pinned Electron
+        if: steps.request.outputs.enabled == 'true'
+        run: npm install --no-save --package-lock=false --no-audit --no-fund electron@44.4.0
+      - name: Exercise the real DEMO and preserve bounded partial results
+        if: steps.request.outputs.enabled == 'true'
+        continue-on-error: true
+        run: xvfb-run -a -s '-screen 0 1280x800x24' ./node_modules/.bin/electron --no-sandbox --use-gl=angle --use-angle=swiftshader scripts/ci/run-live-demo.mjs
+      - name: Recover evidence
+        if: always() && steps.request.outputs.enabled == 'true'
+        run: node scripts/ci/recover-live-evidence.mjs
+      - name: Require accepted spin proof and confirmed cleanup
+        if: always() && steps.request.outputs.enabled == 'true'
+        run: node scripts/ci/assert-exit-probe.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always() && steps.request.outputs.enabled == 'true'
+        with:
+          name: observed-exit-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.FUZZER_OUTPUT_DIR }}/
+          retention-days: 1
+          compression-level: 1

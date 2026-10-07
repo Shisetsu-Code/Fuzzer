@@ -10,7 +10,8 @@ export function operationStateFromEntries(entries,{afterSequence,verificationAft
  const response=e=>{const c=e?.response?.content;return c?.encoding==='base64'?Buffer.from(c.text||'','base64').toString():c?.text||'';};
  const body=response(last),fields=new URLSearchParams(body);
  const kindOf=e=>{const request=new URLSearchParams(e.request.postData.text);return request.has('pur')&&Number(request.get('pur'))>=0?'purchase':'spin';};
- const transaction=e=>e?{kind:kindOf(e),status:e.response?.status||0,complete:e._fuzzerPending!==true&&!e.response?._error&&e.response?.status===200&&!!response(e),endpoint:sanitizeTransportUrl(e.request.url),payload:Object.fromEntries(new URLSearchParams(sanitizeTransportText(e.request.postData.text)))}:null;
+ const acknowledgement=e=>{const f=new URLSearchParams(response(e)),next=f.get('na');return {responseNextAction:next,protocolAccepted:['s','c','b','m','fso','fss'].includes(next)&&!['error','errorCode','error_code','err'].some(k=>f.has(k)&&!['','0','false'].includes(f.get(k)))};};
+ const transaction=e=>e?{kind:kindOf(e),...acknowledgement(e),status:e.response?.status||0,complete:e._fuzzerPending!==true&&!e.response?._error&&e.response?.status===200&&!!response(e),endpoint:sanitizeTransportUrl(e.request.url),payload:Object.fromEntries(new URLSearchParams(sanitizeTransportText(e.request.postData.text)))}:null;
  const kind=latest?kindOf(latest):null;
  // The boundary is the spin count before the action, not the latest bonus spin.
  const submitted=Number.isInteger(afterSequence)&&afterSequence>=0?spins[afterSequence]:null;
@@ -64,8 +65,9 @@ export function visibleOperationChoices(pickers,drawings,{fallback=false,exclude
 }
 
 /** Complete one submitted operation. Only choice alternatives form a family; reels/results do not. */
-export async function finishOperation(a,before,initial,{choicePlan=[],deadline=Infinity,timeoutMs=180000,pollMs=500,verifyPurchase=true,stallMs=Infinity,choiceDwellMs=0,recoveryQuietMs=1000,recoveryGapMs=2000}={}){
+export async function finishOperation(a,before,initial,{choicePlan=[],deadline=Infinity,timeoutMs=180000,pollMs=500,verifyPurchase=true,stallMs=Infinity,choiceDwellMs=0,recoveryQuietMs=1000,recoveryGapMs=2000,probeIdleMs=0,probeResponseMs=10000}={}){
  if(!(stallMs>0)||!(Number.isFinite(stallMs)||stallMs===Infinity))throw Error('INVALID_STALL_LIMIT');
+ if(!Number.isSafeInteger(probeIdleMs)||probeIdleMs<0||!Number.isSafeInteger(probeResponseMs)||probeResponseMs<1)throw Error('INVALID_EXIT_PROBE_LIMIT');
  const started=a.now(),until=Math.min(started+timeoutMs,deadline),sequenceBefore=before?.operation?.sequence||0;
  const initialOperation=initial.operation||{},anchored=Object.hasOwn(initialOperation,'submission');
  const original=anchored?initialOperation.submission:initialOperation.sequence===sequenceBefore+1&&initialOperation.transaction?{sequence:initialOperation.sequence,...initialOperation.transaction}:null;
@@ -74,6 +76,7 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
  const decisions=[],verificationChoices=[],continuations=[];
  let current=initial,assessedSnapshot=initial,assessedAt=null,traffic=initial.traffic,lastTraffic=started,lastCenter=started,lastAdvance=started,choiceMarker=null,readyTicks=0,verificationSequence=null,verification=null,verificationAvailable=false,controlUnavailable=false,lastSpinAt=-Infinity,lastSpinAttempt=null,phase='operation_completion';
  let lastProgress=started,progressKey=null,lastCenterProgress=null,lastAdvanceProgress=null,choiceCandidate=null,lastRecoveryInput=started;
+ let empiricalRequired=probeIdleMs>0&&kind==='purchase',probeKey=null,probeChangedAt=started,probeTriedKey=null,probeSentAt=null,closureEvidence=null,verificationNextOperation=null,probeAttempts=0;
  const completion=()=>{
    const f=current.flags||{},o=current.operation||{},blockers=normalControlBlockers(current);
    if(!submission||submission.sequence!==sequenceBefore+1||anchored&&o.submission?.sequence!==submission.sequence)blockers.push('SUBMISSION_NOT_OBSERVED');
@@ -85,30 +88,30 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
    }
    if(!blockers.length&&readyTicks<2)blockers.push('READINESS_NOT_STABLE');
    return {
-     phase,blockers:[...new Set(blockers)],
+     phase,blockers:closureEvidence?[]:[...new Set(blockers)],...(closureEvidence?{observedRuntimeBlockers:[...new Set(blockers)]}:{}),
      readiness:{ticks:Math.min(readyTicks,2),requiredTicks:2,quietMs:assessedAt===null?0:Math.min(timeoutMs,Math.max(0,assessedAt-lastTraffic)),assessedAtMs:assessedAt===null?null:Math.min(timeoutMs,Math.max(0,assessedAt-started))},
      flags:{...Object.fromEntries(diagnosticFlags.map(k=>[k,bool(f[k])])),stages:[...new Set((Array.isArray(f.stages)?f.stages:[]).filter(k=>diagnosticStages.has(k)))]},
      stageDetails:(Array.isArray(current.stageDetails)?current.stageDetails:[]).filter(s=>diagnosticStages.has(s.name)).slice(0,3).map(s=>({name:s.name,...Object.fromEntries(stageFlags.map(k=>[k,bool(s[k])]))})),
      protocol:{sequence:count(o.sequence),protocolSequence:count(o.protocolSequence),kind:['spin','purchase'].includes(o.kind)?o.kind:null,transactionStatus:Number.isInteger(o.transaction?.status)?o.transaction.status:null,transactionComplete:bool(o.transaction?.complete),protocolComplete:bool(o.protocolComplete),nextAction:['s','c','m','b','fso','fss'].includes(o.nextAction)?o.nextAction:o.nextAction===null||o.nextAction===undefined?null:'OTHER',cascadeActive:bool(o.cascadeActive)},
-     lastSpinAttempt,boundaries:{submissionAfterSequence:count(sequenceBefore),verificationAfterSequence:count(verificationSequence)},
+     exitSurface:current.exitSurface?{clear:bool(current.exitSurface.clear),reason:code(current.exitSurface.reason),pendingCount:current.exitSurface.pendingPaths?.length??0}:null,lastSpinAttempt,boundaries:{submissionAfterSequence:count(sequenceBefore),verificationAfterSequence:count(verificationSequence)},
      evidence:Object.fromEntries(['tab_id','capture_id','full_path','artifact_dir'].filter(k=>['string','number'].includes(typeof current.evidence?.[k])).map(k=>[k,current.evidence[k]]))
    };
  };
- const result=(ok,reason)=>({ok,reason,kind,normalSpinVerified:ok&&(kind!=='purchase'||verifyPurchase),verificationRequired:verifyPurchase&&kind==='purchase',decisions,verificationChoices,continuations,elapsedMs:a.now()-started,snapshot:current,submission,verification,completion:completion()});
+ const result=(ok,reason)=>({ok,reason,kind,normalSpinVerified:ok&&(!!closureEvidence||kind!=='purchase'||verifyPurchase),verificationRequired:empiricalRequired||verifyPurchase&&kind==='purchase',closureEvidence,verificationNextOperation,decisions,verificationChoices,continuations,elapsedMs:a.now()-started,snapshot:current,submission,verification,completion:completion()});
  if(!submission||submission.sequence!==sequenceBefore+1)return result(false,'OPERATION_SUBMISSION_UNAVAILABLE');
  while(a.now()<until){
    const now=a.now();if(current.traffic!==traffic){traffic=current.traffic;lastTraffic=now;readyTicks=0;}
    const op=current.operation||{},choices=current.choices||[],busy=current.flags?.stages?.includes('StageSpin');
    const liveSubmission=anchored?op.submission:op.sequence===submission.sequence?op.transaction:null;
    if(liveSubmission&&(!anchored||liveSubmission.sequence===submission.sequence)){
-     submission.status=liveSubmission.status;submission.complete=liveSubmission.complete;
+     submission.status=liveSubmission.status;submission.complete=liveSubmission.complete;submission.protocolAccepted=liveSubmission.protocolAccepted;
    }
    if(verificationSequence!==null){
      const liveVerification=Object.hasOwn(op,'verification')?op.verification:op.sequence===verificationSequence+1&&op.transaction?{sequence:op.sequence,...op.transaction}:null;
      verificationAvailable=liveVerification?.sequence===verificationSequence+1;
      if(verificationAvailable){
        if(!verification)verification=copyTransaction(liveVerification);
-       else{verification.status=liveVerification.status;verification.complete=liveVerification.complete;}
+       else{verification.status=liveVerification.status;verification.complete=liveVerification.complete;verification.protocolAccepted=liveVerification.protocolAccepted;verification.responseNextAction=liveVerification.responseNextAction;}
      }
      phase=verification?'verification_response':'verification_request';
    }
@@ -124,8 +127,61 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
    // later; keep observing until choices appear or the absolute operation/global
    // deadline expires. Generic operations still use the short stall budget.
    const advertisedChoicePending=op.protocolComplete===true&&['b','m','fso'].includes(op.nextAction)&&!choices.length;
+   // Empirical exit uses observed UI + game traffic, not stale lifecycle flags.
+   // The actual base-control input is performed by a separately revalidated adapter.
+   if(probeIdleMs>0&&(choices.length||['b','m','fso'].includes(op.nextAction)||current.flags?.logicIsFreeSpin===true||current.flags?.respinInProgress===true))empiricalRequired=true;
+   const exitProgress=JSON.stringify([op.sequence,op.protocolSequence,op.nextAction,op.protocolComplete,current.capture?.marker,current.capture?.pending,current.capture?.uncertain,current.exitSurface?.key,choices.map(c=>c.key)]);
+   if(probeKey!==exitProgress){probeKey=exitProgress;probeChangedAt=now;}
+   if(empiricalRequired&&probeSentAt!==null){
+     if(verificationAvailable&&verification?.complete===true&&current.capture?.uncertain!==true){
+       if(verification.kind!=='spin')return result(false,'EXIT_PROBE_NOT_NORMAL');
+       if(verification.protocolAccepted===false)return result(false,'EXIT_PROBE_REJECTED');
+       if(decisions.length<choicePlan.length)return result(false,'CHOICE_NOT_OBSERVED');
+       closureEvidence={basis:'OBSERVED_NORMAL_SPIN',control:lastSpinAttempt.control,sequence:verification.sequence,protocolSequenceBefore:lastSpinAttempt.protocolSequenceBefore};
+       verificationNextOperation={sequence:verification.sequence,nextAction:verification.responseNextAction??op.nextAction,complete:false,requiresInteraction:['b','m','fso'].includes(verification.responseNextAction??op.nextAction)};
+       phase='complete';return result(true,'OPERATION_COMPLETE');
+     }
+     // No second input can accidentally provide the proof for the first click.
+     // In particular, a new prompt is evidence of interaction, not of a new spin.
+     if(choices.length&&current.capture?.pending===false&&current.capture?.uncertain!==true){
+       continuations.push({kind:'EXIT_PROBE_REVEALED_INTERACTION',ok:true,timeMs:now-started});
+       // The input opened a prompt instead of starting a round. Follow its
+       // observed alternatives, invalidating this proof epoch before any input.
+       probeSentAt=null;verificationSequence=null;verification=null;verificationAvailable=false;
+       controlUnavailable=true;lastRecoveryInput=now;phase='operation_completion';
+       await a.sleep(Math.min(pollMs,Math.max(0,until-a.now())));current=await a.snapshot();continue;
+     }
+     if(current.wager?.menuOpen)return result(false,'EXIT_PROBE_INTERACTION_REQUIRED');
+     if(now-probeSentAt>=probeResponseMs)return result(false,'EXIT_PROBE_NO_RESPONSE');
+     await a.sleep(Math.min(pollMs,Math.max(0,until-a.now())));current=await a.snapshot();continue;
+   }
+   if(empiricalRequired&&submissionAvailable&&submission.complete===true&&
+      current.capture?.pending===false&&current.capture?.uncertain!==true&&op.protocolComplete===true&&
+      !advertisedChoicePending&&!choices.length&&!current.wager?.menuOpen&&current.exitSurface?.clear===true&&
+      now-Math.max(probeChangedAt,lastRecoveryInput)>=probeIdleMs&&probeTriedKey!==probeKey){
+     if(probeAttempts>=2)return result(false,'EXIT_PROBE_LIMIT');
+     probeTriedKey=probeKey;phase='exit_probe_control';
+     let spin;try{spin=await a.spinNormal(current,{empirical:true,deadline:until});}
+     catch{spin={ok:false,clicked:true,reason:'EXIT_PROBE_CLICK_UNCONFIRMED'};}
+     lastSpinAttempt={ok:bool(spin?.ok),clicked:bool(spin?.clicked),retryable:spin?.retryable===true,
+       reason:spin?.reason===undefined?null:code(spin.reason),sequenceBefore:count(spin?.sequenceBefore),
+       protocolSequenceBefore:count(spin?.protocolSequenceBefore),control:boundedText(spin?.control),empirical:true,timeMs:now-started};
+     lastSpinAt=lastRecoveryInput=a.now();
+     if(spin?.ok===true&&spin.clicked===true&&spin.empirical===true){
+       verificationSequence=spin.sequenceBefore;
+       if(count(verificationSequence)===null)return result(false,'VERIFICATION_BOUNDARY_UNAVAILABLE');
+       probeAttempts++;probeSentAt=a.now();controlUnavailable=false;phase='verification_request';
+       if(a.now()>=until)break;
+       await a.sleep(Math.min(pollMs,until-a.now()));current=await a.snapshot();continue;
+     }
+     if(spin?.clicked!==false)return result(false,'EXIT_PROBE_CLICK_UNCONFIRMED');
+     controlUnavailable=true;
+     // The preflight may have observed a new UI: never recover from its old snapshot.
+     if(a.now()>=until)break;
+     await a.sleep(Math.min(pollMs,until-a.now()));current=await a.snapshot();continue;
+   }
    if(!advertisedChoicePending&&now-lastProgress>=stallMs)return result(false,'OPERATION_STALLED');
-   if(readyTicks>=2){
+   if(readyTicks>=2&&!empiricalRequired){
      if(verificationSequence===null){
        if(decisions.length<choicePlan.length)return result(false,'CHOICE_NOT_OBSERVED');
        if(!verifyPurchase||kind!=='purchase'){phase='complete';return result(true,'OPERATION_COMPLETE');}
@@ -142,7 +198,7 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
          readyTicks=0;
        }
      }else if(verificationAvailable&&verification?.kind==='spin'&&verification.complete===true){phase='complete';return result(true,'OPERATION_COMPLETE');}
-   }else if(choices.length&&current.capture?.pending!==true&&current.capture?.uncertain!==true&&(verifyPurchase||!busy||op.protocolComplete===true&&['b','fso'].includes(op.nextAction))){
+   }else if(choices.length&&current.capture?.pending!==true&&current.capture?.uncertain!==true&&(verifyPurchase||probeIdleMs>0||!busy||op.protocolComplete===true&&['b','fso'].includes(op.nextAction))){
      const layout=JSON.stringify(choices.map(c=>[c.key,c.labels||[]])),sequence=op.protocolSequence??op.sequence,captureMarker=current.capture?.marker??null;
      // A response that says spin/collect can precede disappearance of the old
      // panel. Only a completed exchange asking for another choice re-arms it.
@@ -168,7 +224,7 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
    // An accepted click may still have an uncaptured request. Never advance on
    // the preceding protocol exchange while that verification boundary is empty.
    const verificationRequestPending=verificationSequence!==null&&!verificationAvailable;
-   const recoveryAllowed=!advertisedChoicePending&&current.capture?.pending!==true&&current.capture?.uncertain!==true&&!verificationRequestPending&&!choices.length&&!current.wager?.menuOpen&&(!normalReady||controlUnavailable);
+   const recoveryAllowed=!(empiricalRequired&&current.exitSurface?.clear===true&&!controlUnavailable)&&!advertisedChoicePending&&current.capture?.pending!==true&&current.capture?.uncertain!==true&&!verificationRequestPending&&!choices.length&&!current.wager?.menuOpen&&(!normalReady||controlUnavailable||empiricalRequired&&current.exitSurface?.clear!==true);
    // Recovery inputs share the same UI/protocol dwell and cooldown. A center
    // fallback must not bypass a new response, a changed UI, or a recent Stop.
    const recoveryStable=now-Math.max(lastTraffic,lastProgress)>=recoveryQuietMs;

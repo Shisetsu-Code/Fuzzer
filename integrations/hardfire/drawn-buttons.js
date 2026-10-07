@@ -21,7 +21,7 @@ async function captureDrawnButtonsImpl(controller,tabId,artifactDir,{includeUniv
   if(![size.width,size.height,placement.frame.width,placement.frame.height,scanResult.viewport.width,scanResult.viewport.height].every(v=>Number.isFinite(v)&&v>0))throw Error('INVALID_CONTROL_VIEWPORT');
   const controls=(scanResult.controls||[]).map(c=>{
    const hit=c.hit_rect?mapButtonRect(c.hit_rect,placement.frame,scanResult.viewport,size,size):null;
-   return {...c,hit_rect:hit,center:hit?{x:(hit.x+hit.width/2)/size.width,y:(hit.y+hit.height/2)/size.height}:null};
+   return {...c,runtime_hit_rect:c.hit_rect,hit_rect:hit,center:hit?{x:(hit.x+hit.width/2)/size.width,y:(hit.y+hit.height/2)/size.height}:null};
   });
   return {geometry_only:true,image_size:size,controls,unresolved:scanResult.unresolved||[],occlusion_verified:false};
  }

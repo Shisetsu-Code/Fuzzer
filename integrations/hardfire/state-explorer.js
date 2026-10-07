@@ -3,6 +3,7 @@ import {createHardFireSession} from './session.js';import {captureDrawnButtons} 
 import {consolidateHars} from './har-consolidation.js';
 import {chooseHitPoint} from '../../providers/pragmatic/hit-point.js';
 import {pressObservedStop} from './observed-stop.js';
+import {assessExitSurface,pressExitSpin} from './observed-exit-spin.js';
 import {withSurfaceLock,ensurePainted} from './paint-guard.js';
 import {wagerEvidence,readRuntimeBalance,baseSurfaceMatches,parseProtocolMoney,classifySpinDebit} from '../../providers/pragmatic/wager-evidence.js';
 import {waitTransition} from '../../providers/pragmatic/state-explorer.js';
@@ -12,7 +13,7 @@ import {measure,independent,createBenchmark,withBenchmark} from '../../lib/perfo
 async function runStateExplorerImpl(controller,{gameUrl,artifactDir,maxActions=20,maxDepth=4,timeoutMs=600000,mode='actions',maxRetries=mode==='actions'?2:0,maxRouteAttempts,operationStallMs=15000,actionDwellMs=4000,maxWagerStepsPerRoute=1,resumeState=null,sliceAttempts=8,savedHarPaths=[],onProgress,onOwnedTab,onClosedTab}={}){
  if(!['actions','strict'].includes(mode))throw Error('INVALID_EXPLORATION_MODE');
  const actionMode=mode==='actions',deadline=Date.now()+timeoutMs;
- let operationControlPaths=[],rootControlPaths=[];
+ let operationControlPaths=[],rootControlPaths=[],rootDrawings=[];
  let session,lastEvidence,lastKey,lastCapture=0,rootSurface=null,rootConfiguration=null,lastActionAt=0,operationBoundary=null,verificationBoundary=null;const savedHars=[...savedHarPaths],branchCaptures=[];let terminalCaptured=false,observationId=0;
  const close=async()=>{
   if(!session)return;const owned=session;
@@ -22,14 +23,14 @@ async function runStateExplorerImpl(controller,{gameUrl,artifactDir,maxActions=2
  };
  const surfaceReady=async()=>{if(actionMode)await controller.tabs.activate(session.tabId);else await ensurePainted(controller,session.tabId);};
  const inputBudget=()=>{if(Date.now()>=deadline)throw Error('DEADLINE');};
- const adapter={now:()=>Date.now(),sleep:ms=>new Promise(r=>setTimeout(r,ms)),reset:async()=>{await close();operationBoundary=null;verificationBoundary=null;operationControlPaths=[];rootControlPaths=[];session=await measure('session.create',()=>createHardFireSession(controller,{gameUrl,artifactDir,entryOnly:true,liveProtocol:actionMode,onOwnedTab,onClosedTab}));lastKey=null;rootSurface=null;rootConfiguration=null;terminalCaptured=false;await controller.tabs.activate(session.tabId);if(actionMode)await withSurfaceLock(()=>ensurePainted(controller,session.tabId));},
+ const adapter={now:()=>Date.now(),sleep:ms=>new Promise(r=>setTimeout(r,ms)),reset:async()=>{await close();operationBoundary=null;verificationBoundary=null;operationControlPaths=[];rootControlPaths=[];rootDrawings=[];session=await measure('session.create',()=>createHardFireSession(controller,{gameUrl,artifactDir,entryOnly:true,liveProtocol:actionMode,onOwnedTab,onClosedTab}));lastKey=null;rootSurface=null;rootConfiguration=null;terminalCaptured=false;await controller.tabs.activate(session.tabId);if(actionMode)await withSurfaceLock(()=>ensurePainted(controller,session.tabId));},
  snapshot:async()=>withSurfaceLock(async()=>{await surfaceReady();const readBoundary=actionMode?measure('runtime.boundary',()=>session.protocolCapture()):null;const [raw,state,wallet,entries,reportedMenu]=await measure('snapshot.reads',()=>independent([()=>measure('runtime.controls',()=>session.frame.evaluate(inspectDrawnButtons)),()=>measure('runtime.state',()=>session.provider.protocolState(session.frame)),()=>measure('runtime.balance',()=>session.frame.evaluate(readRuntimeBalance)),()=>measure('runtime.entries',()=>session.entries()),()=>measure('runtime.menu',()=>session.purchaseMenu())]));if(raw.supported===false||!raw.viewport||![raw.viewport.width,raw.viewport.height].every(v=>Number.isFinite(v)&&v>0))throw Error('RUNTIME_SURFACE_UNAVAILABLE');const menu=purchaseMenuContext(raw.controls,reportedMenu);const partition=filterKnownControls(raw.controls||[],{requireHitRect:true,includeWagerAdjustments:actionMode,menuOpen:menu.open===true,restrictToPurchaseMenu:actionMode}),controls=partition.keep.map(b=>({...b,key:b.path})),unresolved=[...filterKnownControls(raw.unresolved||[],{includeWagerAdjustments:actionMode,menuOpen:menu.open===true,restrictToPurchaseMenu:actionMode}).keep,...partition.unresolved];const flags={stages:state?.stages?.map(s=>s.name).sort(),logicIsFreeSpin:state?.logicIsFreeSpin,respinInProgress:state?.respinInProgress,spinBlockingFeatureIsRunning:state?.spinBlockingFeatureIsRunning,canSpin:state?.canSpin,stopActive:state?.stopActive,lastWinIsCounting:state?.lastWinIsCounting,waitInResultForBigWin:state?.waitInResultForBigWin,confirmFSActive:state?.confirmFSActive,fsStartNeedsConfirmation:state?.fsStartNeedsConfirmation,mustOpenBonus:state?.mustOpenBonus,mustOpenAnotherBonus:state?.mustOpenAnotherBonus,mustResumeFreeSpinOptions:state?.mustResumeFreeSpinOptions,manualRespin:state?.manualRespin};
  const stageDetails=(state?.stages||[]).map(stage=>Object.fromEntries(Object.entries(stage).filter(([key,value])=>key==='name'&&typeof value==='string'||['mustSpin','fsStartConfirmed','shouldEnterFS','freeSpinsEnded','changeToResult','spinEnded'].includes(key)&&typeof value==='boolean')));
  if(wallet.balance===null||wallet.balance===0){for(const entry of [...entries].reverse()){const content=entry.response?.content;if(!content?.text||content.encoding==='base64')continue;const fields=new URLSearchParams(content.text);const value=fields.get('balance');if(value!==null&&value.trim()!==''&&parseProtocolMoney(value)!==null){wallet.balance=parseProtocolMoney(value);wallet.balanceSource='server:balance';break;}}}
  const wager={...wallet,betLevelIndex:state?.betLevelIndex??null,canSpin:state?.canSpin===true,menuOpen:menu.open===true,serverMarker:actionMode?session.protocolCapture().marker:JSON.stringify(controller.withTab(session.tabId).networkEvents())};
  const surface=controls.map(b=>({center:{x:(b.hit_rect.x+b.hit_rect.width/2)/raw.viewport.width,y:(b.hit_rect.y+b.hit_rect.height/2)/raw.viewport.height}}));
  const configuration=JSON.stringify({buttons:controls.map(b=>({path:b.key,labels:b.labels||[],sprites:b.sprite_names})),betLevelIndex:wager.betLevelIndex});
- if(rootSurface===null){rootSurface=surface;rootConfiguration=configuration;rootControlPaths=controls.map(c=>c.key);}
+ if(rootSurface===null){rootDrawings=raw.controls;rootSurface=surface;rootConfiguration=configuration;rootControlPaths=controls.map(c=>c.key);}
  wager.probeReady=!unresolved.length&&(actionMode||configuration!==rootConfiguration)&&baseSurfaceMatches(rootSurface,surface)&&!wager.menuOpen&&!state?.logicIsFreeSpin&&!state?.respinInProgress&&!state?.spinBlockingFeatureIsRunning;
  const key=actionMode?createNavigationKey({controls,unresolved,wager}):createHash('sha256').update(JSON.stringify({configuration,flags,unresolved:unresolved.map(c=>({path:c.path,reason:c.reason}))})).digest('hex').slice(0,20);
  if(!actionMode&&(key!==lastKey||Date.now()-lastCapture>10000)){lastEvidence=await measure('snapshot.evidence',()=>captureDrawnButtons(controller,session.tabId,artifactDir));lastKey=key;lastCapture=Date.now();}
@@ -39,10 +40,10 @@ async function runStateExplorerImpl(controller,{gameUrl,artifactDir,maxActions=2
  if(capture){wager.serverMarker=capture.marker;for(const b of controls){b.captureMarker=readBoundary?.marker??capture.marker;if(Number.isFinite(wager.betAmount))b.wagerGuard={betAmount:wager.betAmount,betSource:wager.betSource};}}
  const traffic=capture?capture.marker:JSON.stringify(controller.withTab(session.tabId).networkEvents());
  const operation=operationStateFromEntries(capture?.entries||entries,{...(operationBoundary===null?{}:{afterSequence:operationBoundary}),...(verificationBoundary===null?{}:{verificationAfterSequence:verificationBoundary})});
- const choices=visibleOperationChoices(state?.pickerControls,raw.controls,{fallback:actionMode&&operationBoundary!==null&&['b','fso'].includes(operation.nextAction),excludedPaths:operationControlPaths});
+ const choices=visibleOperationChoices(state?.pickerControls,raw.controls,{fallback:actionMode&&operationBoundary!==null,excludedPaths:operationControlPaths});
  if(actionMode)for(const choice of choices)choice.captureMarker=readBoundary?.marker??capture?.marker;
  const inputReady=capture?.pending===false&&capture.uncertain!==true&&capture.marker===readBoundary?.marker&&!flags.stages?.includes('StageSpin')&&!flags.lastWinIsCounting&&(wager.menuOpen?menu.ready===true:choices.length>0||flags.canSpin===true&&!flags.logicIsFreeSpin&&!flags.respinInProgress&&!flags.spinBlockingFeatureIsRunning&&!flags.stopActive);
- return {key,controls,excludedControls:partition.discarded.map(c=>({key:c.path,name:c.name,reason:c.discard_reason})),choices,inputReady,capture:capture?{marker:capture.marker,pending:capture.pending,uncertain:capture.uncertain}:null,operation,unresolved,traffic,wager,evidence:actionMode?{tab_id:session.tabId,observation_id:++observationId,observed_at:Date.now(),kind:'RUNTIME_OBSERVATION'}:{tab_id:session.tabId,capture_id:lastEvidence.capture_id,full_path:lastEvidence.full_path,artifact_dir:lastEvidence.artifact_dir},flags,stageDetails};}),
+ return {key,controls,exitSurface:actionMode?assessExitSurface(raw,rootDrawings):null,excludedControls:partition.discarded.map(c=>({key:c.path,name:c.name,reason:c.discard_reason})),choices,inputReady,capture:capture?{marker:capture.marker,pending:capture.pending,uncertain:capture.uncertain}:null,operation,unresolved,traffic,wager,evidence:actionMode?{tab_id:session.tabId,observation_id:++observationId,observed_at:Date.now(),kind:'RUNTIME_OBSERVATION'}:{tab_id:session.tabId,capture_id:lastEvidence.capture_id,full_path:lastEvidence.full_path,artifact_dir:lastEvidence.artifact_dir},flags,stageDetails};}),
  click:async b=>withSurfaceLock(async()=>{await surfaceReady();const fresh=await captureDrawnButtons(controller,session.tabId,artifactDir,{includeUniversal:true,geometryOnly:actionMode});const target=fresh.controls.find(c=>c.path===b.key);if(!target?.center||target.enabled===false)throw Error('CONTROL_UNAVAILABLE');const point=chooseHitPoint(target,fresh.controls);if(!point)throw Error('AMBIGUOUS_HIT_AREA');if(b.wagerGuard){const wallet=await session.frame.evaluate(readRuntimeBalance);if(wallet.betAmount!==b.wagerGuard.betAmount||wallet.betSource!==b.wagerGuard.betSource)throw Error('ACTION_CONFIGURATION_CHANGED');}if(actionMode){const latest=session.protocolCapture();if(latest.pending||latest.uncertain||latest.marker!==b.captureMarker)throw Error('ACTION_PROTOCOL_CHANGED');}
  inputBudget();lastActionAt=Date.now();const clicked=await measure('input.click',()=>controller.withTab(session.tabId).click(point.x,point.y));if(clicked?.ok===false)throw Error('ACTION_CLICK_UNCONFIRMED');}),
  clickCenter:async()=>withSurfaceLock(async()=>{await surfaceReady();if(actionMode&&(session.protocolCapture().pending||session.protocolCapture().uncertain))return {ok:false,reason:'CAPTURE_PENDING'};inputBudget();return session.clickContinue();}),
@@ -50,7 +51,7 @@ async function runStateExplorerImpl(controller,{gameUrl,artifactDir,maxActions=2
  finishOperation:async(before,after,options)=>{
   session.started=true;operationBoundary=before.operation?.sequence||0;operationControlPaths=[...rootControlPaths,...(before.controls||[]).map(c=>c.key)];
   verificationBoundary=null;
-  try{const initial={...after,operation:operationStateFromEntries(await session.entries(),{afterSequence:operationBoundary})};return await finishOperation(adapter,before,initial,{...options,verifyPurchase:!actionMode,stallMs:actionMode?operationStallMs:Infinity,choiceDwellMs:actionMode?actionDwellMs:0,recoveryQuietMs:actionMode?actionDwellMs:1000,recoveryGapMs:actionMode?actionDwellMs:2000});}
+  try{const initial={...after,operation:operationStateFromEntries(await session.entries(),{afterSequence:operationBoundary})};return await finishOperation(adapter,before,initial,{...options,verifyPurchase:!actionMode,probeIdleMs:actionMode?actionDwellMs:0,stallMs:actionMode?operationStallMs:Infinity,choiceDwellMs:actionMode?actionDwellMs:0,recoveryQuietMs:actionMode?actionDwellMs:1000,recoveryGapMs:actionMode?actionDwellMs:2000});}
   finally{operationBoundary=null;verificationBoundary=null;}
  },
  choose:async choice=>{
@@ -67,9 +68,17 @@ async function runStateExplorerImpl(controller,{gameUrl,artifactDir,maxActions=2
    inputBudget();if(Date.now()>=operationDeadline)return {ok:false,kind:'WAIT',reason:'OPERATION_DEADLINE'};if(actionMode&&(session.protocolCapture().pending||session.protocolCapture().uncertain))return {ok:false,kind:'WAIT',reason:'CAPTURE_PENDING'};
    return observed.continueAction?session.perform(observed.continueAction):{ok:true,kind:'WAIT'};
  }),
- spinNormal:async current=>withSurfaceLock(async()=>{
+ spinNormal:async(current,{empirical=false,deadline:operationDeadline=deadline}={})=>withSurfaceLock(async()=>{
    const reject=reason=>({ok:false,clicked:false,retryable:true,reason});
    await surfaceReady();
+   if(empirical&&actionMode){
+    const result=await pressExitSpin({current,baseControls:rootDrawings,deadline:Math.min(deadline,operationDeadline),
+     readCapture:()=>session.protocolCapture(),
+     readControls:()=>captureDrawnButtons(controller,session.tabId,artifactDir,{includeUniversal:true,geometryOnly:true}),
+     click:(x,y)=>measure('input.exit-probe',()=>controller.withTab(session.tabId).click(x,y))});
+    if(result.clicked===true)verificationBoundary=result.sequenceBefore;
+    return result;
+   }
    const raw=await captureDrawnButtons(controller,session.tabId,artifactDir,{includeUniversal:true,geometryOnly:actionMode});
    const [live,menu]=await independent([()=>measure('runtime.state',()=>session.provider.protocolState(session.frame)),()=>measure('runtime.menu',()=>session.purchaseMenu())]);
    if(live?.canSpin!==true)return reject('NORMAL_SPIN_RUNTIME_NOT_READY');
@@ -153,7 +162,7 @@ export async function runStateExplorer(controller,options={}){
   try{
    result=await measure('exploration.total',()=>runExplorerCampaign(segment=>runStateExplorerImpl(controller,segment),{
     ...runOptions,timeoutMs:runOptions.timeoutMs??1200000,
-    identity:{contract:'pragmatic-campaign-v1',gameUrl:runOptions.gameUrl,source:process.env.FUZZER_SOURCE_SHA||null,hardfire:process.env.HARDFIRE_SOURCE_SHA||null},
+    identity:{contract:'pragmatic-campaign-v2-observed-exit',gameUrl:runOptions.gameUrl,source:process.env.FUZZER_SOURCE_SHA||null,hardfire:process.env.HARDFIRE_SOURCE_SHA||null},
     onProgress:progress=>measure('checkpoint.progress',()=>runOptions.onProgress?.({...progress,...(recorder?{performance:{...recorder.report({includeTrace:false}),mode:performanceMode}}:{})}))
    }));
    return result;

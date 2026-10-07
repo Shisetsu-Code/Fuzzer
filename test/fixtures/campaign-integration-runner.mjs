@@ -10,8 +10,8 @@ const button=(name,x,y,event)=>({root:0,path:`Game/${name}`,name,labels:[],sprit
 const controls=[button('StartSpin_Button',70,10,'Evt_DataToCode_Pressed_Spin'),button('FeatureAlpha',10,10,'Evt_Alpha'),button('FeatureBeta',35,10,'Evt_Beta'),button('FeatureGamma',10,40,'Evt_Gamma')];
 const raw=()=>({supported:true,viewport:{width:100,height:100},controls,unresolved:[]});
 const controller={tabs:{activate:async()=>{}},withTab:()=>({networkEvents:()=>entries,click:async(x,y)=>{
- assert.ok(x<70,'no extra normal spin is allowed');clicked.push([x,y]);
- entries.push({request:{url:'https://demogamesfree.pragmaticplay.net/gs2c/gameService',postData:{text:'action=doSpin&pur=0&c=0.1&l=20'}},response:{status:200,content:{text:'na=s&balance=99900'}}});return {ok:true};
+ clicked.push([x,y]);
+ entries.push({request:{url:'https://demogamesfree.pragmaticplay.net/gs2c/gameService',postData:{text:x>=70?'action=doSpin&c=0.1&l=20':'action=doSpin&pur=0&c=0.1&l=20'}},response:{status:200,content:{text:'na=s&balance=99900'}}});return {ok:true};
 }})};
 mock.module(new URL('../../integrations/hardfire/session.js',import.meta.url).href,{namedExports:{createHardFireSession:async(_controller,options)=>{
  assert.equal(owned.size,0,'the previous session must be closed before a new one is created');creates++;entries=[];
@@ -31,9 +31,9 @@ try{
  assert.ok(result.campaign);assert.equal(result.campaign.slices,3);
  assert.equal(result.status,'EXHAUSTED_OBSERVED_CONTROLS');assert.equal(result.actions,3);assert.equal(result.completeGame,false);
  assert.deepEqual(result.edges.map(e=>e.action),controls.slice(1).map(c=>c.path));
- assert.equal(creates,3);assert.equal(closes,3);assert.equal(clicked.length,3);assert.equal(owned.size,0);assert.equal(result.savedHarPaths.length,3);
+ assert.equal(creates,3);assert.equal(closes,3);assert.equal(clicked.length,6);assert.equal(owned.size,0);assert.equal(result.savedHarPaths.length,3);
  for(const file of result.savedHarPaths)await fs.access(file);
  const reference=JSON.parse(await fs.readFile(path.join(artifactDir,'har-reference.json'),'utf8'));
- const har=JSON.parse(await fs.readFile(reference.path,'utf8'));assert.equal(har.log.entries.length,3);
+ const har=JSON.parse(await fs.readFile(reference.path,'utf8'));assert.equal(har.log.entries.length,6);
  console.log(JSON.stringify({scenario:'campaign',creates,closes,actions:result.actions,slices:result.campaign.slices,harEntries:har.log.entries.length}));
 }finally{mock.restoreAll();await fs.rm(artifactDir,{recursive:true,force:true});}
