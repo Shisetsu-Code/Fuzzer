@@ -1,4 +1,5 @@
 import {filterKnownControls} from './known-controls.js';
+import {createNavigationKey} from './state-explorer.js';
 import {sanitizeTransportUrl,sanitizeTransportText} from '../../lib/parser-common.js';
 
 /** Protocol evidence marks the submission boundary. Random bonus values are not graph keys. */
@@ -72,7 +73,7 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
  const kind=submission?.kind||initialOperation.kind||'spin';
  const decisions=[],verificationChoices=[],continuations=[];
  let current=initial,assessedSnapshot=initial,assessedAt=null,traffic=initial.traffic,lastTraffic=started,lastCenter=started,lastAdvance=started,choiceMarker=null,readyTicks=0,verificationSequence=null,verification=null,verificationAvailable=false,controlUnavailable=false,lastSpinAt=-Infinity,lastSpinAttempt=null,phase='operation_completion';
- let lastProgress=started,progressKey=null,lastCenterProgress=null,lastAdvanceProgress=null,choiceCandidate=null;
+ let lastProgress=started,progressKey=null,lastCenterProgress=null,lastAdvanceProgress=null,choiceCandidate=null,lastRecoveryInput=started;
  const completion=()=>{
    const f=current.flags||{},o=current.operation||{},blockers=normalControlBlockers(current);
    if(!submission||submission.sequence!==sequenceBefore+1||anchored&&o.submission?.sequence!==submission.sequence)blockers.push('SUBMISSION_NOT_OBSERVED');
@@ -116,7 +117,7 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
    const normalReady=submissionAvailable&&submission.complete===true&&normalControlsReady(current);
    readyTicks=normalReady?readyTicks+1:0;
    assessedSnapshot=current;assessedAt=now;
-   const observedProgress=JSON.stringify([op.sequence,op.protocolSequence,op.nextAction,op.protocolComplete,op.cascadeActive,current.capture?.pending,current.capture?.uncertain,current.flags,current.wager?.menuOpen,choices.map(c=>c.key)]);
+   const observedProgress=JSON.stringify([createNavigationKey(current),op.sequence,op.protocolSequence,op.nextAction,op.protocolComplete,op.cascadeActive,current.capture?.pending,current.capture?.uncertain,current.flags,current.wager?.menuOpen,choices.map(c=>c.key)]);
    if(observedProgress!==progressKey){progressKey=observedProgress;lastProgress=now;}
    // A completed response that explicitly advertises a decision is an open
    // traversal frontier, not a stalled operation. The panel may be animated in
@@ -160,7 +161,7 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
          if(!selected)return result(false,'CHOICE_NOT_AVAILABLE');
          if(a.now()>=until)break;
          let action;try{action=await a.choose(selected);}catch{action={ok:false};}if(action?.ok!==true)return result(false,'CHOICE_ACTION_FAILED');
-         decision.selected=selected.key;choiceMarker={layout,sequence};choiceCandidate=null;lastCenter=lastAdvance=now;
+         decision.selected=selected.key;choiceMarker={layout,sequence};choiceCandidate=null;lastCenter=lastAdvance=lastRecoveryInput=a.now();
        }
      }else choiceCandidate=null;
    }else choiceCandidate=null;
@@ -168,12 +169,16 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
    // the preceding protocol exchange while that verification boundary is empty.
    const verificationRequestPending=verificationSequence!==null&&!verificationAvailable;
    const recoveryAllowed=!advertisedChoicePending&&current.capture?.pending!==true&&current.capture?.uncertain!==true&&!verificationRequestPending&&!choices.length&&!current.wager?.menuOpen&&(!normalReady||controlUnavailable);
+   // Recovery inputs share the same UI/protocol dwell and cooldown. A center
+   // fallback must not bypass a new response, a changed UI, or a recent Stop.
+   const recoveryStable=now-Math.max(lastTraffic,lastProgress)>=recoveryQuietMs;
+   const recoveryCooled=now-lastRecoveryInput>=recoveryGapMs;
    let advanced=false;
    if(a.now()>=until)break;
-   if((!busy||!verifyPurchase&&current.flags?.stopActive===true)&&recoveryAllowed&&op.protocolComplete&&now-lastTraffic>=recoveryQuietMs&&now-lastAdvance>=recoveryGapMs&&lastAdvanceProgress!==progressKey){
+   if((!busy||!verifyPurchase&&current.flags?.stopActive===true)&&recoveryAllowed&&op.protocolComplete&&recoveryStable&&recoveryCooled&&now-lastAdvance>=recoveryGapMs&&lastAdvanceProgress!==progressKey){
      const r=await a.advance?.(current,{deadline:until});if(r)continuations.push(continuationOutcome(typeof r.kind==='string'&&/^[A-Za-z0-9_-]{1,64}$/.test(r.kind)?r.kind:'UNKNOWN',r,now-started));lastAdvance=now;
      if(r?.clicked===true&&r.ok!==true)return result(false,'CONTINUATION_ACTION_UNCONFIRMED');
-     advanced=r?.ok===true&&r.kind!=='WAIT';if(advanced)lastAdvanceProgress=progressKey;
+     advanced=r?.ok===true&&r.kind!=='WAIT';if(advanced){lastAdvanceProgress=progressKey;lastRecoveryInput=a.now();}
    }
    // An awaited continuation may consume the deadline or change the UI.
    // Never dispatch a second input using its predecessor's observation.
@@ -182,7 +187,7 @@ export async function finishOperation(a,before,initial,{choicePlan=[],deadline=I
    // layout or a completed new choice exchange can rearm this decision.
    // StageSpin can remain active behind an intro overlay. Neither that flag
    // nor unrelated background controls may suppress "click to continue".
-   if(!advanced&&recoveryAllowed&&now-lastCenter>=5000&&now-lastTraffic>=1000&&lastCenterProgress!==progressKey){const r=await a.clickCenter?.();continuations.push(continuationOutcome('CENTER_CLICK',r,now-started));lastCenter=now;lastCenterProgress=progressKey;}
+   if(!advanced&&recoveryAllowed&&recoveryStable&&recoveryCooled&&now-lastCenter>=5000&&lastCenterProgress!==progressKey){const r=await a.clickCenter?.();continuations.push(continuationOutcome('CENTER_CLICK',r,now-started));lastCenter=lastRecoveryInput=a.now();lastCenterProgress=progressKey;}
    await a.sleep(pollMs);current=await a.snapshot();
  }
  // A snapshot acquired at the deadline was never evaluated by this loop.
