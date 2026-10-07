@@ -34,3 +34,11 @@ for(const [scenario,name]of scenarios)test(name,()=>{
  assert.equal(evidence.scenario,scenario);
  assert(evidence.wallMs<2000,'the deterministic clock must avoid real transition waits');
 });
+
+
+test('the real adapter continues three campaign slices and consolidates every session HAR',()=>{
+ const fixture=fileURLToPath(new URL('./fixtures/campaign-integration-runner.mjs',import.meta.url));
+ const child=spawnSync(process.execPath,['--experimental-test-module-mocks',fixture],{encoding:'utf8',timeout:5000});
+ assert.equal(child.status,0,child.stderr||child.stdout||String(child.error));
+ assert.deepEqual(JSON.parse(child.stdout),{scenario:'campaign',creates:3,closes:3,actions:3,slices:3,harEntries:3});
+});

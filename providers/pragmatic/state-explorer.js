@@ -34,26 +34,32 @@ export function createNavigationKey({controls=[],unresolved=[],wager={}}={}){
 }
 
 const recoverableReasons=new Set([
- 'ACTIVE_TIMEOUT','QUIET_TIMEOUT','NO_TRANSITION','REPLAY_MISMATCH','CONTROL_UNAVAILABLE',
+ 'INTERRUPTED_ATTEMPT','DEADLINE','ACTIVE_TIMEOUT','QUIET_TIMEOUT','NO_TRANSITION','REPLAY_MISMATCH','CONTROL_UNAVAILABLE',
  'OPERATION_TIMEOUT','OPERATION_STALLED','OPERATION_SUBMISSION_UNAVAILABLE',
  'CHOICE_NOT_OBSERVED','CHOICE_NOT_AVAILABLE','CHOICE_ACTION_FAILED',
  'ACTION_PROTOCOL_CHANGED','ACTION_CONFIGURATION_CHANGED','ACTION_CLICK_UNCONFIRMED','CONTINUATION_ACTION_UNCONFIRMED'
 ]);
 const taskId=task=>createHash('sha256').update(JSON.stringify([task.state,task.route,task.action,task.choicePlan||[]])).digest('hex').slice(0,24);
 
-export async function exploreStates(a,{maxActions=20,maxDepth=4,wait=waitTransition,onProgress=async()=>{},deadline=Infinity,mode='strict',maxRetries=mode==='actions'?2:0,maxRouteAttempts=maxActions*(maxRetries+1),maxWagerStepsPerRoute=1}={}){
+export async function exploreStates(a,{maxActions=20,maxDepth=4,wait=waitTransition,onProgress=async()=>{},deadline=Infinity,mode='strict',maxRetries=mode==='actions'?2:0,maxRouteAttempts=maxActions*(maxRetries+1),maxWagerStepsPerRoute=1,resumeState=null,sliceAttempts=Infinity}={}){
  if(!Number.isInteger(maxWagerStepsPerRoute)||maxWagerStepsPerRoute<0||maxWagerStepsPerRoute>3)throw Error('INVALID_WAGER_STEP_LIMIT');
  if(!Number.isInteger(maxRetries)||maxRetries<0||maxRetries>5)throw Error('INVALID_RETRY_LIMIT');
  if(!Number.isInteger(maxRouteAttempts)||maxRouteAttempts<1||maxRouteAttempts>10000)throw Error('INVALID_ROUTE_ATTEMPT_LIMIT');
+ if(sliceAttempts!==Infinity&&(!Number.isSafeInteger(sliceAttempts)||sliceAttempts<1))throw Error('INVALID_SLICE_LIMIT');
+ const limits={mode,maxActions,maxDepth,maxRetries,maxRouteAttempts,maxWagerStepsPerRoute};
  const now=()=>a.now?.()??Date.now();
  const scopeOmissions=[];const coverage={wagerSampling:maxWagerStepsPerRoute===1?'one-step-per-route':'bounded-per-route',maxWagerStepsPerRoute,allAmountsTested:false,scopeOmissions};
  const nodes=new Map(),routes=new Map(),edges=[],pending=[],queue=[],retryQueue=[],attemptHistory=[],operationPlans=new Set();
- let actions=0,attemptedActions=0,routeAttempts=0,cleanupFailure=null,inFlight=null,reuseTask=null;
+ let actions=0,attemptedActions=0,routeAttempts=0,cleanupFailure=null,inFlight=null,reuseTask=null,activeTask=null,sliceAttemptCount=0,persistenceFailed=false;
  const recovery=()=>({maxRetries,routeAttempts,retries:[...routes.values()].reduce((sum,r)=>sum+Math.max(0,r.attempts-1),0),
   discoveredRoutes:routes.size,validRoutes:[...routes.values()].filter(r=>r.valid).length,
   resolvedRoutes:[...routes.values()].filter(r=>r.resolved).length,recoveredRoutes:[...routes.values()].filter(r=>r.resolved&&r.attempts>1).length,
   blockedRoutes:pending.filter(p=>p.disposition==='blocked').length,deferredRoutes:pending.filter(p=>p.disposition==='deferred').length});
- const progress=()=>onProgress({nodes:[...nodes.values()],edges,pending,queued:[...queue,...retryQueue],inFlight,actions,attemptedActions,recovery:recovery(),coverage,attemptHistory,...cleanupFailure});
+ const checkpoint=()=>structuredClone({schema:'fuzzer/explorer-resume/v1',limits,nodes:[...nodes.values()],routes:[...routes],edges,pending,queue,retryQueue,attemptHistory,operationPlans:[...operationPlans],scopeOmissions,actions,attemptedActions,routeAttempts,activeTask,cleanupPending:!!cleanupFailure});
+ const progress=async()=>{
+  try{await onProgress({nodes:[...nodes.values()],edges,pending,queued:[...queue,...retryQueue],inFlight,actions,attemptedActions,recovery:recovery(),coverage,attemptHistory,resumeState:checkpoint(),...cleanupFailure});}
+  catch(cause){persistenceFailed=true;throw Object.assign(new Error('CHECKPOINT_WRITE_FAILED',{cause}),{code:'CHECKPOINT_WRITE_FAILED'});}
+ };
  const budget=()=>{if(now()>=deadline)throw Object.assign(Error('DEADLINE'),{code:'DEADLINE'});};
  const register=task=>{
   const fresh={state:task.state,route:task.route,action:task.action,...(task.choicePlan?.length?{choicePlan:task.choicePlan}:{})};
@@ -126,14 +132,32 @@ export async function exploreStates(a,{maxActions=20,maxDepth=4,wait=waitTransit
  const learnVariant=(s,route)=>{
   if(mode==='actions'&&s.inputReady===true&&s.capture?.pending===false&&s.capture?.uncertain!==true)observe(s,route);
  };
- budget();await a.reset();observe(await a.snapshot(),[]);
- while((queue.length||retryQueue.length)&&attemptedActions<maxActions&&routeAttempts<maxRouteAttempts&&now()<deadline&&!cleanupFailure){
+ // Resume data is private scheduler state, never a browser snapshot to click.
+ // Reject mismatches before opening a session, then replay using fresh controls.
+ if(resumeState){
+  const r=structuredClone(resumeState),arrays=['nodes','routes','edges','pending','queue','retryQueue','attemptHistory','operationPlans','scopeOmissions'];
+  if(r.schema!=='fuzzer/explorer-resume/v1'||JSON.stringify(r.limits)!==JSON.stringify(limits)||r.cleanupPending!==false||arrays.some(k=>!Array.isArray(r[k])||r[k].length>50000))throw Error('RESUME_INVALID_OR_INCOMPATIBLE');
+  if(![r.actions,r.attemptedActions,r.routeAttempts].every(n=>Number.isSafeInteger(n)&&n>=0)||r.actions>r.attemptedActions||r.attemptedActions>maxActions||r.routeAttempts>maxRouteAttempts)throw Error('RESUME_INVALID_COUNTERS');
+  for(const node of r.nodes){if(typeof node.key!=='string'||!Array.isArray(node.controls)||nodes.has(node.key))throw Error('RESUME_INVALID_NODES');nodes.set(node.key,node);}
+  for(const row of r.routes){if(!Array.isArray(row)||row.length!==2||typeof row[0]!=='string'||routes.has(row[0])||!Number.isSafeInteger(row[1]?.attempts)||row[1].attempts<0||row[1].attempts>maxRetries+1||typeof row[1].valid!=='boolean'||typeof row[1].resolved!=='boolean')throw Error('RESUME_INVALID_ROUTES');routes.set(...row);}
+  const queuedIds=new Set();
+  for(const task of [...r.queue,...r.retryQueue,...(r.activeTask?[r.activeTask]:[])]){
+   if(!task||typeof task.state!=='string'||typeof task.action!=='string'||!Array.isArray(task.route)||task.route.some(step=>!step||!['from','to','action'].every(k=>typeof step[k]==='string'))||task.choicePlan!==undefined&&(!Array.isArray(task.choicePlan)||task.choicePlan.some(k=>typeof k!=='string'))||task.routeId!==taskId(task)||!routes.has(task.routeId)||routes.get(task.routeId).resolved||queuedIds.has(task.routeId))throw Error('RESUME_INVALID_TASK');
+   queuedIds.add(task.routeId);
+  }
+  edges.push(...r.edges);pending.push(...r.pending);queue.push(...r.queue);retryQueue.push(...r.retryQueue);attemptHistory.push(...r.attemptHistory);scopeOmissions.push(...r.scopeOmissions);for(const plan of r.operationPlans)operationPlans.add(plan);
+  actions=r.actions;attemptedActions=r.attemptedActions;routeAttempts=r.routeAttempts;
+  if(r.activeTask)failure(r.activeTask,'INTERRUPTED_ATTEMPT',{uncertain:true});
+ }
+ if(!resumeState||(queue.length||retryQueue.length)&&attemptedActions<maxActions&&routeAttempts<maxRouteAttempts&&now()<deadline){budget();await a.reset();if(!resumeState)observe(await a.snapshot(),[]);}
+ await progress();
+ while(sliceAttemptCount<sliceAttempts&&(queue.length||retryQueue.length)&&attemptedActions<maxActions&&routeAttempts<maxRouteAttempts&&now()<deadline&&!cleanupFailure){
   // Recovery gets a separate FIFO: newly discovered routes always go first.
   const task=queue.length?queue.shift():retryQueue.shift(),meta=routes.get(task.routeId);
-  meta.attempts++;const started=now();
+  meta.attempts++;activeTask=task;const started=now();
   try{
    const reuse=mode==='actions'&&task===reuseTask&&meta.attempts===1;reuseTask=null;
-   if(routeAttempts++&&!reuse)await a.reset();let s=await a.snapshot(),inline=reuse&&s.key===task.state;
+   routeAttempts++;await progress();if(sliceAttemptCount++&&!reuse)await a.reset();let s=await a.snapshot(),inline=reuse&&s.key===task.state;
    if(reuse&&!inline){await a.reset();s=await a.snapshot();}
    budget();let failed=false,replayFailure=null;const replayTrace=[],actualRoute=[];
    for(const step of inline?[]:task.route){
@@ -164,15 +188,16 @@ export async function exploreStates(a,{maxActions=20,maxDepth=4,wait=waitTransit
    else if(outcome.reason==='ACTIVE_TIMEOUT'||next.key===s.key)failure(task,outcome.reason||'NO_TRANSITION',{evidence:next.evidence});
    else{meta.resolved=true;reuseTask=observe(next,[...task.route,{from:s.key,to:next.key,action:b.key,...(b.role?{role:b.role}:{})}]);}
   }catch(e){
+   if(e.code==='CHECKPOINT_WRITE_FAILED')throw e;
    const retained=e.retainedTabIds||[];
    if(e.code==='SESSION_CLEANUP_FAILED'||retained.length){
     cleanupFailure={cleanupError:String(e.cleanupError||e.message),retainedTabIds:retained,cleanupPending:true};
     failure(task,'SESSION_CLEANUP_FAILED',{error:String(e.message),...cleanupFailure});
    }else failure(task,e.code==='DEADLINE'||e.message==='DEADLINE'?'DEADLINE':recoverableReasons.has(e.code)?e.code:recoverableReasons.has(e.message)?e.message:'ERROR',{error:String(e.message)});
-  }finally{inFlight=null;await progress();}
+  }finally{inFlight=null;activeTask=null;if(!persistenceFailed)await progress();}
  }
- const stopReason=cleanupFailure?'CLEANUP_FAILED':now()>=deadline?'DEADLINE':(queue.length||retryQueue.length)&&attemptedActions>=maxActions?'ACTION_LIMIT':(queue.length||retryQueue.length)&&routeAttempts>=maxRouteAttempts?'ROUTE_ATTEMPT_LIMIT':pending.length?'BLOCKED_ROUTES':'EXHAUSTED_OBSERVED_CONTROLS';
- const queued=[...queue,...retryQueue];
+ const stopReason=cleanupFailure?'CLEANUP_FAILED':now()>=deadline?'DEADLINE':(queue.length||retryQueue.length)&&attemptedActions>=maxActions?'ACTION_LIMIT':(queue.length||retryQueue.length)&&routeAttempts>=maxRouteAttempts?'ROUTE_ATTEMPT_LIMIT':(queue.length||retryQueue.length)&&sliceAttemptCount>=sliceAttempts?'SLICE_LIMIT':pending.length?'BLOCKED_ROUTES':'EXHAUSTED_OBSERVED_CONTROLS';
+ const resume=checkpoint(),queued=[...queue,...retryQueue];
  for(const task of queued){const meta=routes.get(task.routeId);pending.push({...task,reason:cleanupFailure?'SESSION_CLEANUP_FAILED':stopReason,attempts:meta.attempts,lastFailure:meta.lastFailure,disposition:'deferred'});}
- return {status:pending.length?'PARTIAL':'EXHAUSTED_OBSERVED_CONTROLS',stopReason,nodes:[...nodes.values()],edges,pending,queued,attemptHistory,recovery:recovery(),coverage,actions,attemptedActions,completeGame:false,...cleanupFailure};
+ return {status:pending.length?'PARTIAL':'EXHAUSTED_OBSERVED_CONTROLS',stopReason,nodes:[...nodes.values()],edges,pending,queued,attemptHistory,recovery:recovery(),coverage,actions,attemptedActions,completeGame:false,resumeState:resume,...cleanupFailure};
 }

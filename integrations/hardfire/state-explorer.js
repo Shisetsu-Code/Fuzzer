@@ -7,12 +7,13 @@ import {withSurfaceLock,ensurePainted} from './paint-guard.js';
 import {wagerEvidence,readRuntimeBalance,baseSurfaceMatches,parseProtocolMoney,classifySpinDebit} from '../../providers/pragmatic/wager-evidence.js';
 import {waitTransition} from '../../providers/pragmatic/state-explorer.js';
 import {operationStateFromEntries,finishOperation,visibleOperationChoices} from '../../providers/pragmatic/operation-completion.js';
+import {runExplorerCampaign} from '../../lib/explorer-campaign.js';
 import {measure,independent,createBenchmark,withBenchmark} from '../../lib/performance.js';
-async function runStateExplorerImpl(controller,{gameUrl,artifactDir,maxActions=20,maxDepth=4,timeoutMs=600000,mode='actions',maxRetries=mode==='actions'?2:0,maxRouteAttempts,operationStallMs=15000,actionDwellMs=4000,maxWagerStepsPerRoute=1,onProgress,onOwnedTab,onClosedTab}={}){
+async function runStateExplorerImpl(controller,{gameUrl,artifactDir,maxActions=20,maxDepth=4,timeoutMs=600000,mode='actions',maxRetries=mode==='actions'?2:0,maxRouteAttempts,operationStallMs=15000,actionDwellMs=4000,maxWagerStepsPerRoute=1,resumeState=null,sliceAttempts=8,savedHarPaths=[],onProgress,onOwnedTab,onClosedTab}={}){
  if(!['actions','strict'].includes(mode))throw Error('INVALID_EXPLORATION_MODE');
  const actionMode=mode==='actions',deadline=Date.now()+timeoutMs;
  let operationControlPaths=[],rootControlPaths=[];
- let session,lastEvidence,lastKey,lastCapture=0,rootSurface=null,rootConfiguration=null,lastActionAt=0,operationBoundary=null,verificationBoundary=null;const savedHars=[],branchCaptures=[];let terminalCaptured=false,observationId=0;
+ let session,lastEvidence,lastKey,lastCapture=0,rootSurface=null,rootConfiguration=null,lastActionAt=0,operationBoundary=null,verificationBoundary=null;const savedHars=[...savedHarPaths],branchCaptures=[];let terminalCaptured=false,observationId=0;
  const close=async()=>{
   if(!session)return;const owned=session;
   if(actionMode&&!terminalCaptured){terminalCaptured=true;try{const image=await measure('branch.evidence',()=>captureDrawnButtons(controller,owned.tabId,artifactDir));branchCaptures.push({tab_id:owned.tabId,full_path:image.full_path,capture_id:image.capture_id,role:'branch-close'});}catch{branchCaptures.push({tab_id:owned.tabId,role:'branch-close',error:'EVIDENCE_CAPTURE_FAILED'});}}
@@ -119,7 +120,7 @@ async function runStateExplorerImpl(controller,{gameUrl,artifactDir,maxActions=2
  };
  for(const [method,label] of Object.entries({snapshot:'adapter.snapshot',reset:'adapter.reset',click:'adapter.click',clickCenter:'adapter.continue',choose:'adapter.choose',advance:'adapter.advance',spinNormal:'adapter.probe',afterAction:'adapter.after-action',finishOperation:'adapter.finish',sleep:'wait.poll'})){const original=adapter[method];adapter[method]=(...args)=>measure(label,()=>original(...args));}
  let result,runError;
- try{return result=await exploreStates(adapter,{maxActions,maxDepth,deadline,onProgress,mode,maxRetries,maxRouteAttempts,maxWagerStepsPerRoute,wait:(a,b)=>measure('wait.transition',()=>waitTransition(a,b,{mode,deadline,...(actionMode?{quietMs:actionDwellMs,stableMs:actionDwellMs,activeMs:15000}: {})}))});}
+ try{return result=await exploreStates(adapter,{maxActions,maxDepth,deadline,onProgress,resumeState,sliceAttempts,mode,maxRetries,maxRouteAttempts,maxWagerStepsPerRoute,wait:(a,b)=>measure('wait.transition',()=>waitTransition(a,b,{mode,deadline,...(actionMode?{quietMs:actionDwellMs,stableMs:actionDwellMs,activeMs:15000}: {})}))});}
  catch(error){runError=error;throw error;}
  finally{
   try{await close();if(result){result.retainedTabIds=[];result.cleanupPending=false;if(actionMode)result.branchCaptures=branchCaptures;}}
@@ -128,8 +129,9 @@ async function runStateExplorerImpl(controller,{gameUrl,artifactDir,maxActions=2
    else if(runError){runError.cleanupError=error.cleanupError;runError.retainedTabIds=error.retainedTabIds;}
    else throw error;
   }
+  if(result)result.savedHarPaths=[...savedHars];
   // Consolidate only saved own HARs; a retained tab keeps its unsaved evidence.
-  try{const combinedPath=await measure('har.consolidate',()=>consolidateHars(savedHars,artifactDir));await fs.writeFile(path.join(artifactDir,'har-reference.json'),JSON.stringify({path:combinedPath}));}
+  try{const combinedPath=await measure('har.consolidate',()=>consolidateHars(savedHars,artifactDir,{retainSources:true}));await fs.writeFile(path.join(artifactDir,'har-reference.json'),JSON.stringify({path:combinedPath}));}
   catch(error){
    if(runError)runError.artifactError=String(error.message);
    else if(result){result.status='PARTIAL';result.artifactError=String(error.message);result.pending.push({phase:'artifact',reason:'HAR_CONSOLIDATION_FAILED',error:String(error.message)});}
@@ -149,7 +151,11 @@ export async function runStateExplorer(controller,options={}){
    console.log('FUZZER_BENCHMARK_PROGRESS='+JSON.stringify({mode:performanceMode,elapsedMs:report.elapsedMs,active:report.active,top:report.stages.slice(0,6)}));
   },15000);timer.unref?.();}
   try{
-   result=await measure('exploration.total',()=>runStateExplorerImpl(controller,{...runOptions,onProgress:progress=>measure('checkpoint.progress',()=>runOptions.onProgress?.({...progress,...(recorder?{performance:{...recorder.report({includeTrace:false}),mode:performanceMode}}:{})}))}));
+   result=await measure('exploration.total',()=>runExplorerCampaign(segment=>runStateExplorerImpl(controller,segment),{
+    ...runOptions,timeoutMs:runOptions.timeoutMs??1200000,
+    identity:{contract:'pragmatic-campaign-v1',gameUrl:runOptions.gameUrl,source:process.env.FUZZER_SOURCE_SHA||null,hardfire:process.env.HARDFIRE_SOURCE_SHA||null},
+    onProgress:progress=>measure('checkpoint.progress',()=>runOptions.onProgress?.({...progress,...(recorder?{performance:{...recorder.report({includeTrace:false}),mode:performanceMode}}:{})}))
+   }));
    return result;
   }finally{
    clearInterval(timer);

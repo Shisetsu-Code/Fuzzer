@@ -8,7 +8,7 @@ const MiB=1024*1024;
 const defaults={maxSourceHarBytes:128*MiB,maxResultBytes:MiB,maxProtocolBodyBytes:128*1024,maxProtocolUncompressedBytes:8*MiB,maxProtocolCompressedBytes:MiB,maxScreenshots:8,maxScreenshotBytes:512*1024,maxScreenshotsTotalBytes:2*MiB,maxExportBytes:4*MiB};
 const secretNames=new Set(['sid','session','sessionid','sessionkey','sessiontoken','token','accesstoken','refreshtoken','clienttoken','authtoken','auth','authorization','password','secret','mgckey','launchtoken','jwt','cookie','cookies','setcookie','apikey','clientsecret']);
 const secret=(key,transport=false)=>{key=key.replace(/[-_]/g,'').toLowerCase();return secretNames.has(key)||transport&&key==='key';};
-const omitted=/^(?:headers|cookies|traffic|serverMarker|rawRuntime|rawruntime|runtime_all)$/i;
+const omitted=/^(?:resumeState|savedHarPaths|headers|cookies|traffic|serverMarker|rawRuntime|rawruntime|runtime_all)$/i;
 const pathKeys=new Set(['full_path','crop_path','artifact_dir','path']);
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const within=(root,file)=>{const rel=path.relative(root,file);return rel!==''&&!rel.startsWith('..'+path.sep)&&rel!=='..'&&!path.isAbsolute(rel);};
@@ -43,7 +43,7 @@ function references(value,out=[],role='observed'){
  if(Array.isArray(value)){for(const item of value)references(item,out,role);}
  else if(value&&typeof value==='object'){
   if(typeof value.full_path==='string')out.push({...value,role});
-  for(const [key,item]of Object.entries(value))if(item&&typeof item==='object')references(item,out,['pending','completion','replayTrace'].includes(key)?'diagnostic':key==='decisions'||key==='verificationChoices'?'choice':role);
+  for(const [key,item]of Object.entries(value))if(!omitted.test(key)&&item&&typeof item==='object')references(item,out,['pending','completion','replayTrace'].includes(key)?'diagnostic':key==='decisions'||key==='verificationChoices'?'choice':role);
  }
  return out;
 }
@@ -61,7 +61,7 @@ function summaryFor(game,result,error,warnings){
  const excludedControlReasons={};for(const node of result?.nodes||[])for(const control of node.excludedControls||[]){const reason=control.reason||'UNKNOWN';excludedControlReasons[reason]=(excludedControlReasons[reason]||0)+1;}
  const sampledAmounts=[...new Set((result?.nodes||[]).map(n=>n.wager?.betAmount).filter(Number.isFinite))].sort((a,b)=>a-b);
  const coverage=result?.coverage?{wagerSampling:result.coverage.wagerSampling,maxWagerStepsPerRoute:result.coverage.maxWagerStepsPerRoute,allAmountsTested:false,sampledAmounts:sampledAmounts.slice(0,64),sampledAmountsOmitted:Math.max(0,sampledAmounts.length-64),scopeOmissionCount:result.coverage.scopeOmissions?.length||0}:null;
- return {schema:'fuzzer/live-summary/v1',game,execution,coverage,excludedControlReasons,configurationChangeCount:(result?.edges||[]).filter(e=>e.configurationChange).length,resultStatus:result?.status??'ERROR',stopReason:result?.stopReason??null,validRouteCount:result?.recovery?.validRoutes??null,recovery:result?.recovery??null,actions:result?.actions??0,nodes:result?.nodes?.length??0,edges:result?.edges?.length??0,completeGame:false,attemptedActions:result?.attemptedActions??result?.actions??0,validActionCount:(result?.edges||[]).filter(e=>e.validity?.valid===true).length,acceptedRequestCount:(result?.edges||[]).filter(e=>e.validity?.basis==='ACCEPTED_REQUEST').length,navigationCount:(result?.edges||[]).filter(e=>e.validity?.basis==='UI_TRANSITION').length,probeCount:(result?.edges||[]).filter(e=>e.followup?.performed===true).length,cleanupPending:result?.cleanupPending??null,pendingCount:result?.pending?.length??0,pendingReasons,purchaseCount:purchases.length,verifiedPurchaseCount:purchases.filter(p=>p.complete&&p.normalSpinVerified).length,modifierCount:modifiers.length,choiceCount:choices.length,purchases:purchases.slice(0,50),modifiers:modifiers.slice(0,50),choices:choices.slice(0,50),summaryRowsOmitted:Math.max(0,purchases.length-50)+Math.max(0,modifiers.length-50)+Math.max(0,choices.length-50),error:error?{name:error.name??'Error',message:error.message??String(error)}:null,warnings};
+ return {schema:'fuzzer/live-summary/v1',game,execution,coverage,campaign:result?.campaign?Object.fromEntries(['slices','elapsedMs','timeoutMs'].map(k=>[k,Number.isFinite(result.campaign[k])?result.campaign[k]:null])):null,excludedControlReasons,configurationChangeCount:(result?.edges||[]).filter(e=>e.configurationChange).length,resultStatus:result?.status??'ERROR',stopReason:result?.stopReason??null,validRouteCount:result?.recovery?.validRoutes??null,recovery:result?.recovery??null,actions:result?.actions??0,nodes:result?.nodes?.length??0,edges:result?.edges?.length??0,completeGame:false,attemptedActions:result?.attemptedActions??result?.actions??0,validActionCount:(result?.edges||[]).filter(e=>e.validity?.valid===true).length,acceptedRequestCount:(result?.edges||[]).filter(e=>e.validity?.basis==='ACCEPTED_REQUEST').length,navigationCount:(result?.edges||[]).filter(e=>e.validity?.basis==='UI_TRANSITION').length,probeCount:(result?.edges||[]).filter(e=>e.followup?.performed===true).length,cleanupPending:result?.cleanupPending??null,pendingCount:result?.pending?.length??0,pendingReasons,purchaseCount:purchases.length,verifiedPurchaseCount:purchases.filter(p=>p.complete&&p.normalSpinVerified).length,modifierCount:modifiers.length,choiceCount:choices.length,purchases:purchases.slice(0,50),modifiers:modifiers.slice(0,50),choices:choices.slice(0,50),summaryRowsOmitted:Math.max(0,purchases.length-50)+Math.max(0,modifiers.length-50)+Math.max(0,choices.length-50),error:error?{name:error.name??'Error',message:error.message??String(error)}:null,warnings};
 }
 function bodyAt(entries,index){
  const seen=new Set();let content;
@@ -105,14 +105,22 @@ export async function exportLiveEvidence({game,result,error,artifactDir,outputDi
  if(!resultPath)failed=true;
  let protocolHarPath=null;
  try{
-  const entries=[],incomplete=[],seenHars=new Set();let sourceIndex=0,sourceBytes=0;
+  const entries=[],incomplete=[],seenHars=new Set(),coveredHars=new Map();let sourceIndex=0,sourceBytes=0;
   const candidates=[path.join(sourceRoot,'all-branches.har'),...evidenceHarPaths,...harFiles,...(error?.har?.path?[error.har.path]:[])];
   for(const candidate of candidates){
    let original;
    try{
     const harFile=await fs.realpath(candidate);if(!within(sourceRoot,harFile))throw Error('HAR_OUTSIDE_ROOT');if(seenHars.has(harFile))continue;seenHars.add(harFile);
-    const size=(await fs.stat(harFile)).size;if(sourceBytes+size>budget.maxSourceHarBytes)throw Error('SOURCE_HAR_TOO_LARGE');sourceBytes+=size;
-    original=JSON.parse(await fs.readFile(harFile,'utf8')).log;if(!Array.isArray(original?.entries))throw Error('HAR_INVALID');
+    const size=(await fs.stat(harFile)).size;if(size>budget.maxSourceHarBytes)throw Error('SOURCE_HAR_TOO_LARGE');
+    const bytes=await fs.readFile(harFile);if(coveredHars.get(harFile)===hash(bytes))continue;
+    if(sourceBytes+size>budget.maxSourceHarBytes)throw Error('SOURCE_HAR_TOO_LARGE');sourceBytes+=size;
+    original=JSON.parse(bytes).log;if(!Array.isArray(original?.entries))throw Error('HAR_INVALID');
+    // Only content-identical sources listed by the owned aggregate are covered.
+    // Equal request payloads in distinct sessions must never be deduplicated.
+    if(candidate===candidates[0])for(const source of Array.isArray(original._sourceFiles)?original._sourceFiles:[]){
+     if(typeof source.path!=='string'||path.isAbsolute(source.path)||!(/^[a-f0-9]{64}$/.test(source.sha256)))continue;
+     const covered=path.resolve(sourceRoot,source.path);if(within(sourceRoot,covered))coveredHars.set(covered,source.sha256);
+    }
    }catch(caught){if(candidate!==candidates[0]||caught.code!=='ENOENT')warn(['SOURCE_HAR_TOO_LARGE','HAR_OUTSIDE_ROOT'].includes(caught.message)?caught.message:'HAR_UNAVAILABLE');continue;}
    sourceIndex++;
    for(const item of [...(original._incompleteSources||[]),...(original._captureIncomplete?[original._captureIncomplete]:[])])incomplete.push({sourceIndex,reason:typeof item.reason==='string'&&/^[A-Z_]+$/.test(item.reason)?item.reason:'CAPTURE_INCOMPLETE',pendingBodies:Number.isInteger(item.pendingBodies)?item.pendingBodies:null});

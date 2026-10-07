@@ -88,7 +88,7 @@ jobs:
       FUZZER_MAX_ACTIONS: '100'
       FUZZER_MAX_DEPTH: '8'
       FUZZER_BENCHMARK: '1'
-      FUZZER_TIMEOUT_MS: '600000'
+      FUZZER_TIMEOUT_MS: '1200000'
       FUZZER_SOURCE_SHA: ${{ needs.select.outputs.source_sha }}
       HARDFIRE_SOURCE_SHA: adf6de5ec14e394f77fb1816d5f46e5deb250b0a
     steps:
