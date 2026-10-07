@@ -65,9 +65,13 @@ export function visibleOperationChoices(pickers,drawings,{fallback=false,exclude
 }
 
 /** Complete one submitted operation. Only choice alternatives form a family; reels/results do not. */
-export async function finishOperation(a,before,initial,{choicePlan=[],deadline=Infinity,timeoutMs=180000,pollMs=500,verifyPurchase=true,stallMs=Infinity,choiceDwellMs=0,recoveryQuietMs=1000,recoveryGapMs=2000,probeIdleMs=0,probeResponseMs=10000}={}){
+export async function finishOperation(a,before,initial,{choicePlan=[],deadline=Infinity,timeoutMs,pollMs=500,verifyPurchase=true,stallMs=Infinity,choiceDwellMs=0,recoveryQuietMs=1000,recoveryGapMs=2000,probeIdleMs=0,probeResponseMs=10000}={}){
  if(!(stallMs>0)||!(Number.isFinite(stallMs)||stallMs===Infinity))throw Error('INVALID_STALL_LIMIT');
  if(!Number.isSafeInteger(probeIdleMs)||probeIdleMs<0||!Number.isSafeInteger(probeResponseMs)||probeResponseMs<1)throw Error('INVALID_EXIT_PROBE_LIMIT');
+ // Empirical mode follows healthy progress within the existing campaign cap.
+ // An explicit operation limit is still honored; strict/unbounded callers keep
+ // the legacy fallback. Quiet/stall and response-probe limits remain separate.
+ timeoutMs??=probeIdleMs>0&&Number.isFinite(deadline)?Math.max(1,deadline-a.now()):180000;
  const started=a.now(),until=Math.min(started+timeoutMs,deadline),sequenceBefore=before?.operation?.sequence||0;
  const initialOperation=initial.operation||{},anchored=Object.hasOwn(initialOperation,'submission');
  const original=anchored?initialOperation.submission:initialOperation.sequence===sequenceBefore+1&&initialOperation.transaction?{sequence:initialOperation.sequence,...initialOperation.transaction}:null;

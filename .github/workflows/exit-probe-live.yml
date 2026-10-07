@@ -16,7 +16,7 @@ jobs:
   probe:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     env:
       HARDFIRE_ROOT: ${{ github.workspace }}/hardfire
       FUZZER_GAME_ID: dragon-s-gate-bonus-choice
@@ -24,7 +24,7 @@ jobs:
       FUZZER_OUTPUT_DIR: ${{ github.workspace }}/outputs/exit-public
       FUZZER_MAX_ACTIONS: '3'
       FUZZER_MAX_DEPTH: '8'
-      FUZZER_TIMEOUT_MS: '300000'
+      FUZZER_TIMEOUT_MS: '480000'
       FUZZER_BENCHMARK: '1'
       FUZZER_SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
       HARDFIRE_SOURCE_SHA: adf6de5ec14e394f77fb1816d5f46e5deb250b0a

@@ -69,7 +69,7 @@ conservación de alternativas y confusión entre bonus original y giro de prueba
 ## Prueba dirigida live y límites
 
 `Observed exit probe validation`, activada con `[exit-probe-live]`, recorre las
-primeras tres acciones de Dragon en una sesión de hasta cinco minutos. Es una
+primeras tres acciones de Dragon en una sesión de hasta ocho minutos. Es una
 prueba diagnóstica, no modifica el presupuesto del workflow de exploración.
 Comparte la cola exclusiva de DEMOs. El paso final exige `closureEvidence`, una
 verificación aceptada y cleanup confirmado; un workflow omitido no es evidencia.
@@ -81,3 +81,40 @@ runtime. Un área sin resolver impide la prueba y queda diagnosticada con las
 capturas de cierre; no se implementó reconocimiento visual semántico universal.
 Tampoco hay atomicidad universal entre lectura de pantalla y clic, ni reinicio
 general del host tras un crash. `completeGame` sigue en false.
+
+## Seguimiento live: un bonus activo no era un bonus bloqueado
+
+La primera prueba real, commit `4f699e2`, run `37580145837`, registró una compra,
+selección de respins y solicitudes del juego que avanzaron rs_c de 1 a 8 entre
+06:14:26 y 06:16:18 UTC. No hubo prueba de giro normal ni cierre certificado.
+El resultado conservó OPERATION_TIMEOUT a los 180140 ms, aunque el bonus seguía
+progresando. La captura final muestra respins pendientes. Esto identifica otro
+freno concreto: el límite interno heredado de tres minutos interrumpía una
+operación sana antes de poder verificar su salida.
+
+Se elimina ese corte implícito únicamente cuando el modo de prueba empírica
+recibe un deadline de campaña finito: usa el tiempo restante de esa campaña.
+Un timeout de operación indicado expresamente sigue aplicándose. Los callers
+estrictos o sin deadline conservan el valor anterior de 180000 ms. Continúan los
+quince segundos de inactividad, diez segundos de respuesta a la prueba y todos
+los límites globales; no se conceden veinte minutos nuevos a cada operación.
+
+La regresión reproduce una operación con tráfico válido cada cinco segundos
+que termina a los 210 s: antes se cortaba a los 180 s; ahora intenta el spin
+normal después de estabilizarse y conserva su respuesta. Pruebas adicionales
+verifican el deadline global, el límite explícito y la parada por inactividad.
+
+La repetición diagnóstica `3cfbe62`, run `37581150887`, falló antes de ejecutar
+acciones: la entrada DEMO no expuso el runtime soportado. No es evidencia de
+cierre ni de una regresión del nuevo criterio. Se conserva su error. Su ZIP:
+`882289a591d8d65a3854c01ddd24463aacc385a4b6bad0f6dd082ba1125997c7`.
+
+El ZIP de la primera prueba:
+`1ecf42d736a69bbfe3e748d23da2df932da3f559245fbe5dc6c08135b559ce0f`.
+Ambos hashes se verificaron al descargar. El diagnóstico dirigido pasa de cinco
+a ocho minutos para observar esa operación sin el corte heredado; la campaña
+normal mantiene veinte minutos. Su gate sigue exigiendo prueba real y limpieza.
+
+Verificación final del seguimiento: **468/468** pruebas locales, cero fallos,
+cancelaciones u omisiones, 27.373 s. `git diff --check` sin errores. La
+validación live del código corregido se registra por separado.

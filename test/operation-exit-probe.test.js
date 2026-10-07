@@ -115,3 +115,27 @@ test('a probe that reveals a prompt follows it and cannot use its continuation s
  assert.equal(result.ok,true);assert.equal(result.closureEvidence.sequence,3);
  assert.deepEqual(inputs,['probe','choose-b','probe']);assert.equal(result.decisions[0].options.length,2);
 });
+
+test('an empirical operation with real ongoing game progress is not cut at the legacy three-minute limit',async()=>{
+ let time=0,spun=false,boundary=null;
+ const snapshot=()=>{
+  const live=time<210000,sequence=spun?boundary+1:1+Math.min(42,Math.floor(time/5000));
+  return {controls:[],choices:[],traffic:sequence,capture:{marker:String(sequence),pending:false,uncertain:false},exitSurface:{clear:!live,key:live?'feature':'base'},flags:{canSpin:!live,logicIsFreeSpin:live},wager:{menuOpen:false},
+   operation:{sequence,protocolSequence:sequence,kind:sequence===1?'purchase':'spin',submission:{sequence:1,kind:'purchase',complete:true,status:200},transaction:{kind:sequence===1?'purchase':'spin',complete:true,status:200},protocolComplete:true,nextAction:'s',verification:spun?{sequence,kind:'spin',complete:true,status:200,protocolAccepted:true}:null}};
+ };
+ const a={now:()=>time,sleep:async ms=>{time+=ms;},snapshot:async()=>snapshot(),spinNormal:async current=>{boundary=current.operation.sequence;spun=true;return {ok:true,clicked:true,empirical:true,sequenceBefore:boundary,protocolSequenceBefore:boundary};}};
+ const result=await finishOperation(a,{operation:{sequence:0}},snapshot(),{probeIdleMs:4000,deadline:300000,stallMs:15000,verifyPurchase:false});
+ assert.equal(result.ok,true);assert.equal(result.closureEvidence.basis,'OBSERVED_NORMAL_SPIN');assert.ok(time>=214000&&time<300000);
+});
+
+for(const [label,settings,expectedAt,reason]of [
+ ['global deadline',{deadline:90000},90000,'OPERATION_TIMEOUT'],
+ ['explicit operation cap',{deadline:300000,timeoutMs:60000},60000,'OPERATION_TIMEOUT'],
+ ['stalled operation',{deadline:300000,stallMs:15000,static:true},15000,'OPERATION_STALLED']
+])test(`empirical exit preserves the ${label}`,async()=>{
+ let time=0,clicks=0;
+ const snapshot=()=>{const sequence=settings.static?1:1+Math.floor(time/5000);return {controls:[],choices:[],traffic:sequence,capture:{marker:String(sequence),pending:false,uncertain:false},exitSurface:{clear:false,key:'feature'},flags:{canSpin:false,logicIsFreeSpin:true},wager:{menuOpen:false},operation:{sequence,protocolSequence:sequence,kind:'purchase',submission:{sequence:1,kind:'purchase',complete:true,status:200},transaction:{kind:'purchase',complete:true,status:200},protocolComplete:true,nextAction:'s'}};};
+ const a={now:()=>time,sleep:async ms=>{time+=ms;},snapshot:async()=>snapshot(),spinNormal:async()=>{clicks++;return {ok:true};}};
+ const result=await finishOperation(a,{operation:{sequence:0}},snapshot(),{probeIdleMs:4000,verifyPurchase:false,...settings});
+ assert.equal(result.ok,false);assert.equal(result.reason,reason);assert.equal(time,expectedAt);assert.equal(clicks,0);
+});
