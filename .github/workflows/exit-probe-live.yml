@@ -60,6 +60,9 @@ jobs:
       - name: Recover evidence
         if: always() && steps.request.outputs.enabled == 'true'
         run: node scripts/ci/recover-live-evidence.mjs
+      - name: Export bounded runtime controls for blocked continuations
+        if: always() && steps.request.outputs.enabled == 'true'
+        run: node scripts/ci/export-exit-diagnostic.mjs
       - name: Require accepted spin proof and confirmed cleanup
         if: always() && steps.request.outputs.enabled == 'true'
         run: node scripts/ci/assert-exit-probe.mjs

@@ -1,0 +1,22 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import {createHash} from 'node:crypto';
+const api=await import('../scripts/ci/export-exit-diagnostic.mjs').catch(()=>({}));
+test('exit diagnostic publishes bounded control evidence, not raw runtime or secrets, and hashes it in the manifest',async t=>{
+ assert.equal(typeof api.exportExitDiagnostic,'function');
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'exit-diag-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));
+ const source=path.join(root,'private'),dest=path.join(root,'public'),scan=path.join(source,'drawn-buttons','capture');
+ await fs.mkdir(scan,{recursive:true});await fs.mkdir(dest);
+ await fs.writeFile(path.join(scan,'runtime-all.json'),JSON.stringify({privateToken:'DO_NOT_EXPORT',controls:[{path:'Game/Continue',name:'Continue',enabled:true,handlers:[{event:'ContinueEvt'}],labels:['token=secret'],hit_rect:{x:1,y:2,width:3,height:4}}],unresolved:[]}));
+ await fs.writeFile(path.join(dest,'result.json'),JSON.stringify({nodes:[{controls:[{key:'Game/Base'}]}]}));
+ await fs.writeFile(path.join(dest,'manifest.json'),JSON.stringify({files:[],totalBytes:0,warnings:[]}));
+ const result=await api.exportExitDiagnostic({artifactDir:source,outputDir:dest});assert.equal(result.written,true);
+ const bytes=await fs.readFile(path.join(dest,'exit-diagnostic.json')),raw=bytes.toString();
+ assert.ok(!raw.includes('DO_NOT_EXPORT'));assert.ok(!raw.includes('=secret'));
+ const diagnostic=JSON.parse(raw);assert.equal(diagnostic.captures[0].controls[0].path,'Game/Continue');assert.equal(diagnostic.captures[0].controls[0].newSinceRoot,true);
+ const manifest=JSON.parse(await fs.readFile(path.join(dest,'manifest.json'),'utf8'));assert.equal(manifest.files[0].sha256,createHash('sha256').update(bytes).digest('hex'));
+ assert.ok(bytes.length<65536);
+});
