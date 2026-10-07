@@ -1,0 +1,38 @@
+{
+  "schema": "fuzzer/latest-gallery/v1",
+  "runId": "37590263036",
+  "attempt": 1,
+  "sourceCommit": "4ccfb65c54a2e2d160a3f862d3ed0baa002208d3",
+  "games": [
+    {
+      "id": "big-bass-blast",
+      "status": "PARTIAL",
+      "stopReason": "DEADLINE",
+      "imageCount": 8
+    },
+    {
+      "id": "blazing-wilds-megaways",
+      "status": "PARTIAL",
+      "stopReason": "DEADLINE",
+      "imageCount": 8
+    },
+    {
+      "id": "dragon-s-gate-bonus-choice",
+      "status": "PARTIAL",
+      "stopReason": "DEADLINE",
+      "imageCount": 8
+    },
+    {
+      "id": "hundreds-and-thousands",
+      "status": "PARTIAL",
+      "stopReason": "DEADLINE",
+      "imageCount": 8
+    },
+    {
+      "id": "inca-queen",
+      "status": "PARTIAL",
+      "stopReason": "DEADLINE",
+      "imageCount": 8
+    }
+  ]
+}
