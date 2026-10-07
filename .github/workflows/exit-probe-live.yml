@@ -22,7 +22,7 @@ jobs:
       FUZZER_GAME_ID: dragon-s-gate-bonus-choice
       FUZZER_ARTIFACT_DIR: ${{ github.workspace }}/outputs/exit-private
       FUZZER_OUTPUT_DIR: ${{ github.workspace }}/outputs/exit-public
-      FUZZER_MAX_ACTIONS: '3'
+      FUZZER_MAX_ACTIONS: '8'
       FUZZER_MAX_DEPTH: '8'
       FUZZER_TIMEOUT_MS: '480000'
       FUZZER_BENCHMARK: '1'
