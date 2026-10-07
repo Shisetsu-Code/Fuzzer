@@ -1,0 +1,70 @@
+{
+  "schema": "fuzzer/live-evidence/v1",
+  "gameId": "dragon-s-gate-bonus-choice",
+  "exportStatus": "EXPORTED",
+  "resultStatus": "PARTIAL",
+  "cleanupPending": false,
+  "files": [
+    {
+      "path": "screenshots/01.jpg",
+      "bytes": 129029,
+      "sha256": "7a6c858ed94c4c4fbd4728e103fa6b47824f64a921cb8c8590f5765060c3910e"
+    },
+    {
+      "path": "screenshots/02.jpg",
+      "bytes": 150733,
+      "sha256": "41f39ae4df0bc086d36461c89df485f634997342757959e75cef39c57c2bb0e0"
+    },
+    {
+      "path": "screenshots/03.jpg",
+      "bytes": 51775,
+      "sha256": "355a64ef73a6cd38f6a25e6fa531e6e0cd88cc89c632892b913a1acb437fcbd2"
+    },
+    {
+      "path": "result.json",
+      "bytes": 7871,
+      "sha256": "65b36f2bd614c0246bcfc5866c6a7cace74edf7d1a367a52ddf9c92cfc1861dc"
+    },
+    {
+      "path": "protocol.har.gz",
+      "bytes": 12152,
+      "sha256": "b41eda5fc196a1a82e7ca4b27230629087dd47231fe1d710d3ccfa48e7317beb"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 1239,
+      "sha256": "7b4c07a91632ea088af868db101449702794386926f6a019aca2bc09a5a35934"
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "screenshots/01.jpg",
+      "bytes": 129029,
+      "sha256": "7a6c858ed94c4c4fbd4728e103fa6b47824f64a921cb8c8590f5765060c3910e",
+      "captureId": "d1ef32b1-1a28-4f25-be4f-2631971d666d",
+      "roles": [
+        "diagnostic"
+      ]
+    },
+    {
+      "path": "screenshots/02.jpg",
+      "bytes": 150733,
+      "sha256": "41f39ae4df0bc086d36461c89df485f634997342757959e75cef39c57c2bb0e0",
+      "captureId": "f8d1635e-bb5e-4caf-9a86-803dc1a679de",
+      "roles": [
+        "observed"
+      ]
+    },
+    {
+      "path": "screenshots/03.jpg",
+      "bytes": 51775,
+      "sha256": "355a64ef73a6cd38f6a25e6fa531e6e0cd88cc89c632892b913a1acb437fcbd2",
+      "captureId": "ci-initial-1",
+      "roles": [
+        "initial"
+      ]
+    }
+  ],
+  "totalBytes": 352799,
+  "warnings": []
+}

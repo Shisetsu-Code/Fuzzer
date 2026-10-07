@@ -1,0 +1,140 @@
+{
+  "schema": "fuzzer/live-evidence/v1",
+  "gameId": "blazing-wilds-megaways",
+  "exportStatus": "EXPORTED",
+  "resultStatus": "PARTIAL",
+  "cleanupPending": false,
+  "files": [
+    {
+      "path": "screenshots/01.jpg",
+      "bytes": 114142,
+      "sha256": "e6f1747637aeae77afeee027896ff4f913190694e7e7ddecfa31ac325cd1f898"
+    },
+    {
+      "path": "screenshots/02.jpg",
+      "bytes": 115472,
+      "sha256": "eea34231ab944bf1fa3ba29d5702dad1afa1c0b87b055dc6545ee77549763c23"
+    },
+    {
+      "path": "screenshots/03.jpg",
+      "bytes": 114963,
+      "sha256": "659294e218547aa388b31cb5a019127347bbea1967e024244536da57611dbbb9"
+    },
+    {
+      "path": "screenshots/04.jpg",
+      "bytes": 113660,
+      "sha256": "7d2f7ab386ad406ccd94b0cede591127e06b8f0184bd4b9a758fd4cc3ac9b336"
+    },
+    {
+      "path": "screenshots/05.jpg",
+      "bytes": 114314,
+      "sha256": "b48c6f1a40c1f43156459b8b1d9637b7ad84e94c029418eb8b333ad456b1701f"
+    },
+    {
+      "path": "screenshots/06.jpg",
+      "bytes": 144326,
+      "sha256": "d3393cbefa7785b555f5df7b3e32b8f7ff4da58a9b18f6560c3900835a180faf"
+    },
+    {
+      "path": "screenshots/07.jpg",
+      "bytes": 114122,
+      "sha256": "fbcffdd8a20804359f0c3d9a3425172f4485d06cd548662dc2676209d019f64b"
+    },
+    {
+      "path": "screenshots/08.jpg",
+      "bytes": 42627,
+      "sha256": "10cc2f7d23604133a28a45b71f9bfaaaea9f60f0ffe1833c08d4cd9c9f081757"
+    },
+    {
+      "path": "result.json",
+      "bytes": 17201,
+      "sha256": "4d8e45c79fc5e6f60a3915debdc9b5fd766b9e83fbfefbc81f90fab51d77c28a"
+    },
+    {
+      "path": "protocol.har.gz",
+      "bytes": 85595,
+      "sha256": "baed2b9cbd2eade4a944f195f14b394079080c757b7d3db6b6fd3afb98be5795"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 1841,
+      "sha256": "5fd8d10ada5d2fd04c822930576bfcecf19703690097f3fba7553a9ccbbe0578"
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "screenshots/01.jpg",
+      "bytes": 114142,
+      "sha256": "e6f1747637aeae77afeee027896ff4f913190694e7e7ddecfa31ac325cd1f898",
+      "captureId": "2a569985-fc32-411d-b92a-6220ca8a3eb0",
+      "roles": [
+        "diagnostic"
+      ]
+    },
+    {
+      "path": "screenshots/02.jpg",
+      "bytes": 115472,
+      "sha256": "eea34231ab944bf1fa3ba29d5702dad1afa1c0b87b055dc6545ee77549763c23",
+      "captureId": "02cb33ed-2e4d-43ad-97f1-f85c98153471",
+      "roles": [
+        "diagnostic"
+      ]
+    },
+    {
+      "path": "screenshots/03.jpg",
+      "bytes": 114963,
+      "sha256": "659294e218547aa388b31cb5a019127347bbea1967e024244536da57611dbbb9",
+      "captureId": "0e131b9f-124b-42a8-b06d-f0988d80741c",
+      "roles": [
+        "diagnostic"
+      ]
+    },
+    {
+      "path": "screenshots/04.jpg",
+      "bytes": 113660,
+      "sha256": "7d2f7ab386ad406ccd94b0cede591127e06b8f0184bd4b9a758fd4cc3ac9b336",
+      "captureId": "3aa0edd5-b8ec-44ce-b251-a5e738ab8ba3",
+      "roles": [
+        "diagnostic"
+      ]
+    },
+    {
+      "path": "screenshots/05.jpg",
+      "bytes": 114314,
+      "sha256": "b48c6f1a40c1f43156459b8b1d9637b7ad84e94c029418eb8b333ad456b1701f",
+      "captureId": "55c77dbe-f4c9-4346-83f3-e44b1aa7a719",
+      "roles": [
+        "diagnostic"
+      ]
+    },
+    {
+      "path": "screenshots/06.jpg",
+      "bytes": 144326,
+      "sha256": "d3393cbefa7785b555f5df7b3e32b8f7ff4da58a9b18f6560c3900835a180faf",
+      "captureId": "f4293d34-9c47-4c1a-b35b-12b734c0a962",
+      "roles": [
+        "observed"
+      ]
+    },
+    {
+      "path": "screenshots/07.jpg",
+      "bytes": 114122,
+      "sha256": "fbcffdd8a20804359f0c3d9a3425172f4485d06cd548662dc2676209d019f64b",
+      "captureId": "886e38fa-18eb-4a03-a0fa-ea11d4c12bfc",
+      "roles": [
+        "observed"
+      ]
+    },
+    {
+      "path": "screenshots/08.jpg",
+      "bytes": 42627,
+      "sha256": "10cc2f7d23604133a28a45b71f9bfaaaea9f60f0ffe1833c08d4cd9c9f081757",
+      "captureId": "ci-initial-1",
+      "roles": [
+        "initial"
+      ]
+    }
+  ],
+  "totalBytes": 978263,
+  "warnings": []
+}

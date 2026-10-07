@@ -8,6 +8,9 @@ export function knownControlKind(control){
  if(/autoplay/i.test(text))return 'autoplay';
  if(/paytable|pay.?table|playtable/i.test(text))return 'paytable';
  if(/smart(?:increase|decrease)bet|(?:increase|decrease)bet|bet(?:up|down|plus|minus)[_\s/]|\/BetButtons\//i.test(text))return 'base_bet';
+ // Stop may appear only after a purchase response, before the picker. It is
+ // base animation input, not a new branch; operation recovery owns its use.
+ if(/Evt_DataToCode_Pressed_Stop\b/i.test(events)||/^StopSpin_Button$/i.test(name))return 'stop';
  if(/Evt_DataToCode_Pressed_Spin\b/i.test(events)||/^(?:StartSpin_Button|SpinButton|Spin_Button)$/i.test(name))return 'spin';
  if(/Pressed_SoundBtn|SoundButtons|SoundOn|SoundOff|MuteButton|VolumeButton/i.test(text))return 'sound';
  if(/\/(?:GameSpeed|HyperPlay)\/|\/Turbo(?:Buttons)?\//i.test(path)||/^(?:TurboButton|QuickSpinButton|HiperPlayDisabled)$/i.test(name))return 'speed';
@@ -15,8 +18,35 @@ export function knownControlKind(control){
  if(/MoneyAndCoinsSwitcher|BalanceDisplay|CreditDisplay/i.test(text))return 'balance_display';
  return null;
 }
-export function filterKnownControls(controls){
- const keep=[],discarded=[];
- for(const control of controls){const kind=knownControlKind(control);if(kind)discarded.push({...control,discard_reason:kind});else keep.push(control);}
- return {keep,discarded};
+/** Adjustment controls are configuration only, and only in an observed menu. */
+export function wagerAdjustmentDirection(control){
+ const text=[control.name,...(control.handlers||[]).flatMap(h=>[h.event,h.catEventPress,h.catEventRelease,h.catEventClick])].filter(Boolean).join(' ');
+ if(/(?:smart)?increasebet|Bet(?:Up|Plus)_Button/i.test(text))return 'increase';
+ if(/(?:smart)?decreasebet|Bet(?:Down|Minus)_Button/i.test(text))return 'decrease';
+ return null;
+}
+export function filterKnownControls(controls,{requireHitRect=false,includeWagerAdjustments=false,menuOpen=false,restrictToPurchaseMenu=false}={}){
+ const keep=[],discarded=[],unresolved=[];
+ for(const original of controls){
+  if(menuOpen&&restrictToPurchaseMenu&&!/\/FeaturePurchase\/(?:FSPurchaseWindow|FSPurchaseOptions)(?:\/|$)|\/Buy_BetButtons\//i.test(String(original.path||''))){discarded.push({...original,discard_reason:'modal_background'});continue;}
+  const kind=knownControlKind(original),direction=kind==='base_bet'&&includeWagerAdjustments&&menuOpen?wagerAdjustmentDirection(original):null;
+  const control=direction?{...original,role:'wager-adjustment',wagerDirection:direction}:original,rect=control.hit_rect;
+  if(kind&&!direction)discarded.push({...control,discard_reason:kind});
+  else if(requireHitRect&&(!rect||![rect.x,rect.y,rect.width,rect.height].every(Number.isFinite)||rect.width<=0||rect.height<=0))unresolved.push({...control,reason:'NO_PROJECTED_HIT_RECT'});
+  else keep.push(control);
+ }
+ keep.sort((a,b)=>Number(a.role==='wager-adjustment')-Number(b.role==='wager-adjustment'));
+ return {keep,discarded,unresolved};
+}
+
+/** Legacy and V2 menus differ in their runtime flags. Projected, enabled
+ * purchase-window controls are direct evidence; the entry button is not. */
+export function purchaseMenuContext(controls,reported={}){
+ const modal=(controls||[]).filter(c=>{
+  const r=c.hit_rect;
+  return c.enabled!==false&&r&&[r.x,r.y,r.width,r.height].every(Number.isFinite)&&r.width>0&&r.height>0&&
+   (c.handlers||[]).length>0&&/\/FeaturePurchase\/(?:FSPurchaseWindow|FSPurchaseOptions)(?:\/|$)/i.test(String(c.path||''));
+ });
+ const ready=modal.some(c=>knownControlKind(c)!=='base_bet'&&!/^Blocker(?:Extra|[0-9]*)?$/i.test(String(c.name||'')));
+ return {...reported,open:reported.open===true||modal.length>0,ready,source:modal.length?'OBSERVED_PURCHASE_CONTROLS':reported.open===true?'RUNTIME_FLAG':'NOT_OBSERVED'};
 }

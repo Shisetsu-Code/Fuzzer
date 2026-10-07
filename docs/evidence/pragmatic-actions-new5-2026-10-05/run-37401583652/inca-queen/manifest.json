@@ -1,0 +1,112 @@
+{
+  "schema": "fuzzer/live-evidence/v1",
+  "gameId": "inca-queen",
+  "exportStatus": "EXPORTED",
+  "resultStatus": "PARTIAL",
+  "cleanupPending": false,
+  "files": [
+    {
+      "path": "screenshots/01.jpg",
+      "bytes": 130355,
+      "sha256": "4fb82f0cf93f94477270e7421b524b81e930275ac7f3c56cf6b3d979d66e6cdf"
+    },
+    {
+      "path": "screenshots/02.jpg",
+      "bytes": 165026,
+      "sha256": "c13e6990d54d991f615c4c1c6665c3d10051e64cba4e4e96e21bcbba770dac2d"
+    },
+    {
+      "path": "screenshots/03.jpg",
+      "bytes": 164906,
+      "sha256": "860a695d1bd28ae106d8eb7ebdecaa46cd40b3edfee63190637602e4f44c54dd"
+    },
+    {
+      "path": "screenshots/04.jpg",
+      "bytes": 164865,
+      "sha256": "5788fa06e20282a5be6ffcec09d2bf7f910d05f60a2e7d675d19431c8881816c"
+    },
+    {
+      "path": "screenshots/05.jpg",
+      "bytes": 164777,
+      "sha256": "7b49142303d2ca68cc2df6f3dade6650be6add0da7cff3e62d8876e11ed402f3"
+    },
+    {
+      "path": "screenshots/06.jpg",
+      "bytes": 44880,
+      "sha256": "82d917006c5e75461baf20871a7022694ac39f606be594727e29ec349fbbb176"
+    },
+    {
+      "path": "result.json",
+      "bytes": 12350,
+      "sha256": "0616d22e6bc8a0a855ba57069781210acc2ec808b412fed0205354b9e921d49b"
+    },
+    {
+      "path": "protocol.har.gz",
+      "bytes": 2440,
+      "sha256": "773d4a89b22d22473a3839c3f3a24824b8104a3d6e11ce0c10e0f4f3d9767e84"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 1885,
+      "sha256": "1081a57a28e2c3549dc3922ba8cb19378764d5531c64e2a478b40968861d32c1"
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "screenshots/01.jpg",
+      "bytes": 130355,
+      "sha256": "4fb82f0cf93f94477270e7421b524b81e930275ac7f3c56cf6b3d979d66e6cdf",
+      "captureId": "79cd2e46-ddff-4049-94fd-35f9bbc0c676",
+      "roles": [
+        "diagnostic"
+      ]
+    },
+    {
+      "path": "screenshots/02.jpg",
+      "bytes": 165026,
+      "sha256": "c13e6990d54d991f615c4c1c6665c3d10051e64cba4e4e96e21bcbba770dac2d",
+      "captureId": "64fdc991-89cd-4903-a535-9c28d7a67c33",
+      "roles": [
+        "diagnostic"
+      ]
+    },
+    {
+      "path": "screenshots/03.jpg",
+      "bytes": 164906,
+      "sha256": "860a695d1bd28ae106d8eb7ebdecaa46cd40b3edfee63190637602e4f44c54dd",
+      "captureId": "00cd4db1-3e2a-480d-81bd-66efb40a06b2",
+      "roles": [
+        "diagnostic"
+      ]
+    },
+    {
+      "path": "screenshots/04.jpg",
+      "bytes": 164865,
+      "sha256": "5788fa06e20282a5be6ffcec09d2bf7f910d05f60a2e7d675d19431c8881816c",
+      "captureId": "120d007f-090f-434a-82f2-a8dff6d3fa14",
+      "roles": [
+        "observed"
+      ]
+    },
+    {
+      "path": "screenshots/05.jpg",
+      "bytes": 164777,
+      "sha256": "7b49142303d2ca68cc2df6f3dade6650be6add0da7cff3e62d8876e11ed402f3",
+      "captureId": "7eaf3e8e-a132-4342-9a8c-4f5cce9b3627",
+      "roles": [
+        "observed"
+      ]
+    },
+    {
+      "path": "screenshots/06.jpg",
+      "bytes": 44880,
+      "sha256": "82d917006c5e75461baf20871a7022694ac39f606be594727e29ec349fbbb176",
+      "captureId": "ci-initial-1",
+      "roles": [
+        "initial"
+      ]
+    }
+  ],
+  "totalBytes": 851484,
+  "warnings": []
+}

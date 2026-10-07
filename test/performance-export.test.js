@@ -1,0 +1,39 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs/promises';import path from 'node:path';import os from 'node:os';
+import {exportLiveEvidence} from '../scripts/ci/export-live-evidence.mjs';
+const game={id:'probe',title:'Probe',url:'https://www.pragmaticplay.fun/en/slots/probe/'};
+test('a bounded profiler trace is published alongside the normal evidence and hashed',async()=>{
+ const temp=await fs.mkdtemp(path.join(os.tmpdir(),'perf-export-'));try{
+  const artifactDir=path.join(temp,'private');await fs.mkdir(artifactDir);
+  await fs.writeFile(path.join(artifactDir,'performance.json'),JSON.stringify({schema:'fuzzer/performance/v1',stages:[],trace:[],token:'SECRET'}));
+  const out=await exportLiveEvidence({game,result:{status:'PARTIAL',nodes:[],edges:[],pending:[],actions:0},artifactDir,outputDir:path.join(temp,'public')});
+  assert(out.files.some(f=>f.path==='performance.json'&&f.sha256));assert(!(await fs.readFile(path.join(temp,'public','performance.json'),'utf8')).includes('SECRET'));
+ }finally{await fs.rm(temp,{recursive:true,force:true});}
+});
+test('a profiler symlink outside the owned evidence root is not published',async t=>{
+ const temp=await fs.mkdtemp(path.join(os.tmpdir(),'perf-link-'));try{
+  const artifactDir=path.join(temp,'private');await fs.mkdir(artifactDir);
+  await fs.writeFile(path.join(temp,'external.json'),'SECRET');
+  try{await fs.symlink(path.join(temp,'external.json'),path.join(artifactDir,'performance.json'));}catch(error){if(process.platform==='win32'&&error.code==='EPERM'){t.skip('Symlink creation unavailable to this Windows account');return;}throw error;}
+  const out=await exportLiveEvidence({game,result:{status:'PARTIAL',nodes:[],edges:[],pending:[],actions:0},artifactDir,outputDir:path.join(temp,'public')});
+  assert(!out.files.some(f=>f.path==='performance.json'));assert(out.warnings.some(w=>w.code==='PERFORMANCE_UNAVAILABLE'));
+ }finally{await fs.rm(temp,{recursive:true,force:true});}
+});
+
+test('recovery preserves a valid benchmark export byte-for-byte instead of inventing interruption',async()=>{
+ const {writeRecoveryCheckpoint,recoverLiveEvidence}=await import('../scripts/ci/recover-live-evidence.mjs');
+ const temp=await fs.mkdtemp(path.join(os.tmpdir(),'perf-recovery-'));try{
+  const artifactDir=path.join(temp,'private'),outputDir=path.join(temp,'public');await fs.mkdir(artifactDir);
+  const result={status:'PARTIAL',nodes:[],edges:[],pending:[{reason:'ACTION_LIMIT'}],actions:0,cleanupPending:false};
+  await fs.writeFile(path.join(artifactDir,'performance.json'),JSON.stringify({schema:'fuzzer/performance/v1',stages:[],trace:[]}));
+  writeRecoveryCheckpoint({artifactDir,outputDir,game,observedResult:result,progressObserved:true,cleanupConfirmed:true,lastOwnedTabIds:[],exportStarted:true});
+  await exportLiveEvidence({game,result,artifactDir,outputDir});
+  const names=await fs.readdir(outputDir),before=await Promise.all(names.map(n=>fs.readFile(path.join(outputDir,n))));
+  const recovery=await recoverLiveEvidence({artifactDir,outputDir,gameId:game.id});
+  assert.equal(recovery.recovered,false);
+  assert.deepEqual(await Promise.all(names.map(n=>fs.readFile(path.join(outputDir,n)))),before);
+  assert(!(await fs.readdir(artifactDir)).some(n=>n.startsWith('incomplete-export-')));
+  // Allowlisting a metrics file must not turn off its checksum validation.
+  await fs.appendFile(path.join(outputDir,'performance.json'),'\n');
+  assert.equal((await recoverLiveEvidence({artifactDir,outputDir,gameId:game.id})).recovered,true);
+ }finally{await fs.rm(temp,{recursive:true,force:true});}
+});

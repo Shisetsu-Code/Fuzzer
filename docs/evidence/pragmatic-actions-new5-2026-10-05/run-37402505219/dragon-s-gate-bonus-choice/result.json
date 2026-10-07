@@ -1,0 +1,258 @@
+{
+  "status": "PARTIAL",
+  "nodes": [
+    {
+      "key": "4ed403cf8d6936277a07",
+      "controls": [
+        {
+          "clickable": "RUNTIME_COLLIDER",
+          "drawing_association": "ANCESTOR_1",
+          "drawn_rect": {
+            "height": 124.540540416,
+            "width": 187.96396377600013,
+            "x": 697.657657472,
+            "y": 2.0180183039999733
+          },
+          "enabled": true,
+          "handlers": [
+            {
+              "catEventClick": null,
+              "catEventPress": null,
+              "catEventRelease": null,
+              "event": null,
+              "index": 9,
+              "kind": "CATButton"
+            }
+          ],
+          "hit_rect": {
+            "height": 69.18918912000004,
+            "width": 140.108107968,
+            "x": 729.6576574400001,
+            "y": 22.774775039999952
+          },
+          "id": "button-5",
+          "labels": [
+            "Buy",
+            "bonus",
+            "$100.00"
+          ],
+          "name": "Collider",
+          "occlusion": "NOT_VERIFIED",
+          "path": null,
+          "root": 1,
+          "sprite_names": [
+            "BuyButton_Random"
+          ],
+          "ui_state": null,
+          "key": "GameRoot/UI Root/XTRoot/Root/Game/GamePivot/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider"
+        }
+      ],
+      "unresolved": [],
+      "evidence": {
+        "tab_id": 1,
+        "capture_id": "f8d1635e-bb5e-4caf-9a86-803dc1a679de",
+        "full_path": "screenshots/02.jpg",
+        "artifact_dir": null
+      },
+      "route": []
+    }
+  ],
+  "edges": [
+    {
+      "from": "4ed403cf8d6936277a07",
+      "to": "e17e9f699e1726109062",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/GamePivot/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider",
+      "reason": "ACTIVE_TIMEOUT",
+      "followup": null,
+      "operation": null,
+      "choicePlan": [],
+      "continuationClicks": 0,
+      "elapsedMs": 65575,
+      "evidence": {
+        "tab_id": 1,
+        "capture_id": "d1ef32b1-1a28-4f25-be4f-2631971d666d",
+        "full_path": "screenshots/01.jpg",
+        "artifact_dir": null
+      }
+    }
+  ],
+  "pending": [
+    {
+      "state": "4ed403cf8d6936277a07",
+      "route": [],
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/GamePivot/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider",
+      "reason": "ACTIVE_TIMEOUT",
+      "evidence": {
+        "tab_id": 1,
+        "capture_id": "d1ef32b1-1a28-4f25-be4f-2631971d666d",
+        "full_path": "screenshots/01.jpg",
+        "artifact_dir": null
+      }
+    }
+  ],
+  "actions": 1,
+  "completeGame": false,
+  "retainedTabIds": [],
+  "cleanupPending": false,
+  "execution": {
+    "hardfireCommit": "adf6de5ec14e394f77fb1816d5f46e5deb250b0a",
+    "sourceCommit": "5d371c3562fcb51ef45452f29b79bdfaafaba8f1",
+    "versions": {
+      "node": "24.21.0",
+      "acorn": "8.18.0",
+      "ada": "4.0.0",
+      "amaro": "1.1.11",
+      "ares": "1.34.8",
+      "brotli": "1.2.0",
+      "cldr": "48.0",
+      "icu": "78.2",
+      "llhttp": "9.4.3",
+      "merve": "1.2.2",
+      "modules": "149",
+      "napi": "10",
+      "nbytes": "0.1.4",
+      "ncrypto": "0.0.1",
+      "nghttp2": "1.70.0",
+      "nghttp3": "",
+      "ngtcp2": "",
+      "openssl": "0.0.0",
+      "simdjson": "4.6.7",
+      "simdutf": "7.7.0",
+      "sqlite": "3.53.4",
+      "tz": "2025c",
+      "undici": "7.29.1",
+      "unicode": "17.0",
+      "uv": "1.52.1",
+      "uvwasi": "0.0.23",
+      "v8": "15.2.124.19-electron.0",
+      "zlib": "1.3.2.1-motley",
+      "zstd": "1.6.0",
+      "electron": "44.4.0",
+      "chrome": "152.0.7977.78"
+    },
+    "requestedSpeed": 4,
+    "startedAt": "2026-10-06T02:14:52.329Z",
+    "live": true,
+    "maxLoadedTabs": 1,
+    "maxActions": 100,
+    "maxDepth": 8,
+    "timeoutMs": 1200000,
+    "runtime": [
+      {
+        "tabId": 1,
+        "requestedSpeed": 4,
+        "observedSpeed": 4,
+        "frameKind": "demo",
+        "activity": {
+          "methodCounts": {
+            "Network.requestWillBeSent": 345,
+            "Network.requestWillBeSentExtraInfo": 209,
+            "Network.responseReceivedExtraInfo": 209,
+            "Network.responseReceived": 338,
+            "Network.policyUpdated": 5,
+            "Network.dataReceived": 2391,
+            "Network.loadingFinished": 338,
+            "Network.resourceChangedPriority": 38,
+            "Network.loadingFailed": 1,
+            "Network.requestServedFromCache": 3
+          },
+          "samples": [
+            {
+              "elapsedMs": 20827,
+              "networkEvents": 3778,
+              "webEvents": 781,
+              "wsFrames": 0,
+              "pendingBodies": 0,
+              "entryCount": 96,
+              "markerHash": "5c670c48a87cb0834c57d4969fef63fc2f106fec9fa44b3846480eec9c8d8b42"
+            },
+            {
+              "elapsedMs": 30364,
+              "networkEvents": 3782,
+              "webEvents": 783,
+              "wsFrames": 0,
+              "pendingBodies": 0,
+              "entryCount": 97,
+              "markerHash": "e1bfed2dd82f66bdd7a71089c04c784011afb5ef334335b6d49e87d82725278d"
+            },
+            {
+              "elapsedMs": 42855,
+              "networkEvents": 3793,
+              "webEvents": 791,
+              "wsFrames": 0,
+              "pendingBodies": 0,
+              "entryCount": 99,
+              "markerHash": "98258560ec660c42daf76c9ce3ded9ea8d9071c4989df980252a51f31bdd2a49"
+            },
+            {
+              "elapsedMs": 52349,
+              "networkEvents": 3798,
+              "webEvents": 795,
+              "wsFrames": 0,
+              "pendingBodies": 0,
+              "entryCount": 100,
+              "markerHash": "f498d53c7cd8921ad74bf5e56b6da095a70867ef05eb8f2bc0e30429f41e906b"
+            },
+            {
+              "elapsedMs": 82436,
+              "networkEvents": 3851,
+              "webEvents": 827,
+              "wsFrames": 0,
+              "pendingBodies": 0,
+              "entryCount": 107,
+              "markerHash": "16cf37187558612f8be2f37bd4248a5b1dc835a69b428d2bb0291ce8f50f0c18"
+            },
+            {
+              "elapsedMs": 89296,
+              "networkEvents": 3851,
+              "webEvents": 827,
+              "wsFrames": 0,
+              "pendingBodies": 0,
+              "entryCount": 107,
+              "markerHash": "16cf37187558612f8be2f37bd4248a5b1dc835a69b428d2bb0291ce8f50f0c18"
+            },
+            {
+              "elapsedMs": 104466,
+              "networkEvents": 3857,
+              "webEvents": 831,
+              "wsFrames": 0,
+              "pendingBodies": 0,
+              "entryCount": 108,
+              "markerHash": "d3a3ec9c8612069074787000225d3683b1703fb545c783211dc20e098c833b14"
+            },
+            {
+              "elapsedMs": 111683,
+              "networkEvents": 3863,
+              "webEvents": 835,
+              "wsFrames": 0,
+              "pendingBodies": 0,
+              "entryCount": 109,
+              "markerHash": "93865b3bf28abe9bcf2b813408b08c17e61a3a48df2b731b7bbe487c5fb64d5a"
+            },
+            {
+              "elapsedMs": 125547,
+              "networkEvents": 3863,
+              "webEvents": 835,
+              "wsFrames": 0,
+              "pendingBodies": 0,
+              "entryCount": 109,
+              "markerHash": "93865b3bf28abe9bcf2b813408b08c17e61a3a48df2b731b7bbe487c5fb64d5a"
+            },
+            {
+              "elapsedMs": 132850,
+              "networkEvents": 3872,
+              "webEvents": 842,
+              "wsFrames": 0,
+              "pendingBodies": 1,
+              "entryCount": 110,
+              "markerHash": "be606b721bf0f60be81662aaecee19d360a2fbc7019d5d8728df4540d384480c"
+            }
+          ]
+        }
+      }
+    ],
+    "finishedAt": "2026-10-06T02:17:09.327Z",
+    "elapsedMs": 136998,
+    "retainedTabIds": []
+  }
+}

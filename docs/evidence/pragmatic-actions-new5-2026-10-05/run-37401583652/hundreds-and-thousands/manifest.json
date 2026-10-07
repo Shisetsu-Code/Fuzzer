@@ -1,0 +1,84 @@
+{
+  "schema": "fuzzer/live-evidence/v1",
+  "gameId": "hundreds-and-thousands",
+  "exportStatus": "EXPORTED",
+  "resultStatus": "PARTIAL",
+  "cleanupPending": false,
+  "files": [
+    {
+      "path": "screenshots/01.jpg",
+      "bytes": 129407,
+      "sha256": "125cd4c75b663d147552808790f5cd1efabe9189a9e1bdd4d23a0f88e7c59531"
+    },
+    {
+      "path": "screenshots/02.jpg",
+      "bytes": 104773,
+      "sha256": "dad894d2b71e715ce8e127aa5f9bfc7f12121b6bfc0a54da0053d44de61be8b6"
+    },
+    {
+      "path": "screenshots/03.jpg",
+      "bytes": 130019,
+      "sha256": "d20d7e87f09f10215cae671b5f5c6ecc4aefe17d0e51a082c170aba631727acd"
+    },
+    {
+      "path": "screenshots/04.jpg",
+      "bytes": 84666,
+      "sha256": "614ef1400fb7eceda6580e2072d5057446448e0d533fc79d400f6947f3f07ea7"
+    },
+    {
+      "path": "result.json",
+      "bytes": 6511,
+      "sha256": "63bcd2d08e672541bdf6a9ba32c41db3f123271ea90bcf043734013fd299d70b"
+    },
+    {
+      "path": "protocol.har.gz",
+      "bytes": 1606,
+      "sha256": "a3c7ced764ddbeb38c1ca2aab4c507bcb21b5f4313394804857f563c86344ba4"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 1347,
+      "sha256": "be0453537a25985301df5985acb17580ba7229f4fdd4d8de3304125f15020250"
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "screenshots/01.jpg",
+      "bytes": 129407,
+      "sha256": "125cd4c75b663d147552808790f5cd1efabe9189a9e1bdd4d23a0f88e7c59531",
+      "captureId": "e24a92c2-c7dc-40bd-9bd0-d1d045c4032e",
+      "roles": [
+        "diagnostic"
+      ]
+    },
+    {
+      "path": "screenshots/02.jpg",
+      "bytes": 104773,
+      "sha256": "dad894d2b71e715ce8e127aa5f9bfc7f12121b6bfc0a54da0053d44de61be8b6",
+      "captureId": "daeff95f-7e45-4f0e-95a1-1b2851b101f6",
+      "roles": [
+        "diagnostic"
+      ]
+    },
+    {
+      "path": "screenshots/03.jpg",
+      "bytes": 130019,
+      "sha256": "d20d7e87f09f10215cae671b5f5c6ecc4aefe17d0e51a082c170aba631727acd",
+      "captureId": "5633ad30-5787-4f5d-b4fd-c5226c9e051b",
+      "roles": [
+        "observed"
+      ]
+    },
+    {
+      "path": "screenshots/04.jpg",
+      "bytes": 84666,
+      "sha256": "614ef1400fb7eceda6580e2072d5057446448e0d533fc79d400f6947f3f07ea7",
+      "captureId": "ci-initial-1",
+      "roles": [
+        "initial"
+      ]
+    }
+  ],
+  "totalBytes": 458329,
+  "warnings": []
+}

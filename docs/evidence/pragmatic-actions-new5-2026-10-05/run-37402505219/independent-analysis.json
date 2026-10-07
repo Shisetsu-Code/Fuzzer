@@ -1,0 +1,154 @@
+{
+  "schema": "fuzzer/temporary-live-analysis/v1",
+  "artifacts": [
+    {
+      "artifact": "dragon-s-gate-bonus-choice",
+      "manifestSchema": "fuzzer/live-evidence/v1",
+      "exportStatus": "EXPORTED",
+      "integrity": {
+        "allListedFilesValid": true,
+        "listedFileCount": 6,
+        "files": [
+          {
+            "file": "screenshots/01.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "screenshots/02.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "screenshots/03.jpg",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "result.json",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "protocol.har.gz",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          },
+          {
+            "file": "summary.json",
+            "safePath": true,
+            "exists": true,
+            "bytesMatch": true,
+            "sha256Match": true
+          }
+        ]
+      },
+      "completeGame": false,
+      "scope": "Captured attempts and observed options only; repeated attempts are not additional unique options.",
+      "game": {
+        "id": "dragon-s-gate-bonus-choice",
+        "title": "Dragon's Gate - Bonus Choice",
+        "url": "https://www.pragmaticplay.fun/en/slots/dragon-s-gate-bonus-choice/"
+      },
+      "status": "PARTIAL",
+      "actions": 1,
+      "nodes": 1,
+      "edges": 1,
+      "cleanupPending": false,
+      "summaryClaims": {
+        "purchaseCount": 0,
+        "verifiedPurchaseCount": 0,
+        "modifierCount": 0,
+        "choiceCount": 0,
+        "summaryRowsOmitted": 0
+      },
+      "execution": {
+        "sourceCommit": "5d371c3562fcb51ef45452f29b79bdfaafaba8f1",
+        "hardfireCommit": "adf6de5ec14e394f77fb1816d5f46e5deb250b0a",
+        "startedAt": "2026-10-06T02:14:52.329Z",
+        "finishedAt": "2026-10-06T02:17:09.327Z",
+        "elapsedMs": 136998,
+        "maxActions": 100,
+        "maxDepth": 8,
+        "timeoutMs": 1200000,
+        "versions": {
+          "node": "24.21.0",
+          "electron": "44.4.0",
+          "chrome": "152.0.7977.78"
+        },
+        "runtime": [
+          {
+            "tabId": 1,
+            "requestedSpeed": 4,
+            "observedSpeed": 4,
+            "frameKind": "demo"
+          }
+        ]
+      },
+      "purchases": {
+        "attemptCount": 0,
+        "uniquePurCount": 0,
+        "uniquePurIndices": [],
+        "engineVerifiedAttempts": 0,
+        "internalAnchorClaimsConsistentAttempts": 0,
+        "harCorroboratedRequestsResponsesAttempts": 0,
+        "failedAttempts": 0,
+        "uniquePurWithAtLeastOneEngineVerifiedAttempt": 0,
+        "options": {},
+        "attempts": []
+      },
+      "modifiers": {
+        "attemptCount": 0,
+        "attempts": []
+      },
+      "choices": {
+        "decisionCount": 0,
+        "distinctObservedFamilyCount": 0,
+        "distinctSelectionsCount": 0,
+        "decisions": []
+      },
+      "pending": {
+        "count": 1,
+        "reasons": {
+          "ACTIVE_TIMEOUT": 1
+        },
+        "phaseCounts": {
+          "unspecified": 1
+        }
+      },
+      "protocol": {
+        "entryCount": 1,
+        "actions": {
+          "doInit": 1
+        },
+        "httpByAction": {
+          "doInit": {
+            "200": 1
+          }
+        },
+        "symbolsObserved": {
+          "vs50dragatebch": [
+            "request:symbol"
+          ]
+        },
+        "purchaseSubmissionRequestCount": 0,
+        "uniquePurIndices": [],
+        "purchaseSubmissionRequests": [],
+        "missingBodies": {},
+        "incompleteSourceCount": 0,
+        "scope": "All captured sessions including preparation and replay; counts are not unique options or one chronological session."
+      },
+      "warnings": []
+    }
+  ]
+}

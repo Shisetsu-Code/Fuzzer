@@ -1,7 +1,13 @@
 export function wagerEvidence(before,after){const balanceKnown=Number.isFinite(before.balance)&&Number.isFinite(after.balance)&&before.balanceSource===after.balanceSource;const delta=balanceKnown?after.balance-before.balance:null;const payloadObserved=before.serverMarker!==after.serverMarker;const modifierEnabled=Number.isInteger(before.betLevelIndex)&&Number.isInteger(after.betLevelIndex)&&after.betLevelIndex>0&&after.betLevelIndex!==before.betLevelIndex;
 return {balanceBefore:before.balance,balanceAfter:after.balance,balanceSource:after.balanceSource,balanceDelta:delta,debitObserved:delta!==null&&delta<0,payloadObserved,modifierEnabled,needsSpin:balanceKnown&&delta===0&&!payloadObserved&&(after.probeReady===undefined?modifierEnabled:after.probeReady===true)&&after.canSpin===true&&after.menuOpen===false};}
 export function readRuntimeBalance(){const out=[];for(const name of ['BalanceDisplayed','CreditDisplayed','Balance','Credit','CurrentBalance','CurrentCredit']){const ref=globalThis.Vars?.[name];if(ref===undefined)continue;for(const getter of ['GetDouble','GetFloat'])try{const value=globalThis.XT?.[getter]?.(ref);if(Number.isFinite(value)&&value>=0)out.push({name,getter,value});}catch{}}
-const found=out.find(v=>v.value>0)||out[0];return {balance:found?.value??null,balanceSource:found?'runtime:'+found.name+'.'+found.getter:null,candidates:out};}
+const found=out.find(v=>v.value>0)||out[0];let betAmount=null,betSource=null;
+for(const name of ['TotalBetDisplayed','TotalBet','TotalBetAmount','BetAmount','CurrentBet','BetDisplayed']){
+ const ref=globalThis.Vars?.[name];if(ref===undefined)continue;
+ for(const getter of ['GetDouble','GetFloat'])try{const value=globalThis.XT?.[getter]?.(ref);if(Number.isFinite(value)&&value>0){betAmount=value;betSource='runtime:'+name+'.'+getter;break;}}catch{}
+ if(betAmount!==null)break;
+}
+return {balance:found?.value??null,balanceSource:found?'runtime:'+found.name+'.'+found.getter:null,candidates:out,betAmount,betSource};}
 export function baseSurfaceMatches(base,current){if(!base.length||!current.length||current.length>base.length)return false;return current.every(c=>c.center&&base.some(b=>b.center&&Math.hypot(c.center.x-b.center.x,c.center.y-b.center.y)<.035));}
 export function classifyProbeCost({balanceBefore,balanceAfter,win,baseCost}){if(![balanceBefore,balanceAfter,win,baseCost].every(Number.isFinite)||baseCost<=0)return {cost:null,multiplier:null,classification:'UNKNOWN'};const cost=Math.round((balanceBefore-balanceAfter+win)*1e8)/1e8,multiplier=cost/baseCost;return {cost,multiplier,classification:Math.abs(multiplier-1)<1e-6?'SAME_AS_BASE_UNCLASSIFIED':multiplier>1?'HIGHER_THAN_BASE':'UNKNOWN'};}
 

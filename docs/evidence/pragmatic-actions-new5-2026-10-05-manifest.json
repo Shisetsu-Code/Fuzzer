@@ -1,0 +1,996 @@
+{
+  "schemaVersion": 1,
+  "batch": "pragmatic-actions-new5-2026-10-05",
+  "selectedAt": "2026-10-06T00:28:16Z",
+  "batchDateTimezone": "America/Argentina/Buenos_Aires",
+  "status": "PROPOSED_NOT_RUN",
+  "selectionClaim": "No figuran en los registros consultados; no se afirma ausencia de pruebas en historial no disponible.",
+  "metadataScope": "Metadatos de páginas oficiales sin ejecutar demos. No prueban opciones expuestas por una sesión, payloads, precios efectivos ni cierre de operaciones.",
+  "constraints": {
+    "maxConcurrentJobs": 2,
+    "maxLoadedDemoTabs": 4
+  },
+  "sources": [
+    {
+      "id": "local-regression-targets",
+      "path": "docs/pragmatic-regression-targets.json",
+      "scope": "Existing targets conservatively excluded; does not imply every target was completed."
+    },
+    {
+      "id": "local-validation-docs",
+      "paths": [
+        "docs/state-explorer.md",
+        "docs/drawn-buttons.md",
+        "docs/pragmatic-direct-controls.md",
+        "docs/validation-pragmatic-five-2026-10-04.json",
+        "docs/validation-five-learned-2026-10-04.md",
+        "docs/validation-fun-catalog-2026-10-04.md",
+        "docs/validation-pragmatic-new5-2026-10-05.md",
+        "docs/evidence/pragmatic-new5-2026-10-05.json"
+      ],
+      "scope": "Documented launches, attempts, scans and named historical cases conservatively excluded."
+    },
+    {
+      "id": "local-contracts-and-validation",
+      "paths": [
+        "contracts/pragmatic/vs20loksriches.json",
+        "contracts/pragmatic/vs20ddominion.json",
+        "contracts/pragmatic/vs20olympuspot.json",
+        "contracts/pragmatic/vs20alieninv.json",
+        "contracts/pragmatic/vs20coven.json",
+        "docs/validation-pragmatic-five-2026-10-04.json"
+      ]
+    },
+    {
+      "id": "snapshot-index",
+      "url": "https://github.com/Shisetsu-Code/Snapshot/blob/42776f9fbe7cc8b428cd830621196f02a40d8c81/snapshots/index.json",
+      "blobSha": "21611642afbfa42dcf080eb5f287db562403cc87",
+      "scope": "25 catalogue snapshot entries conservatively excluded; screenshots do not demonstrate spins."
+    },
+    {
+      "id": "tester-spin-tree",
+      "url": "https://api.github.com/repos/Shisetsu-Code/Tester-Spin/git/trees/9ddbbd2b4a8eab587b0846e8ab7bc4d2f3acd99f?recursive=1",
+      "scope": "Public tree inspected; no matching manifest/history/results/index JSON located. No game-history inference from source code."
+    },
+    {
+      "id": "historical-exclusions-confirmed-in-session",
+      "scope": "Additional game identities confirmed by coordinating reviewer from available prior work; no private conversation content stored."
+    },
+    {
+      "id": "official-dragon-s-gate-bonus-choice",
+      "url": "https://www.pragmaticplay.fun/en/slots/dragon-s-gate-bonus-choice/",
+      "scope": "Official title, metadata and Play Demo entry verified by page retrieval; game not launched."
+    },
+    {
+      "id": "official-inca-queen",
+      "url": "https://www.pragmaticplay.fun/en/slots/inca-queen/",
+      "scope": "Official title, metadata and Play Demo entry verified by page retrieval; game not launched."
+    },
+    {
+      "id": "official-big-bass-blast",
+      "url": "https://www.pragmaticplay.fun/en/slots/big-bass-blast/",
+      "scope": "Official title, metadata and Play Demo entry verified by page retrieval; game not launched."
+    },
+    {
+      "id": "official-hundreds-and-thousands",
+      "url": "https://www.pragmaticplay.fun/en/slots/hundreds-and-thousands/",
+      "scope": "Official title, metadata and Play Demo entry verified by page retrieval; game not launched."
+    },
+    {
+      "id": "official-blazing-wilds-megaways",
+      "url": "https://www.pragmaticplay.fun/en/slots/blazing-wilds-megaways/",
+      "scope": "Official title, metadata and Play Demo entry verified by page retrieval; game not launched."
+    }
+  ],
+  "limitations": [
+    "Some historical games numbered 59–62 have no identifiable title/symbol in available context and cannot be matched.",
+    "Selected game symbols were not verified from runtime traffic and remain null.",
+    "Slugs appear only where consulted records provide them. Normalized names remove punctuation and case; variants are conservatively excluded."
+  ],
+  "exclusions": [
+    {
+      "title": "3 Buzzing Wilds",
+      "normalizedName": "3 buzzing wilds",
+      "slugs": [
+        "3-buzzing-wilds"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets"
+      ]
+    },
+    {
+      "title": "5 Frozen Charms Megaways",
+      "normalizedName": "5 frozen charms megaways",
+      "slugs": [
+        "5-frozen-charms-megaways"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets"
+      ]
+    },
+    {
+      "title": "5 Lions Megaways",
+      "normalizedName": "5 lions megaways",
+      "slugs": [
+        "5-lions-megaways"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets"
+      ]
+    },
+    {
+      "title": "5 Lions Megaways 2",
+      "normalizedName": "5 lions megaways 2",
+      "slugs": [
+        "5-lions-megaways-2"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets"
+      ]
+    },
+    {
+      "title": "5 Lions Reborn",
+      "normalizedName": "5 lions reborn",
+      "slugs": [
+        "5-lions-reborn"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets",
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "777 Wheel Blitz",
+      "normalizedName": "777 wheel blitz",
+      "slugs": [
+        "777-wheel-blitz"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "snapshot-index"
+      ]
+    },
+    {
+      "title": "Alien Invaders",
+      "normalizedName": "alien invaders",
+      "slugs": [
+        "alien-invaders"
+      ],
+      "gameSymbols": [
+        "vs20alieninv"
+      ],
+      "sources": [
+        "local-regression-targets",
+        "local-contracts-and-validation"
+      ]
+    },
+    {
+      "title": "Big Bass Amazon Xtreme",
+      "normalizedName": "big bass amazon xtreme",
+      "slugs": [
+        "big-bass-amazon-xtreme"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets",
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "Big Bass Christmas Bash",
+      "normalizedName": "big bass christmas bash",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "Big Bass Day at the Races",
+      "normalizedName": "big bass day at the races",
+      "slugs": [
+        "big-bass-day-at-the-races"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets"
+      ]
+    },
+    {
+      "title": "Big Bass Halloween Splash 1000",
+      "normalizedName": "big bass halloween splash 1000",
+      "slugs": [
+        "big-bass-halloween-splash-1000"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "snapshot-index",
+        "local-validation-docs"
+      ]
+    },
+    {
+      "title": "Big Bass Hold & Spinner",
+      "normalizedName": "big bass hold spinner",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "local-validation-docs"
+      ]
+    },
+    {
+      "title": "Big Bass Hold & Spinner Megaways",
+      "normalizedName": "big bass hold spinner megaways",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "Big Bass Vegas 1000",
+      "normalizedName": "big bass vegas 1000",
+      "slugs": [
+        "big-bass-vegas-1000"
+      ],
+      "gameSymbols": [
+        "vs10bbveg1000"
+      ],
+      "sources": [
+        "local-regression-targets",
+        "snapshot-index",
+        "local-contracts-and-validation"
+      ]
+    },
+    {
+      "title": "Bubble Up!",
+      "normalizedName": "bubble up",
+      "slugs": [
+        "bubble-up"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "snapshot-index",
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "Bubble Wild",
+      "normalizedName": "bubble wild",
+      "slugs": [
+        "bubble-wild"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "snapshot-index"
+      ]
+    },
+    {
+      "title": "Candy Rush",
+      "normalizedName": "candy rush",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "local-validation-docs"
+      ]
+    },
+    {
+      "title": "Chilli Heat Megaways",
+      "normalizedName": "chilli heat megaways",
+      "slugs": [
+        "chilli-heat-megaways"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets",
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "Cosmic Clusters!",
+      "normalizedName": "cosmic clusters",
+      "slugs": [
+        "cosmic-clusters"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "snapshot-index"
+      ]
+    },
+    {
+      "title": "Coven Rising",
+      "normalizedName": "coven rising",
+      "slugs": [
+        "coven-rising"
+      ],
+      "gameSymbols": [
+        "vs20coven"
+      ],
+      "sources": [
+        "local-regression-targets",
+        "snapshot-index",
+        "local-contracts-and-validation"
+      ]
+    },
+    {
+      "title": "Death Dominion",
+      "normalizedName": "death dominion",
+      "slugs": [
+        "death-dominion"
+      ],
+      "gameSymbols": [
+        "vs20ddominion"
+      ],
+      "sources": [
+        "snapshot-index",
+        "local-validation-docs",
+        "local-contracts-and-validation"
+      ]
+    },
+    {
+      "title": "Deep Sea",
+      "normalizedName": "deep sea",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "local-validation-docs"
+      ]
+    },
+    {
+      "title": "Dragon King Hot Pots",
+      "normalizedName": "dragon king hot pots",
+      "slugs": [
+        "dragon-king-hot-pots"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets"
+      ]
+    },
+    {
+      "title": "Eastern Fury",
+      "normalizedName": "eastern fury",
+      "slugs": [
+        "eastern-fury"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "snapshot-index",
+        "local-validation-docs"
+      ]
+    },
+    {
+      "title": "Eternal Diamonds",
+      "normalizedName": "eternal diamonds",
+      "slugs": [
+        "eternal-diamonds"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "snapshot-index",
+        "local-validation-docs"
+      ]
+    },
+    {
+      "title": "Extra Juicy Megaways",
+      "normalizedName": "extra juicy megaways",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "Forever Split Megaways",
+      "normalizedName": "forever split megaways",
+      "slugs": [
+        "forever-split-megaways"
+      ],
+      "gameSymbols": [
+        "vswaysmgrmgw"
+      ],
+      "sources": [
+        "local-regression-targets",
+        "local-contracts-and-validation"
+      ]
+    },
+    {
+      "title": "Freya 1000",
+      "normalizedName": "freya 1000",
+      "slugs": [
+        "freya-1000"
+      ],
+      "gameSymbols": [
+        "vs10freya"
+      ],
+      "sources": [
+        "local-regression-targets",
+        "snapshot-index",
+        "local-contracts-and-validation"
+      ]
+    },
+    {
+      "title": "Fury of Anubis",
+      "normalizedName": "fury of anubis",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "Gates of Olympus",
+      "normalizedName": "gates of olympus",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "Gates of Olympus 2500",
+      "normalizedName": "gates of olympus 2500",
+      "slugs": [
+        "gates-of-olympus-2500"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets",
+        "snapshot-index"
+      ]
+    },
+    {
+      "title": "Gates of Olympus POP",
+      "normalizedName": "gates of olympus pop",
+      "slugs": [
+        "gates-of-olympus-pop"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "snapshot-index"
+      ]
+    },
+    {
+      "title": "Gates of Olympus Super Scatter",
+      "normalizedName": "gates of olympus super scatter",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "local-validation-docs"
+      ]
+    },
+    {
+      "title": "Gatot Kaca's Fury",
+      "normalizedName": "gatot kaca s fury",
+      "slugs": [
+        "gatot-kaca-s-fury"
+      ],
+      "gameSymbols": [
+        "vs20gatotfury"
+      ],
+      "sources": [
+        "local-regression-targets"
+      ]
+    },
+    {
+      "title": "Golden Retriever",
+      "normalizedName": "golden retriever",
+      "slugs": [
+        "golden-retriever"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "snapshot-index",
+        "local-validation-docs"
+      ]
+    },
+    {
+      "title": "Great Reef",
+      "normalizedName": "great reef",
+      "slugs": [
+        "great-reef"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets"
+      ]
+    },
+    {
+      "title": "Harvest Moon - Grave Profits",
+      "normalizedName": "harvest moon grave profits",
+      "slugs": [
+        "harvest-moon-grave-profits"
+      ],
+      "gameSymbols": [
+        "vs15grprofits"
+      ],
+      "sources": [
+        "snapshot-index",
+        "local-validation-docs",
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "Hearts of Venus",
+      "normalizedName": "hearts of venus",
+      "slugs": [
+        "hearts-of-venus"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "snapshot-index",
+        "local-validation-docs"
+      ]
+    },
+    {
+      "title": "Helios Triple Sun",
+      "normalizedName": "helios triple sun",
+      "slugs": [
+        "helios-triple-sun"
+      ],
+      "gameSymbols": [
+        "vs20olympuspot"
+      ],
+      "sources": [
+        "local-regression-targets",
+        "snapshot-index",
+        "local-contracts-and-validation"
+      ]
+    },
+    {
+      "title": "Infective Wild",
+      "normalizedName": "infective wild",
+      "slugs": [
+        "infective-wild"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets"
+      ]
+    },
+    {
+      "title": "Jade Legends",
+      "normalizedName": "jade legends",
+      "slugs": [
+        "jade-legends"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "snapshot-index"
+      ]
+    },
+    {
+      "title": "John Hunter and the secrets of Da Vinci's Treasure",
+      "normalizedName": "john hunter and the secrets of da vinci s treasure",
+      "slugs": [
+        "john-hunter-and-the-secrets-of-da-vinci-s-treasure"
+      ],
+      "gameSymbols": [
+        "vs25davinci"
+      ],
+      "sources": [
+        "local-regression-targets"
+      ]
+    },
+    {
+      "title": "Jungle Gorilla",
+      "normalizedName": "jungle gorilla",
+      "slugs": [
+        "jungle-gorilla"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets"
+      ]
+    },
+    {
+      "title": "Loki's Riches",
+      "normalizedName": "loki s riches",
+      "slugs": [
+        "loki-s-riches"
+      ],
+      "gameSymbols": [
+        "vs20loksriches"
+      ],
+      "sources": [
+        "local-regression-targets",
+        "local-contracts-and-validation"
+      ]
+    },
+    {
+      "title": "Lucky Drums 88",
+      "normalizedName": "lucky drums 88",
+      "slugs": [
+        "lucky-drums-88"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "snapshot-index"
+      ]
+    },
+    {
+      "title": "Out of the Woods",
+      "normalizedName": "out of the woods",
+      "slugs": [
+        "out-of-the-woods"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets",
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "Piggy Bank Bills",
+      "normalizedName": "piggy bank bills",
+      "slugs": [
+        "piggy-bank-bills"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets"
+      ]
+    },
+    {
+      "title": "Plushie Wins",
+      "normalizedName": "plushie wins",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "local-validation-docs"
+      ]
+    },
+    {
+      "title": "Power of Thor",
+      "normalizedName": "power of thor",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "Ra vs Osiris",
+      "normalizedName": "ra vs osiris",
+      "slugs": [
+        "ra-vs-osiris"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "snapshot-index"
+      ]
+    },
+    {
+      "title": "Release the Bison",
+      "normalizedName": "release the bison",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "Release the Kraken",
+      "normalizedName": "release the kraken",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "Release the Kraken 2",
+      "normalizedName": "release the kraken 2",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "Rise of Pyramids",
+      "normalizedName": "rise of pyramids",
+      "slugs": [
+        "rise-of-pyramids"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets"
+      ]
+    },
+    {
+      "title": "Romeo and Juliet",
+      "normalizedName": "romeo and juliet",
+      "slugs": [
+        "romeo-and-juliet"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets"
+      ]
+    },
+    {
+      "title": "Sanator",
+      "normalizedName": "sanator",
+      "slugs": [],
+      "gameSymbols": [
+        "vswayssanator"
+      ],
+      "sources": [
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "Sleeping Dragon Ultra Dark",
+      "normalizedName": "sleeping dragon ultra dark",
+      "slugs": [
+        "sleeping-dragon-ultra-dark"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "snapshot-index",
+        "local-validation-docs"
+      ]
+    },
+    {
+      "title": "Spell Master",
+      "normalizedName": "spell master",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "local-validation-docs"
+      ]
+    },
+    {
+      "title": "Starlight Wins",
+      "normalizedName": "starlight wins",
+      "slugs": [
+        "starlight-wins"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets"
+      ]
+    },
+    {
+      "title": "Sunnydaze Asylum",
+      "normalizedName": "sunnydaze asylum",
+      "slugs": [
+        "sunnydaze-asylum"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "snapshot-index",
+        "local-validation-docs"
+      ]
+    },
+    {
+      "title": "Super Serge",
+      "normalizedName": "super serge",
+      "slugs": [
+        "super-serge"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "snapshot-index"
+      ]
+    },
+    {
+      "title": "Sweet Bonanza",
+      "normalizedName": "sweet bonanza",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "Sweet Bonanza POP",
+      "normalizedName": "sweet bonanza pop",
+      "slugs": [
+        "sweet-bonanza-pop"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "snapshot-index",
+        "local-validation-docs"
+      ]
+    },
+    {
+      "title": "Sweet Rush Bonanza",
+      "normalizedName": "sweet rush bonanza",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "local-validation-docs"
+      ]
+    },
+    {
+      "title": "Temple Guardians",
+      "normalizedName": "temple guardians",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "local-validation-docs"
+      ]
+    },
+    {
+      "title": "The Champions",
+      "normalizedName": "the champions",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "The Dog House 1000",
+      "normalizedName": "the dog house 1000",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "Tic Tac Take",
+      "normalizedName": "tic tac take",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "historical-exclusions-confirmed-in-session"
+      ]
+    },
+    {
+      "title": "Triple Hop Pots",
+      "normalizedName": "triple hop pots",
+      "slugs": [
+        "triple-hop-pots"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets",
+        "snapshot-index"
+      ]
+    },
+    {
+      "title": "Vampires vs Wolves",
+      "normalizedName": "vampires vs wolves",
+      "slugs": [
+        "vampires-vs-wolves"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets"
+      ]
+    },
+    {
+      "title": "Wild Gladiators",
+      "normalizedName": "wild gladiators",
+      "slugs": [
+        "wild-gladiators"
+      ],
+      "gameSymbols": [],
+      "sources": [
+        "local-regression-targets"
+      ]
+    },
+    {
+      "title": "Zeus vs Hades 250",
+      "normalizedName": "zeus vs hades 250",
+      "slugs": [],
+      "gameSymbols": [],
+      "sources": [
+        "historical-exclusions-confirmed-in-session"
+      ]
+    }
+  ],
+  "games": [
+    {
+      "id": "dragon-s-gate-bonus-choice",
+      "title": "Dragon's Gate - Bonus Choice",
+      "url": "https://www.pragmaticplay.fun/en/slots/dragon-s-gate-bonus-choice/",
+      "normalizedName": "dragon s gate bonus choice",
+      "gameSymbol": null,
+      "selectionStatus": "PROPOSED_NOT_RUN",
+      "metadata": {
+        "bonusBuyMultipliers": [
+          50
+        ],
+        "anteBet": false,
+        "payType": "Lines",
+        "mechanicsAnnounced": [
+          "Free Spins or Respins choice"
+        ]
+      },
+      "metadataSource": "https://www.pragmaticplay.fun/en/slots/dragon-s-gate-bonus-choice/"
+    },
+    {
+      "id": "inca-queen",
+      "title": "Inca Queen",
+      "url": "https://www.pragmaticplay.fun/en/slots/inca-queen/",
+      "normalizedName": "inca queen",
+      "gameSymbol": null,
+      "selectionStatus": "PROPOSED_NOT_RUN",
+      "metadata": {
+        "bonusBuyMultipliers": [
+          250
+        ],
+        "anteBet": true,
+        "payType": "Lines",
+        "mechanicsAnnounced": [
+          "Coin Respins",
+          "Frame Respins",
+          "Money Respins"
+        ]
+      },
+      "metadataSource": "https://www.pragmaticplay.fun/en/slots/inca-queen/"
+    },
+    {
+      "id": "big-bass-blast",
+      "title": "Big Bass Blast",
+      "url": "https://www.pragmaticplay.fun/en/slots/big-bass-blast/",
+      "normalizedName": "big bass blast",
+      "gameSymbol": null,
+      "selectionStatus": "PROPOSED_NOT_RUN",
+      "metadata": {
+        "bonusBuyMultipliers": [
+          100
+        ],
+        "anteBet": true,
+        "payType": "Lines",
+        "mechanicsAnnounced": [
+          "Free spins",
+          "Wild collection",
+          "Retriggers"
+        ]
+      },
+      "metadataSource": "https://www.pragmaticplay.fun/en/slots/big-bass-blast/"
+    },
+    {
+      "id": "hundreds-and-thousands",
+      "title": "Hundreds and Thousands",
+      "url": "https://www.pragmaticplay.fun/en/slots/hundreds-and-thousands/",
+      "normalizedName": "hundreds and thousands",
+      "gameSymbol": null,
+      "selectionStatus": "PROPOSED_NOT_RUN",
+      "metadata": {
+        "bonusBuyMultipliers": [
+          100
+        ],
+        "anteBet": true,
+        "payType": "Lines",
+        "mechanicsAnnounced": [
+          "Free spins",
+          "2x wins during free spins"
+        ]
+      },
+      "metadataSource": "https://www.pragmaticplay.fun/en/slots/hundreds-and-thousands/"
+    },
+    {
+      "id": "blazing-wilds-megaways",
+      "title": "Blazing Wilds Megaways™",
+      "url": "https://www.pragmaticplay.fun/en/slots/blazing-wilds-megaways/",
+      "normalizedName": "blazing wilds megaways",
+      "gameSymbol": null,
+      "selectionStatus": "PROPOSED_NOT_RUN",
+      "metadata": {
+        "bonusBuyMultipliers": [
+          100
+        ],
+        "anteBet": false,
+        "payType": "Megaways",
+        "mechanicsAnnounced": [
+          "Cascades",
+          "Expanding wild multipliers",
+          "Free spins"
+        ]
+      },
+      "metadataSource": "https://www.pragmaticplay.fun/en/slots/blazing-wilds-megaways/"
+    }
+  ]
+}

@@ -1,0 +1,172 @@
+name: Pragmatic live DEMOs
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/pragmatic-new5.yml'
+      - 'scripts/ci/**'
+      - 'docs/evidence/pragmatic-actions-new5-2026-10-05-manifest.json'
+  workflow_dispatch:
+    inputs:
+      game_id:
+        description: 'Game id from the new-five manifest, or all'
+        required: true
+        default: all
+        type: string
+
+permissions:
+  contents: read
+
+# One live batch at a time, including reruns on other branches. Do not cancel
+# an active DEMO before its recorder and owned tab have finished cleanup.
+concurrency:
+  group: pragmatic-live-demos
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  select:
+    name: Select requested DEMOs
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      enabled: ${{ steps.games.outputs.enabled }}
+      matrix: ${{ steps.games.outputs.matrix }}
+      source_sha: ${{ steps.games.outputs.source_sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+      - id: games
+        name: Validate manifest and explicit run marker
+        env:
+          FUZZER_GAME_SELECTION: ${{ inputs.game_id || 'all' }}
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const manifest = JSON.parse(fs.readFileSync('docs/evidence/pragmatic-actions-new5-2026-10-05-manifest.json', 'utf8'));
+          if (!Array.isArray(manifest.games) || manifest.games.length !== 5) throw new Error('Exactly five DEMOs are required');
+          const ids = new Set();
+          for (const game of manifest.games) {
+            if (!/^[a-z0-9-]+$/.test(game.id) || ids.has(game.id) || typeof game.title !== 'string') throw new Error('Invalid or duplicate game');
+            const url = new URL(game.url);
+            if (url.origin !== 'https://www.pragmaticplay.fun' || !/^\/en\/slots\/[a-z0-9-]+\/$/.test(url.pathname) || url.search || url.hash) throw new Error('An official public DEMO catalog URL is required');
+            ids.add(game.id);
+          }
+          const message = execFileSync('git', ['log', '-1', '--pretty=%B'], {encoding:'utf8'});
+          const marker = message.match(/\[live-demo:([a-z0-9-]+)\]/)?.[1];
+          const selected = process.env.GITHUB_EVENT_NAME === 'workflow_dispatch' ? process.env.FUZZER_GAME_SELECTION : marker;
+          if (selected && selected !== 'all' && !ids.has(selected)) throw new Error('Requested game is absent from the manifest');
+          const games = manifest.games.filter(game => !selected || selected === 'all' || game.id === selected).map(({id,title}) => ({id,title}));
+          const sha = execFileSync('git', ['rev-parse', 'HEAD'], {encoding:'utf8'}).trim();
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `enabled=${Boolean(selected)}\nmatrix=${JSON.stringify({include:games})}\nsource_sha=${sha}\n`);
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, selected ? `## Requested live DEMOs\n\nSource: \`${sha}\`\n\n${games.map(game => `- ${game.title}`).join('\n')}\n` : 'Live DEMOs were not requested by this commit. Use `[live-demo:all]` or `[live-demo:<game-id>]` in the head commit message, or start the workflow manually.\n');
+          NODE
+
+  explore:
+    name: DEMO / ${{ matrix.title }}
+    needs: select
+    if: needs.select.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix: ${{ fromJSON(needs.select.outputs.matrix) }}
+    env:
+      HARDFIRE_ROOT: ${{ github.workspace }}/hardfire
+      FUZZER_GAME_ID: ${{ matrix.id }}
+      FUZZER_MANIFEST: ${{ github.workspace }}/docs/evidence/pragmatic-actions-new5-2026-10-05-manifest.json
+      FUZZER_ARTIFACT_DIR: ${{ github.workspace }}/outputs/live-private/${{ matrix.id }}
+      FUZZER_OUTPUT_DIR: ${{ github.workspace }}/outputs/live-evidence/${{ matrix.id }}
+      FUZZER_MAX_ACTIONS: '100'
+      FUZZER_MAX_DEPTH: '8'
+      FUZZER_BENCHMARK: '1'
+      FUZZER_TIMEOUT_MS: '1200000'
+      FUZZER_SOURCE_SHA: ${{ needs.select.outputs.source_sha }}
+      HARDFIRE_SOURCE_SHA: adf6de5ec14e394f77fb1816d5f46e5deb250b0a
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.select.outputs.source_sha }}
+          persist-credentials: false
+      - name: Checkout the pinned HardFire implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Shisetsu-Code/HardFire
+          ref: adf6de5ec14e394f77fb1816d5f46e5deb250b0a
+          path: hardfire
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+      - name: Install the pinned Electron runtime
+        run: npm install --no-save --package-lock=false --no-audit --no-fund electron@44.4.0
+      - name: Explore the real official DEMO with Fuzzer and HardFire
+        run: |
+          setsid xvfb-run -a -s '-screen 0 1280x800x24' ./node_modules/.bin/electron --no-sandbox --use-gl=angle --use-angle=swiftshader scripts/ci/run-live-demo.mjs &
+          fuzzer_pid=$!
+          for attempt in {1..30}; do
+            if test -s "$FUZZER_ARTIFACT_DIR/runner-started.json"; then break; fi
+            if ! kill -0 "$fuzzer_pid" 2>/dev/null; then
+              wait "$fuzzer_pid" || true
+              echo '::error::Electron exited before the runner startup marker was written.'
+              exit 1
+            fi
+            sleep 1
+          done
+          if ! test -s "$FUZZER_ARTIFACT_DIR/runner-started.json"; then
+            # main writes the marker before creating any window or game tab.
+            kill -- "-$fuzzer_pid" 2>/dev/null || true
+            wait "$fuzzer_pid" || true
+            echo '::error::Electron did not enter the runner within 30 seconds; no game was started.'
+            exit 1
+          fi
+          echo 'Fuzzer runner startup confirmed.'
+          wait "$fuzzer_pid"
+      - name: Recover durable evidence after Electron exits
+        if: always()
+        run: node scripts/ci/recover-live-evidence.mjs
+      - name: Preserve the structured summary in the Actions log
+        if: always()
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          const summaryPath = path.join(process.env.FUZZER_OUTPUT_DIR, 'summary.json');
+          if (!fs.existsSync(summaryPath)) {
+            const error = {gameId:process.env.FUZZER_GAME_ID,status:'INFRASTRUCTURE_ERROR',reason:'No sanitized summary was produced; inspect the setup/execution step.'};
+            console.log('FUZZER_SUMMARY_JSON=' + JSON.stringify(error));
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `## ${process.env.FUZZER_GAME_ID}\n\nNo sanitized summary was produced. The setup or execution step failed before evidence export.\n`);
+          } else {
+            const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+            console.log('FUZZER_SUMMARY_JSON=' + JSON.stringify(summary));
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `## ${process.env.FUZZER_GAME_ID}\n\n\`\`\`json\n${JSON.stringify(summary,null,2)}\n\`\`\`\n`);
+          }
+          NODE
+      - name: Upload sanitized evidence only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: pragmatic-${{ matrix.id }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.FUZZER_OUTPUT_DIR }}/
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 1
+
+  gallery:
+    name: Publish latest-run screenshots
+    needs: [select, explore]
+    if: always() && needs.select.outputs.enabled == 'true'
+    permissions:
+      contents: write
+      actions: read
+    uses: ./.github/workflows/latest-captures.yml
+    with:
+      source_run_id: ${{ github.run_id }}

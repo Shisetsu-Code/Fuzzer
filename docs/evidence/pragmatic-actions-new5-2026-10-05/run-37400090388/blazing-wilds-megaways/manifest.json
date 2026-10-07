@@ -1,0 +1,70 @@
+{
+  "schema": "fuzzer/live-evidence/v1",
+  "gameId": "blazing-wilds-megaways",
+  "exportStatus": "EXPORTED",
+  "resultStatus": "PARTIAL",
+  "cleanupPending": false,
+  "files": [
+    {
+      "path": "screenshots/01.jpg",
+      "bytes": 114709,
+      "sha256": "46a2bc3bf48d8327b960d2830a89de5eeaacf2935ebd8d0ec96dc8b4bc884bd5"
+    },
+    {
+      "path": "screenshots/02.jpg",
+      "bytes": 144439,
+      "sha256": "d00afae7363933f029f7c3724a00de03a78de1d446d37098b00e74770c1d258c"
+    },
+    {
+      "path": "screenshots/03.jpg",
+      "bytes": 42871,
+      "sha256": "08f99d06d1e443fe779517696d4e77c363e52bafb5be01ee89124898592dc9d5"
+    },
+    {
+      "path": "result.json",
+      "bytes": 4039,
+      "sha256": "60ca02b3b291f72bcfd28a0e5cbe522e8105edafc72a8a6fb45cbbc16abeb30e"
+    },
+    {
+      "path": "protocol.har.gz",
+      "bytes": 14755,
+      "sha256": "0ac703f335cd8ac61174fb2e15db5c8e66cd07be56e441f4a3fc3309432ea177"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 1227,
+      "sha256": "143dfd9833b73cdf2cdab1a980fbb11859cbc0dcf1b67591709a5e50e7b5f7bd"
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "screenshots/01.jpg",
+      "bytes": 114709,
+      "sha256": "46a2bc3bf48d8327b960d2830a89de5eeaacf2935ebd8d0ec96dc8b4bc884bd5",
+      "captureId": "2b9a0443-fd95-4d37-9344-019c50b322d2",
+      "roles": [
+        "diagnostic"
+      ]
+    },
+    {
+      "path": "screenshots/02.jpg",
+      "bytes": 144439,
+      "sha256": "d00afae7363933f029f7c3724a00de03a78de1d446d37098b00e74770c1d258c",
+      "captureId": "d29cb449-4e05-475d-8167-46b2b70469d5",
+      "roles": [
+        "observed"
+      ]
+    },
+    {
+      "path": "screenshots/03.jpg",
+      "bytes": 42871,
+      "sha256": "08f99d06d1e443fe779517696d4e77c363e52bafb5be01ee89124898592dc9d5",
+      "captureId": "ci-initial-1",
+      "roles": [
+        "initial"
+      ]
+    }
+  ],
+  "totalBytes": 322040,
+  "warnings": []
+}

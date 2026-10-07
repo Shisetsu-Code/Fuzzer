@@ -1,0 +1,43 @@
+name: Reproducible source bundle
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  bundle:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - id: gate
+        shell: bash
+        run: |
+          if git log -1 --format=%B | grep -Fq '[source-bundle]'; then echo 'run=true' >> "$GITHUB_OUTPUT"; fi
+      - if: steps.gate.outputs.run == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: Shisetsu-Code/HardFire
+          ref: adf6de5ec14e394f77fb1816d5f46e5deb250b0a
+          path: hardfire-source
+          persist-credentials: false
+      - if: steps.gate.outputs.run == 'true'
+        shell: bash
+        run: |
+          mkdir source-bundle
+          git archive --format=tar --prefix=Fuzzer/ HEAD > source-bundle/fuzzer.tar
+          git -C hardfire-source archive --format=tar --prefix=HardFire/ HEAD > source-bundle/hardfire.tar
+          git rev-parse HEAD > source-bundle/fuzzer-sha.txt
+          git -C hardfire-source rev-parse HEAD > source-bundle/hardfire-sha.txt
+          sha256sum source-bundle/*.tar > source-bundle/SHA256SUMS
+      - if: steps.gate.outputs.run == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: source-bundle-${{ github.run_id }}
+          path: source-bundle/
+          retention-days: 1
+          if-no-files-found: error

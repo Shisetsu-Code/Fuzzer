@@ -864,7 +864,7 @@ export const pragmatic = {
             try {
               const name = String(button.gameObject?.name || '');
               const event = String(button.eventToCode?.name || '');
-              const active = button.gameObject?.activeInHierarchy === true && button.xtEnabled !== false;
+              const active = button.gameObject?.activeInHierarchy === true && button.xtEnabled !== false && button.enabled !== false;
               const text = (name + ' ' + event).toLowerCase();
 
               const descriptor = {
@@ -1350,7 +1350,7 @@ export const pragmatic = {
         const candidates = buttons.filter(button => {
           try {
             return (
-              button.gameObject?.activeInHierarchy === true && button.xtEnabled !== false &&
+              button.gameObject?.activeInHierarchy === true && button.xtEnabled !== false && button.enabled !== false &&
               String(button.gameObject?.name || '') === String(choice?.name || '') &&
               String(button.eventToCode?.name || '') === String(choice?.event || '')
             );

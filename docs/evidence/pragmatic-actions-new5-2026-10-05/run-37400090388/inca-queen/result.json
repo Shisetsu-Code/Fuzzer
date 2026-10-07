@@ -1,0 +1,232 @@
+{
+  "status": "PARTIAL",
+  "nodes": [
+    {
+      "key": "6ca88d92c4da5fe4978a",
+      "controls": [
+        {
+          "clickable": "RUNTIME_COLLIDER",
+          "drawing_association": "ANCESTOR_2",
+          "drawn_rect": {
+            "height": 129.21081068159992,
+            "width": 149.44864849919998,
+            "x": 20.41081130239995,
+            "y": 302.38558557120007
+          },
+          "enabled": true,
+          "handlers": [
+            {
+              "catEventClick": null,
+              "catEventPress": null,
+              "catEventRelease": null,
+              "event": null,
+              "index": 8,
+              "kind": "CATButton"
+            }
+          ],
+          "hit_rect": {
+            "height": 117.04504492799998,
+            "width": 131.45945932800004,
+            "x": 29.98198246399994,
+            "y": 307.89189187200003
+          },
+          "id": "button-5",
+          "labels": [
+            "BET",
+            "HIGHER",
+            "CHANCE TO WIN FEATURE",
+            "$60.00",
+            "OFF"
+          ],
+          "name": "Level0Button",
+          "occlusion": "NOT_VERIFIED",
+          "path": null,
+          "root": 1,
+          "sprite_names": [
+            "Antebet",
+            "arrow",
+            "slider"
+          ],
+          "ui_state": null,
+          "key": "GameRoot/UI Root/XTRoot/Root/Game/GamePivot/GameFeatures/AnteBet/BetLevelButtons/ButtonColliders/Level0Button"
+        },
+        {
+          "clickable": "RUNTIME_COLLIDER",
+          "drawing_association": "ANCESTOR_1",
+          "drawn_rect": {
+            "height": 130.7675674368,
+            "width": 148.92972958079997,
+            "x": 20.554983654546945,
+            "y": 168.8792793984
+          },
+          "enabled": true,
+          "handlers": [
+            {
+              "catEventClick": null,
+              "catEventPress": null,
+              "catEventRelease": null,
+              "event": null,
+              "index": 14,
+              "kind": "CATButton"
+            }
+          ],
+          "hit_rect": {
+            "height": 116.75675663999999,
+            "width": 131.8054052736,
+            "x": 29.63603651839992,
+            "y": 176.4036037152
+          },
+          "id": "button-6",
+          "labels": [
+            "BUY\nRESPINS",
+            "$500.00"
+          ],
+          "name": "Collider",
+          "occlusion": "NOT_VERIFIED",
+          "path": null,
+          "root": 1,
+          "sprite_names": [
+            "Purchase"
+          ],
+          "ui_state": null,
+          "key": "GameRoot/UI Root/XTRoot/Root/Game/GamePivot/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider"
+        }
+      ],
+      "unresolved": [],
+      "evidence": {
+        "tab_id": 1,
+        "capture_id": "d4b31109-6e5e-4fa7-8f23-020675eca8c7",
+        "full_path": "screenshots/03.jpg",
+        "artifact_dir": null
+      },
+      "route": []
+    }
+  ],
+  "edges": [
+    {
+      "from": "6ca88d92c4da5fe4978a",
+      "to": "fae6760c14f581773d39",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/GamePivot/GameFeatures/AnteBet/BetLevelButtons/ButtonColliders/Level0Button",
+      "reason": "ACTIVE_TIMEOUT",
+      "followup": null,
+      "operation": null,
+      "choicePlan": [],
+      "continuationClicks": 0,
+      "elapsedMs": 67035,
+      "evidence": {
+        "tab_id": 1,
+        "capture_id": "dd4849cb-f7c9-4f2c-99e1-058199c838f0",
+        "full_path": "screenshots/01.jpg",
+        "artifact_dir": null
+      }
+    },
+    {
+      "from": "6ca88d92c4da5fe4978a",
+      "to": "1b955addd302f1211d45",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/GamePivot/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider",
+      "reason": "ACTIVE_TIMEOUT",
+      "followup": null,
+      "operation": null,
+      "choicePlan": [],
+      "continuationClicks": 0,
+      "elapsedMs": 63094,
+      "evidence": {
+        "tab_id": 2,
+        "capture_id": "f021be3d-6eac-4017-bdfd-cc20bc19115a",
+        "full_path": "screenshots/02.jpg",
+        "artifact_dir": null
+      }
+    }
+  ],
+  "pending": [
+    {
+      "state": "6ca88d92c4da5fe4978a",
+      "route": [],
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/GamePivot/GameFeatures/AnteBet/BetLevelButtons/ButtonColliders/Level0Button",
+      "reason": "ACTIVE_TIMEOUT",
+      "evidence": {
+        "tab_id": 1,
+        "capture_id": "dd4849cb-f7c9-4f2c-99e1-058199c838f0",
+        "full_path": "screenshots/01.jpg",
+        "artifact_dir": null
+      }
+    },
+    {
+      "state": "6ca88d92c4da5fe4978a",
+      "route": [],
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/GamePivot/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider",
+      "reason": "ACTIVE_TIMEOUT",
+      "evidence": {
+        "tab_id": 2,
+        "capture_id": "f021be3d-6eac-4017-bdfd-cc20bc19115a",
+        "full_path": "screenshots/02.jpg",
+        "artifact_dir": null
+      }
+    }
+  ],
+  "actions": 2,
+  "completeGame": false,
+  "retainedTabIds": [],
+  "cleanupPending": false,
+  "execution": {
+    "hardfireCommit": "adf6de5ec14e394f77fb1816d5f46e5deb250b0a",
+    "sourceCommit": "571026fe225b5a511d804bb39a29a2fd7ab2e526",
+    "versions": {
+      "node": "24.21.0",
+      "acorn": "8.18.0",
+      "ada": "4.0.0",
+      "amaro": "1.1.11",
+      "ares": "1.34.8",
+      "brotli": "1.2.0",
+      "cldr": "48.0",
+      "icu": "78.2",
+      "llhttp": "9.4.3",
+      "merve": "1.2.2",
+      "modules": "149",
+      "napi": "10",
+      "nbytes": "0.1.4",
+      "ncrypto": "0.0.1",
+      "nghttp2": "1.70.0",
+      "nghttp3": "",
+      "ngtcp2": "",
+      "openssl": "0.0.0",
+      "simdjson": "4.6.7",
+      "simdutf": "7.7.0",
+      "sqlite": "3.53.4",
+      "tz": "2025c",
+      "undici": "7.29.1",
+      "unicode": "17.0",
+      "uv": "1.52.1",
+      "uvwasi": "0.0.23",
+      "v8": "15.2.124.19-electron.0",
+      "zlib": "1.3.2.1-motley",
+      "zstd": "1.6.0",
+      "electron": "44.4.0",
+      "chrome": "152.0.7977.78"
+    },
+    "requestedSpeed": 4,
+    "startedAt": "2026-10-06T01:37:36.910Z",
+    "live": true,
+    "maxLoadedTabs": 1,
+    "maxActions": 100,
+    "maxDepth": 8,
+    "timeoutMs": 1200000,
+    "runtime": [
+      {
+        "tabId": 1,
+        "requestedSpeed": 4,
+        "observedSpeed": 4,
+        "frameKind": "demo"
+      },
+      {
+        "tabId": 2,
+        "requestedSpeed": 4,
+        "observedSpeed": 4,
+        "frameKind": "demo"
+      }
+    ],
+    "finishedAt": "2026-10-06T01:41:00.197Z",
+    "elapsedMs": 203287,
+    "retainedTabIds": []
+  }
+}

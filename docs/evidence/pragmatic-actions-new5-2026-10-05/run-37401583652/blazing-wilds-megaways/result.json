@@ -1,0 +1,578 @@
+{
+  "status": "PARTIAL",
+  "nodes": [
+    {
+      "key": "14510a24a5f679226f68",
+      "controls": [
+        {
+          "clickable": "RUNTIME_COLLIDER",
+          "drawing_association": "ANCESTOR_1",
+          "drawn_rect": {
+            "height": 129.4414414414415,
+            "width": 147.60360360360363,
+            "x": 59.38738738738739,
+            "y": 134.9189189189189
+          },
+          "enabled": true,
+          "handlers": [
+            {
+              "catEventClick": null,
+              "catEventPress": null,
+              "catEventRelease": null,
+              "event": null,
+              "index": 7,
+              "kind": "CATButton"
+            }
+          ],
+          "hit_rect": {
+            "height": 161.4414414414415,
+            "width": 117.62162162162167,
+            "x": 60.54054054054052,
+            "y": 121.36936936936935
+          },
+          "id": "button-5",
+          "labels": [
+            "BUY\nFREE SPINS",
+            "$200.00"
+          ],
+          "name": "Collider",
+          "occlusion": "NOT_VERIFIED",
+          "path": null,
+          "root": 1,
+          "sprite_names": [
+            "blwi_buyFS_stick"
+          ],
+          "ui_state": null,
+          "key": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider"
+        }
+      ],
+      "unresolved": [],
+      "evidence": {
+        "tab_id": 1,
+        "capture_id": "f4293d34-9c47-4c1a-b35b-12b734c0a962",
+        "full_path": "screenshots/06.jpg",
+        "artifact_dir": null
+      },
+      "route": []
+    },
+    {
+      "key": "29c3f5e4fddbf8e9b2a7",
+      "controls": [
+        {
+          "clickable": "RUNTIME_COLLIDER",
+          "drawing_association": "ANCESTOR_2",
+          "drawn_rect": {
+            "height": 576,
+            "width": 1024,
+            "x": 0,
+            "y": 0
+          },
+          "enabled": true,
+          "handlers": [
+            {
+              "catEventClick": null,
+              "catEventPress": null,
+              "catEventRelease": null,
+              "event": null,
+              "index": 3,
+              "kind": "CATButton"
+            }
+          ],
+          "hit_rect": {
+            "height": 65.15315315315314,
+            "width": 84.75675675675677,
+            "x": 323.1711711711712,
+            "y": 345.3693693693694
+          },
+          "id": "button-5",
+          "labels": [
+            "BUY\nFREE SPINS",
+            "$200.00"
+          ],
+          "name": "ButtonNo",
+          "occlusion": "NOT_VERIFIED",
+          "path": null,
+          "root": 1,
+          "sprite_names": [
+            "common_square"
+          ],
+          "ui_state": null,
+          "key": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseWindow/content/Buttons/ButtonNo"
+        },
+        {
+          "clickable": "RUNTIME_COLLIDER",
+          "drawing_association": "ANCESTOR_2",
+          "drawn_rect": {
+            "height": 576,
+            "width": 1024,
+            "x": 0,
+            "y": 0
+          },
+          "enabled": true,
+          "handlers": [
+            {
+              "catEventClick": null,
+              "catEventPress": null,
+              "catEventRelease": null,
+              "event": null,
+              "index": 4,
+              "kind": "CATButton"
+            }
+          ],
+          "hit_rect": {
+            "height": 65.15315315315314,
+            "width": 84.75675675675677,
+            "x": 616.072072072072,
+            "y": 345.3693693693694
+          },
+          "id": "button-6",
+          "labels": [
+            "BUY\nFREE SPINS",
+            "$200.00"
+          ],
+          "name": "ButtonYes",
+          "occlusion": "NOT_VERIFIED",
+          "path": null,
+          "root": 1,
+          "sprite_names": [
+            "common_square"
+          ],
+          "ui_state": null,
+          "key": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseWindow/content/Buttons/ButtonYes"
+        },
+        {
+          "clickable": "RUNTIME_COLLIDER",
+          "drawing_association": "ANCESTOR_2",
+          "drawn_rect": {
+            "height": 576,
+            "width": 1024,
+            "x": 0,
+            "y": 0
+          },
+          "enabled": true,
+          "handlers": [
+            {
+              "catEventClick": null,
+              "catEventPress": null,
+              "catEventRelease": null,
+              "event": null,
+              "index": 5,
+              "kind": "CATButton"
+            }
+          ],
+          "hit_rect": {
+            "height": 576,
+            "width": 1024,
+            "x": 0,
+            "y": 0
+          },
+          "id": "button-7",
+          "labels": [
+            "BUY\nFREE SPINS",
+            "$200.00"
+          ],
+          "name": "ButtonCancel",
+          "occlusion": "NOT_VERIFIED",
+          "path": null,
+          "root": 1,
+          "sprite_names": [
+            "common_square"
+          ],
+          "ui_state": null,
+          "key": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseWindow/content/Buttons/ButtonCancel"
+        },
+        {
+          "clickable": "RUNTIME_COLLIDER",
+          "drawing_association": "ANCESTOR_1",
+          "drawn_rect": {
+            "height": 576,
+            "width": 1024,
+            "x": 0,
+            "y": 0
+          },
+          "enabled": true,
+          "handlers": [
+            {
+              "catEventClick": null,
+              "catEventPress": null,
+              "catEventRelease": null,
+              "event": null,
+              "index": 6,
+              "kind": "CATButton"
+            }
+          ],
+          "hit_rect": {
+            "height": 576,
+            "width": 1024,
+            "x": 0,
+            "y": 0
+          },
+          "id": "button-8",
+          "labels": [
+            "BUY\nFREE SPINS",
+            "$200.00"
+          ],
+          "name": "BlockerNO",
+          "occlusion": "NOT_VERIFIED",
+          "path": null,
+          "root": 1,
+          "sprite_names": [
+            "common_square"
+          ],
+          "ui_state": null,
+          "key": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseWindow/content/BlockerNO"
+        },
+        {
+          "clickable": "RUNTIME_COLLIDER",
+          "drawing_association": "ANCESTOR_1",
+          "drawn_rect": {
+            "height": 129.4414414414415,
+            "width": 147.60360360360363,
+            "x": 59.38738738738739,
+            "y": 134.9189189189189
+          },
+          "enabled": true,
+          "handlers": [
+            {
+              "catEventClick": null,
+              "catEventPress": null,
+              "catEventRelease": null,
+              "event": null,
+              "index": 7,
+              "kind": "CATButton"
+            }
+          ],
+          "hit_rect": {
+            "height": 161.4414414414415,
+            "width": 117.62162162162167,
+            "x": 60.54054054054052,
+            "y": 121.36936936936935
+          },
+          "id": "button-9",
+          "labels": [
+            "BUY\nFREE SPINS",
+            "$200.00"
+          ],
+          "name": "Collider",
+          "occlusion": "NOT_VERIFIED",
+          "path": null,
+          "root": 1,
+          "sprite_names": [
+            "blwi_buyFS_stick"
+          ],
+          "ui_state": null,
+          "key": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider"
+        }
+      ],
+      "unresolved": [],
+      "evidence": {
+        "tab_id": 1,
+        "capture_id": "886e38fa-18eb-4a03-a0fa-ea11d4c12bfc",
+        "full_path": "screenshots/07.jpg",
+        "artifact_dir": null
+      },
+      "route": [
+        {
+          "from": "14510a24a5f679226f68",
+          "to": "29c3f5e4fddbf8e9b2a7",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "14510a24a5f679226f68",
+      "to": "29c3f5e4fddbf8e9b2a7",
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider",
+      "reason": "STATE_CHANGED",
+      "followup": {
+        "balanceBefore": 100000,
+        "balanceAfter": 100000,
+        "balanceSource": "runtime:BalanceDisplayed.GetDouble",
+        "balanceDelta": 0,
+        "debitObserved": false,
+        "payloadObserved": true,
+        "modifierEnabled": false,
+        "needsSpin": false,
+        "performed": false
+      },
+      "operation": null,
+      "choicePlan": [],
+      "continuationClicks": 0,
+      "elapsedMs": 39682,
+      "evidence": {
+        "tab_id": 1,
+        "capture_id": "886e38fa-18eb-4a03-a0fa-ea11d4c12bfc",
+        "full_path": "screenshots/07.jpg",
+        "artifact_dir": null
+      }
+    }
+  ],
+  "pending": [
+    {
+      "state": "29c3f5e4fddbf8e9b2a7",
+      "route": [
+        {
+          "from": "14510a24a5f679226f68",
+          "to": "29c3f5e4fddbf8e9b2a7",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider"
+        }
+      ],
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseWindow/content/Buttons/ButtonNo",
+      "reason": "ACTIVE_TIMEOUT",
+      "phase": "replay",
+      "expected": "29c3f5e4fddbf8e9b2a7",
+      "observed": "29c3f5e4fddbf8e9b2a7",
+      "replayTrace": [
+        {
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider",
+          "expected": "29c3f5e4fddbf8e9b2a7",
+          "observed": "29c3f5e4fddbf8e9b2a7",
+          "reason": "ACTIVE_TIMEOUT",
+          "evidence": {
+            "tab_id": 2,
+            "capture_id": "2a569985-fc32-411d-b92a-6220ca8a3eb0",
+            "full_path": "screenshots/01.jpg",
+            "artifact_dir": null
+          }
+        }
+      ],
+      "evidence": {
+        "tab_id": 2,
+        "capture_id": "2a569985-fc32-411d-b92a-6220ca8a3eb0",
+        "full_path": "screenshots/01.jpg",
+        "artifact_dir": null
+      }
+    },
+    {
+      "state": "29c3f5e4fddbf8e9b2a7",
+      "route": [
+        {
+          "from": "14510a24a5f679226f68",
+          "to": "29c3f5e4fddbf8e9b2a7",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider"
+        }
+      ],
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseWindow/content/Buttons/ButtonYes",
+      "reason": "ACTIVE_TIMEOUT",
+      "phase": "replay",
+      "expected": "29c3f5e4fddbf8e9b2a7",
+      "observed": "29c3f5e4fddbf8e9b2a7",
+      "replayTrace": [
+        {
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider",
+          "expected": "29c3f5e4fddbf8e9b2a7",
+          "observed": "29c3f5e4fddbf8e9b2a7",
+          "reason": "ACTIVE_TIMEOUT",
+          "evidence": {
+            "tab_id": 3,
+            "capture_id": "02cb33ed-2e4d-43ad-97f1-f85c98153471",
+            "full_path": "screenshots/02.jpg",
+            "artifact_dir": null
+          }
+        }
+      ],
+      "evidence": {
+        "tab_id": 3,
+        "capture_id": "02cb33ed-2e4d-43ad-97f1-f85c98153471",
+        "full_path": "screenshots/02.jpg",
+        "artifact_dir": null
+      }
+    },
+    {
+      "state": "29c3f5e4fddbf8e9b2a7",
+      "route": [
+        {
+          "from": "14510a24a5f679226f68",
+          "to": "29c3f5e4fddbf8e9b2a7",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider"
+        }
+      ],
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseWindow/content/Buttons/ButtonCancel",
+      "reason": "ACTIVE_TIMEOUT",
+      "phase": "replay",
+      "expected": "29c3f5e4fddbf8e9b2a7",
+      "observed": "29c3f5e4fddbf8e9b2a7",
+      "replayTrace": [
+        {
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider",
+          "expected": "29c3f5e4fddbf8e9b2a7",
+          "observed": "29c3f5e4fddbf8e9b2a7",
+          "reason": "ACTIVE_TIMEOUT",
+          "evidence": {
+            "tab_id": 4,
+            "capture_id": "0e131b9f-124b-42a8-b06d-f0988d80741c",
+            "full_path": "screenshots/03.jpg",
+            "artifact_dir": null
+          }
+        }
+      ],
+      "evidence": {
+        "tab_id": 4,
+        "capture_id": "0e131b9f-124b-42a8-b06d-f0988d80741c",
+        "full_path": "screenshots/03.jpg",
+        "artifact_dir": null
+      }
+    },
+    {
+      "state": "29c3f5e4fddbf8e9b2a7",
+      "route": [
+        {
+          "from": "14510a24a5f679226f68",
+          "to": "29c3f5e4fddbf8e9b2a7",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider"
+        }
+      ],
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseWindow/content/BlockerNO",
+      "reason": "ACTIVE_TIMEOUT",
+      "phase": "replay",
+      "expected": "29c3f5e4fddbf8e9b2a7",
+      "observed": "29c3f5e4fddbf8e9b2a7",
+      "replayTrace": [
+        {
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider",
+          "expected": "29c3f5e4fddbf8e9b2a7",
+          "observed": "29c3f5e4fddbf8e9b2a7",
+          "reason": "ACTIVE_TIMEOUT",
+          "evidence": {
+            "tab_id": 5,
+            "capture_id": "3aa0edd5-b8ec-44ce-b251-a5e738ab8ba3",
+            "full_path": "screenshots/04.jpg",
+            "artifact_dir": null
+          }
+        }
+      ],
+      "evidence": {
+        "tab_id": 5,
+        "capture_id": "3aa0edd5-b8ec-44ce-b251-a5e738ab8ba3",
+        "full_path": "screenshots/04.jpg",
+        "artifact_dir": null
+      }
+    },
+    {
+      "state": "29c3f5e4fddbf8e9b2a7",
+      "route": [
+        {
+          "from": "14510a24a5f679226f68",
+          "to": "29c3f5e4fddbf8e9b2a7",
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider"
+        }
+      ],
+      "action": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider",
+      "reason": "ACTIVE_TIMEOUT",
+      "phase": "replay",
+      "expected": "29c3f5e4fddbf8e9b2a7",
+      "observed": "29c3f5e4fddbf8e9b2a7",
+      "replayTrace": [
+        {
+          "action": "GameRoot/UI Root/XTRoot/Root/Game/GameFeatures/FeaturePurchase/FSPurchaseButton/content/Collider",
+          "expected": "29c3f5e4fddbf8e9b2a7",
+          "observed": "29c3f5e4fddbf8e9b2a7",
+          "reason": "ACTIVE_TIMEOUT",
+          "evidence": {
+            "tab_id": 6,
+            "capture_id": "55c77dbe-f4c9-4346-83f3-e44b1aa7a719",
+            "full_path": "screenshots/05.jpg",
+            "artifact_dir": null
+          }
+        }
+      ],
+      "evidence": {
+        "tab_id": 6,
+        "capture_id": "55c77dbe-f4c9-4346-83f3-e44b1aa7a719",
+        "full_path": "screenshots/05.jpg",
+        "artifact_dir": null
+      }
+    }
+  ],
+  "actions": 1,
+  "completeGame": false,
+  "retainedTabIds": [],
+  "cleanupPending": false,
+  "execution": {
+    "hardfireCommit": "adf6de5ec14e394f77fb1816d5f46e5deb250b0a",
+    "sourceCommit": "2d3c5617c44ec9b29330d893d231c19c310c6327",
+    "versions": {
+      "node": "24.21.0",
+      "acorn": "8.18.0",
+      "ada": "4.0.0",
+      "amaro": "1.1.11",
+      "ares": "1.34.8",
+      "brotli": "1.2.0",
+      "cldr": "48.0",
+      "icu": "78.2",
+      "llhttp": "9.4.3",
+      "merve": "1.2.2",
+      "modules": "149",
+      "napi": "10",
+      "nbytes": "0.1.4",
+      "ncrypto": "0.0.1",
+      "nghttp2": "1.70.0",
+      "nghttp3": "",
+      "ngtcp2": "",
+      "openssl": "0.0.0",
+      "simdjson": "4.6.7",
+      "simdutf": "7.7.0",
+      "sqlite": "3.53.4",
+      "tz": "2025c",
+      "undici": "7.29.1",
+      "unicode": "17.0",
+      "uv": "1.52.1",
+      "uvwasi": "0.0.23",
+      "v8": "15.2.124.19-electron.0",
+      "zlib": "1.3.2.1-motley",
+      "zstd": "1.6.0",
+      "electron": "44.4.0",
+      "chrome": "152.0.7977.78"
+    },
+    "requestedSpeed": 4,
+    "startedAt": "2026-10-06T02:06:06.080Z",
+    "live": true,
+    "maxLoadedTabs": 1,
+    "maxActions": 100,
+    "maxDepth": 8,
+    "timeoutMs": 1200000,
+    "runtime": [
+      {
+        "tabId": 1,
+        "requestedSpeed": 4,
+        "observedSpeed": 4,
+        "frameKind": "demo"
+      },
+      {
+        "tabId": 2,
+        "requestedSpeed": 4,
+        "observedSpeed": 4,
+        "frameKind": "demo"
+      },
+      {
+        "tabId": 3,
+        "requestedSpeed": 4,
+        "observedSpeed": 4,
+        "frameKind": "demo"
+      },
+      {
+        "tabId": 4,
+        "requestedSpeed": 4,
+        "observedSpeed": 4,
+        "frameKind": "demo"
+      },
+      {
+        "tabId": 5,
+        "requestedSpeed": 4,
+        "observedSpeed": null,
+        "frameKind": "demo"
+      },
+      {
+        "tabId": 6,
+        "requestedSpeed": 4,
+        "observedSpeed": 4,
+        "frameKind": "demo"
+      }
+    ],
+    "finishedAt": "2026-10-06T02:14:29.619Z",
+    "elapsedMs": 503539,
+    "retainedTabIds": []
+  }
+}
