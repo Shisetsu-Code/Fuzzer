@@ -42,7 +42,7 @@ function clean(value,transport=false,images=new Map(),root=''){
 function references(value,out=[],role='observed'){
  if(Array.isArray(value)){for(const item of value)references(item,out,role);}
  else if(value&&typeof value==='object'){
-  if(typeof value.full_path==='string')out.push({...value,role});
+  if(typeof value.full_path==='string')out.push({...value,role:value.role==='diagnostic'?'diagnostic':role});
   for(const [key,item]of Object.entries(value))if(!omitted.test(key)&&item&&typeof item==='object')references(item,out,['pending','completion','replayTrace'].includes(key)?'diagnostic':key==='decisions'||key==='verificationChoices'?'choice':role);
  }
  return out;
@@ -85,8 +85,17 @@ export async function exportLiveEvidence({game,result,error,artifactDir,outputDi
  let totalBytes=0,failed=false;const metadataReserve=Math.min(128*1024,Math.floor(budget.maxExportBytes/2));
  const write=async(name,bytes,metadata=false)=>{bytes=Buffer.isBuffer(bytes)?bytes:Buffer.from(bytes);const cap=budget.maxExportBytes-(metadata?Math.floor(metadataReserve/2):metadataReserve);if(totalBytes+bytes.length>cap){warn('EXPORT_BUDGET',name);return null;}await fs.writeFile(path.join(dest,name),bytes,{flag:'wx'});files.push({path:name,bytes:bytes.length,sha256:hash(bytes)});totalBytes+=bytes.length;return path.join(dest,name);};
  const json=value=>JSON.stringify(value,null,2)+'\n';
- const refs=[...references(result),...evidenceRefs,...(error?.screenshot?.path?[{full_path:error.screenshot.path,role:'bootstrap'}]:[])];
- refs.sort((a,b)=>(a.role==='diagnostic'?0:a.role==='bootstrap'?1:2)-(b.role==='diagnostic'?0:b.role==='bootstrap'?1:2));
+ const diagnosticRefs=[];
+ try{
+  const journalPath=path.join(sourceRoot,'stall-captures.json'),stat=await fs.lstat(journalPath);
+  if(!stat.isFile()||stat.isSymbolicLink()||stat.size>MiB)throw Error('INVALID_STALL_JOURNAL');
+  const journal=JSON.parse(await fs.readFile(journalPath,'utf8'));
+  if(journal.schema!=='fuzzer/stall-captures/v1'||!Array.isArray(journal.captures)||journal.captures.length>64)throw Error('INVALID_STALL_JOURNAL');
+  diagnosticRefs.push(...journal.captures.map(c=>({...c,role:'diagnostic'})));
+  if(journal.omitted>0)warn('STALL_CAPTURE_RETENTION_LIMIT');
+ }catch(error){if(error.code!=='ENOENT')warn('STALL_JOURNAL_UNAVAILABLE');}
+ const refs=[...diagnosticRefs,...references(result),...evidenceRefs,...(error?.screenshot?.path?[{full_path:error.screenshot.path,role:'bootstrap'}]:[])];
+ refs.sort((a,b)=>(a.role==='diagnostic'?0:a.role==='bootstrap'?1:2)-(b.role==='diagnostic'?0:b.role==='bootstrap'?1:2)||(Number(b.capturedAtMs)||0)-(Number(a.capturedAtMs)||0));
  const seen=new Map();let imageBytes=0;
  for(const ref of refs){
   try{
@@ -97,7 +106,7 @@ export async function exportLiveEvidence({game,result,error,artifactDir,outputDi
    const availableImageBytes=Math.max(0,budget.maxExportBytes-metadataReserve-budget.maxResultBytes-budget.maxProtocolCompressedBytes);
    if(screenshots.length>=budget.maxScreenshots||imageBytes+bytes.length>Math.min(budget.maxScreenshotsTotalBytes,availableImageBytes)){warn('SCREENSHOT_BUDGET');continue;}
    await fs.mkdir(path.join(dest,'screenshots'),{recursive:true});const name=`screenshots/${String(screenshots.length+1).padStart(2,'0')}.jpg`;
-   const saved=await write(name,bytes);if(!saved)continue;images.set(supplied,name);images.set(file,name);seen.set(digest,name);imageBytes+=bytes.length;screenshots.push({path:name,bytes:bytes.length,sha256:digest,captureId:cleanText(String(ref.capture_id??'')),roles:[ref.role||'observed']});
+   const saved=await write(name,bytes);if(!saved)continue;images.set(supplied,name);images.set(file,name);seen.set(digest,name);imageBytes+=bytes.length;screenshots.push({path:name,bytes:bytes.length,sha256:digest,captureId:cleanText(String(ref.capture_id??'')),roles:[ref.role||'observed'],...clean(Object.fromEntries(['reason','phase','observedAtMs','observationAtMs','capturedAtMs','captureDurationMs','lastAction','blockers','protocol'].filter(k=>ref[k]!==undefined).map(k=>[k,ref[k]])),false,images,sourceRoot)});
   }catch{warn('SCREENSHOT_UNAVAILABLE');}
  }
  const sanitizedResult=clean(result??{status:'ERROR',nodes:[],edges:[],pending:[],error:{name:error?.name??'Error',message:error?.message??'No exploration result'}},false,images,sourceRoot);

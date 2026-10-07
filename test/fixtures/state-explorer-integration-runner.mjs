@@ -26,7 +26,7 @@ const raw=()=>({supported:true,viewport:{width:100,height:100},controls:scenario
 const exchange=(extra='')=>({request:{url:'https://demogamesfree.pragmaticplay.net/gs2c/gameService?token=private',postData:{text:`action=doSpin&c=0.1&l=20&${extra}`}},response:{status:200,content:{text:'na=s&balance=100000'}}});
 const controller={tabs:{activate:async id=>{assert.equal(id,42);}},withTab:id=>{
  assert.equal(id,42);
- return {networkEvents:()=>entries.map((_,i)=>({sequence:i+1})),click:async(x,y)=>{
+ return {screenshot:async quality=>{assert.equal(quality,65);assert.equal(closes,0,'stall screenshot must precede close');return Buffer.from([255,216,255,224,255,217]);},networkEvents:()=>entries.map((_,i)=>({sequence:i+1})),click:async(x,y)=>{
   if(scenario==='action-late-continuation'&&phase==='overlay'){clicks.push('continue');phase='done';return {ok:true};}
   if(scenario==='action-generic-choice'&&phase==='choice'){clicks.push('decision');entries.push({request:{url:'https://demogamesfree.pragmaticplay.net/gs2c/gameService',postData:{text:'action=doBonus&ind=0'}},response:{status:200,content:{text:'na=s&balance=99900'}}});phase='done';return {ok:true};}
   if(x>=70){normalSpins++;clicks.push('spin');if(scenario==='verification-click-error')throw Error('click transport uncertain');if(scenario!=='verification-no-request')entries.push(exchange());}
@@ -126,6 +126,7 @@ try{
    assert.equal(result.status,'PARTIAL');assert.equal(result.nodes.length,1);assert.equal(result.edges.length,0);assert.deepEqual(clicks,[]);assert.equal(closes,1);
    assert.equal(result.pending[0].phase,'cleanup');assert.equal(result.pending[0].reason,'SESSION_CLEANUP_FAILED');assert.equal(result.cleanupError,'HAR write failed');assert.deepEqual(result.retainedTabIds,[42]);
   }else throw Error('Unknown scenario');
+  if(scenario==='verification-no-request'){const shot=result.edges[0].operation.stallCapture;assert.ok(shot?.full_path,'blocked operation needs its own screenshot');await fs.access(shot.full_path);assert.equal(shot.reason,result.edges[0].operation.reason);}
   const retained=scenario==='reset-failure'||scenario==='final-failure';assert.deepEqual([...owned],retained?[42]:[]);
   const reference=JSON.parse(await fs.readFile(path.join(artifactDir,'har-reference.json'),'utf8'));
   if(retained)assert.equal(reference.path,null);

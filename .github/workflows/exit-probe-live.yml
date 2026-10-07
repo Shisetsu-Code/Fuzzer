@@ -15,6 +15,8 @@ concurrency:
 jobs:
   probe:
     if: github.event.pull_request.head.repo.full_name == github.repository
+    outputs:
+      enabled: ${{ steps.request.outputs.enabled }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     env:
@@ -73,3 +75,14 @@ jobs:
           path: ${{ env.FUZZER_OUTPUT_DIR }}/
           retention-days: 1
           compression-level: 1
+
+  gallery:
+    name: Publish latest-run screenshots
+    needs: probe
+    if: always() && needs.probe.outputs.enabled == 'true'
+    permissions:
+      contents: write
+      actions: read
+    uses: ./.github/workflows/latest-captures.yml
+    with:
+      source_run_id: ${{ github.run_id }}

@@ -159,3 +159,14 @@ jobs:
           if-no-files-found: warn
           retention-days: 1
           compression-level: 1
+
+  gallery:
+    name: Publish latest-run screenshots
+    needs: [select, explore]
+    if: always() && needs.select.outputs.enabled == 'true'
+    permissions:
+      contents: write
+      actions: read
+    uses: ./.github/workflows/latest-captures.yml
+    with:
+      source_run_id: ${{ github.run_id }}
