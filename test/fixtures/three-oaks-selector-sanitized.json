@@ -1,0 +1,1141 @@
+{
+  "log": {
+    "version": "1.2",
+    "entries": [
+      {
+        "_sourceEntry": 0,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"sync\",\"session_id\":\"fixture-session\"}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"sync\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 1,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"spin\",\"params\":{\"bet_per_line\":10,\"lines\":5}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"spin\",\"buy_spin\"],\"current\":\"spins\",\"last_action\":\"spin\",\"last_args\":{\"bet_per_line\":10,\"lines\":5},\"round_finished\":true,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 2,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"spin\",\"params\":{\"bet_per_line\":10,\"lines\":5}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"spin\",\"buy_spin\"],\"current\":\"spins\",\"last_action\":\"spin\",\"last_args\":{\"bet_per_line\":10,\"lines\":5},\"round_finished\":true,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 3,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"buy_spin\",\"params\":{\"bet_per_line\":10,\"lines\":5,\"selected_mode\":3}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"bonus_init\"],\"current\":\"spins\",\"last_action\":\"buy_spin\",\"last_args\":{\"bet_per_line\":10,\"lines\":5,\"selected_mode\":3},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 4,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"bonus_init\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"bonus_init\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 5,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 6,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 7,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 8,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 9,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 10,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 11,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 12,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 13,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 14,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 15,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"bonus_stop\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 16,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"bonus_stop\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"spin\",\"buy_spin\"],\"current\":\"spins\",\"last_action\":\"bonus_stop\",\"last_args\":{},\"round_finished\":true,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 17,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"sync\",\"session_id\":\"fixture-session\"}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"sync\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 18,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"buy_spin\",\"params\":{\"bet_per_line\":10,\"lines\":5,\"selected_mode\":1}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"bonus_init\"],\"current\":\"spins\",\"last_action\":\"buy_spin\",\"last_args\":{\"bet_per_line\":10,\"lines\":5,\"selected_mode\":1},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 19,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"bonus_init\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"bonus_init\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 20,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"sync\",\"session_id\":\"fixture-session\"}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"sync\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 21,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 22,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 23,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 24,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 25,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 26,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 27,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 28,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"bonus_stop\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 29,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"bonus_stop\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"spin\",\"buy_spin\"],\"current\":\"spins\",\"last_action\":\"bonus_stop\",\"last_args\":{},\"round_finished\":true,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 30,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"sync\",\"session_id\":\"fixture-session\"}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"sync\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 31,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"buy_spin\",\"params\":{\"bet_per_line\":10,\"lines\":5,\"selected_mode\":2}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"bonus_init\"],\"current\":\"spins\",\"last_action\":\"buy_spin\",\"last_args\":{\"bet_per_line\":10,\"lines\":5,\"selected_mode\":2},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 32,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"bonus_init\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"bonus_init\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 33,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 34,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 35,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 36,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 37,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 38,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 39,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"bonus_stop\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 40,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"bonus_stop\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"spin\",\"buy_spin\"],\"current\":\"spins\",\"last_action\":\"bonus_stop\",\"last_args\":{},\"round_finished\":true,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 41,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"buy_spin\",\"params\":{\"bet_per_line\":10,\"lines\":5,\"selected_mode\":0}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"bonus_init\"],\"current\":\"spins\",\"last_action\":\"buy_spin\",\"last_args\":{\"bet_per_line\":10,\"lines\":5,\"selected_mode\":0},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 42,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"bonus_init\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"bonus_init\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 43,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 44,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 45,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 46,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 47,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 48,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 49,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 50,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 51,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 52,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 53,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 54,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 55,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 56,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 57,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"respin\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 58,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"respin\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"bonus_stop\"],\"current\":\"bonus\",\"last_action\":\"respin\",\"last_args\":{},\"round_finished\":false,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 59,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"bonus_stop\",\"params\":{}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"spin\",\"buy_spin\"],\"current\":\"spins\",\"last_action\":\"bonus_stop\",\"last_args\":{},\"round_finished\":true,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 60,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"spin\",\"params\":{\"bet_per_line\":10,\"lines\":5}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"spin\",\"buy_spin\"],\"current\":\"spins\",\"last_action\":\"spin\",\"last_args\":{\"bet_per_line\":10,\"lines\":5},\"round_finished\":true,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 61,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"action\":{\"name\":\"spin\",\"params\":{\"bet_per_line\":10,\"lines\":5}}}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"play\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"},\"context\":{\"actions\":[\"spin\",\"buy_spin\"],\"current\":\"spins\",\"last_action\":\"spin\",\"last_args\":{\"bet_per_line\":10,\"lines\":5},\"round_finished\":true,\"available_buy_bonus\":[1,2,3,4]}}"
+          }
+        }
+      },
+      {
+        "_sourceEntry": 62,
+        "request": {
+          "url": "https://betman-demo.head.3oaks.com/betman-demo/gs/fixture_selector/desktop/fixture-instance/demo/",
+          "method": "POST",
+          "postData": {
+            "mimeType": "text/plain",
+            "text": "{\"command\":\"sync\",\"session_id\":\"fixture-session\"}"
+          }
+        },
+        "response": {
+          "status": 200,
+          "content": {
+            "mimeType": "application/json",
+            "text": "{\"command\":\"sync\",\"session_id\":\"fixture-session\",\"status\":{\"code\":\"OK\"}}"
+          }
+        }
+      }
+    ]
+  }
+}

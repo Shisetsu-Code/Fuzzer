@@ -1,0 +1,15 @@
+{
+  "name": "fuzzer-har",
+  "version": "0.2.0",
+  "description": "Read, inspect and compare local HAR evidence without browser control.",
+  "author": {"name": "Shisetsu-Code"},
+  "mcpServers": "./mcp.json",
+  "interface": {
+    "displayName": "Fuzzer HAR",
+    "shortDescription": "Análisis local de HAR",
+    "longDescription": "Consulta solicitudes y respuestas, compara capturas y separa evidencia de compras, antebets y continuaciones sin abrir un navegador.",
+    "developerName": "Shisetsu-Code",
+    "category": "Developer Tools",
+    "defaultPrompt": "Analiza el HAR local que te indique y explica la evidencia de compras y antebets."
+  }
+}
