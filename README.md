@@ -114,3 +114,7 @@ Si la última acción de Ante ya confirmó esas dos tiradas y una observación n
 Las respuestas conservan `rs_c`, `rs_p`, `rs_m` y `rs_t`, además de los códigos `msg_code`/`ext_code`. Un contador activo en `rs_c`, incluidos contadores separados por comas, impide declarar base o certificar un giro ordinario aunque el cliente muestre brevemente `canSpin=true`. Esto evita falsos COMPLETE; no implica que todas las continuaciones de cascadas estén resueltas.
 
 En `pragmatic_fuzz_start`, `timeout_ms` controla el presupuesto entre 1.000 y 600.000 ms; por defecto 180.000. En `pragmatic_explore_start`, admite entre 10.000 y 1.800.000 ms; por defecto 600.000. La preparación y el guardado de HAR pueden agregar tiempo. Agotar el presupuesto conserva las rutas pendientes y nunca convierte un resultado parcial en completo.
+
+## 3 Oaks: exploración dinámica
+
+El recorrido dinámico de controles tiene un adaptador 3 Oaks para compras, antebet y continuaciones de DEMO. Usa `three_oaks_explore_start` y `three_oaks_explore_result` en HardFire. [Funcionamiento, instalación y límites](docs/three-oaks-explorer.md).
