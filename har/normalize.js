@@ -5,6 +5,8 @@ export function pairsToObject(pairs){
  for(const [key,value] of pairs){if(Object.hasOwn(result,key))result[key]=Array.isArray(result[key])?[...result[key],value]:[result[key],value];else result[key]=value;}
  return result;
 }
+// Explicit transport precedence: body fields override URL fields of the same name.
+export function requestFields(exchange){return {...exchange.request.query,...(exchange.request.fields&&typeof exchange.request.fields==='object'&&!Array.isArray(exchange.request.fields)?exchange.request.fields:{})};}
 function contentAt(capture,index,seen,warnings){
  if(seen.has(index)){warnings.push('BODY_REFERENCE_CYCLE');return null;}
  const entry=capture.entries[index];if(!entry){warnings.push('BODY_REFERENCE_INVALID_INDEX');return null;}
@@ -34,13 +36,14 @@ function decodeBody(content,warnings){
  }
  return {body:{status:'AVAILABLE',mimeType:mime,text},fields:parseFields(text,mime)};
 }
-export function normalizeExchange(capture,index){
+export function normalizeExchange(capture,index,{includeResponse=true}={}){
  if(!Number.isInteger(index)||index<0||!capture.entries[index])throw Error('INVALID_ENTRY');
  const entry=capture.entries[index],warnings=[];let query={};
  try{query=pairsToObject(new URL(entry.request.url).searchParams);}catch{warnings.push('INVALID_REQUEST_URL');}
  const post=entry.request.postData;
  const req=decodeBody(post,warnings);
  if(!req.fields&&Array.isArray(post?.params))req.fields=pairsToObject(post.params.map(p=>[p.name,p.value??'']));
- const res=decodeBody(contentAt(capture,index,new Set(),warnings),warnings);
+ const content=contentAt(capture,index,new Set(),warnings);
+ const res=includeResponse?decodeBody(content,warnings):{body:{status:typeof content?.text==='string'?'AVAILABLE':'MISSING',mimeType:content?.mimeType},fields:null};
  return {entry_index:index,request:{url:entry.request.url,method:entry.request.method??'UNKNOWN',headers:entry.request.headers??[],query,...req},response:{status:entry.response?.status??null,headers:entry.response?.headers??[],...res},warnings};
 }

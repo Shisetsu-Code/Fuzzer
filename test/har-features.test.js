@@ -9,7 +9,7 @@ test('Helios has two advertised purchases, one executed option, and antebets kep
  const r=analyzeFeatures({entries,warnings:[]});assert.equal(r.groups.length,1);const g=r.groups[0];assert.equal(g.provider,'pragmatic');assert.equal(g.game,'vs20olympuspot');assert.equal(g.purchases.presence,'PRESENT');assert.equal(g.purchases.advertised_count,2);assert.equal(g.purchases.accepted_options.length,1);assert.equal(g.purchases.attempts,1);assert.equal(g.modifiers.presence,'PRESENT');assert.equal(g.modifiers.advertised_levels[0].multiplier,1.5);assert.equal(g.modifiers.observed_levels.length,1);assert.ok(g.operations.normal_spin>0);assert.ok(g.operations.continuation>0);
 });
 test('failed purchase is an attempt and not accepted; absence requires explicit evidence',()=>{
- const r=analyzeFeatures({entries:[exchange('action=doSpin&symbol=g&pur=1','error=failed',500)]});const g=r.groups[0];assert.equal(g.purchases.attempts,1);assert.equal(g.purchases.accepted_options.length,0);assert.equal(g.purchases.presence,'PRESENT');assert.equal(g.purchases.advertised_count,null);assert.equal(g.modifiers.presence,'UNKNOWN');
+ const r=analyzeFeatures({entries:[exchange('action=doSpin&symbol=g&pur=1','error=failed',500)]});const g=r.groups[0];assert.equal(g.purchases.attempts,1);assert.equal(g.purchases.accepted_options.length,0);assert.equal(g.purchases.presence,'UNKNOWN');assert.equal(g.purchases.advertised_count,null);assert.equal(g.modifiers.presence,'UNKNOWN');
  for(const text of ['symbol=g&sc=1','symbol=g&purInit=bad'])assert.equal(analyzeFeatures({entries:[exchange('action=doInit&symbol=g',text)]}).groups[0].purchases.presence,'UNKNOWN');
  assert.equal(analyzeFeatures({entries:[exchange('action=doInit&symbol=g','symbol=g&purInit=[]')]}).groups[0].purchases.presence,'ABSENT_EXPLICIT');
 });
@@ -27,4 +27,21 @@ test('different initialization inventories remain separate observations rather t
 });
 test('HTTP success carrying a provider error does not confirm a purchase',()=>{
  const g=analyzeFeatures({entries:[exchange('action=doSpin&symbol=g&pur=0','msg_code=ERROR&ext_code=123')]}).groups[0];assert.equal(g.purchases.accepted_options.length,0);
+});
+test('static assets do not create feature groups for an unknown provider',()=>{
+ const e={request:{url:'https://static.3oaks.com/config.json',method:'GET'},response:{status:200,content:{mimeType:'application/json',text:'{"images":[1,2]}'}}};assert.equal(analyzeFeatures({entries:[e]}).groups.length,0);
+});
+test('query session IDs isolate inventory and expose only generated labels',()=>{
+ for(const field of ['sid','sessionId']){
+  const a=exchange('action=doInit&symbol=g','purInit=[{bet:10}]'),b=exchange('action=doSpin&symbol=g&pur=0','na=s');a.request.url+=`?${field}=SECRET_A`;b.request.url+=`?${field}=SECRET_B`;
+  const r=analyzeFeatures({entries:[a,b]});assert.equal(r.groups.length,2);assert.deepEqual(r.groups.map(g=>g.session_label),['session-1','session-2']);assert.equal(r.groups[1].purchases.accepted_options.length,0);assert.equal(r.groups[1].purchases.presence,'UNKNOWN');assert.ok(!JSON.stringify(r).includes('SECRET'));
+ }
+});
+test('failed initialization preserves unknown inventories and modifiers even with HTTP 200',()=>{
+ const g=analyzeFeatures({entries:[exchange('action=doInit&symbol=g','error=failed&purInit=[]&bls=20')]}).groups[0];assert.equal(g.purchases.presence,'UNKNOWN');assert.equal(g.modifiers.presence,'UNKNOWN');assert.equal(g.purchases.advertised_count,null);
+});
+test('query-only actions and selections are interpreted with body precedence',()=>{
+ const a=exchange('','symbol=g&purInit=[{bet:10}]'),b=exchange('','na=s&fs=1&fsmax=8');a.request.url+='?action=doInit&symbol=g';b.request.url+='?action=doSpin&symbol=g&pur=0';
+ const g=analyzeFeatures({entries:[a,b]}).groups[0];assert.equal(g.game,'g');assert.equal(g.operations.initialization,1);assert.equal(g.purchases.attempts,1);assert.equal(g.purchases.accepted_options.length,1);assert.equal(g.session_label,'unidentified');
+ b.request.postData.text='action=doCollect';assert.equal(analyzeFeatures({entries:[b]}).groups[0].operations.continuation,1);
 });

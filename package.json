@@ -1,1 +1,17 @@
-{"name":"provider-fuzzer","version":"0.1.0","private":true,"type":"module","engines":{"node":">=22"},"scripts":{"test":"node --test test/*.test.js","pragmatic":"node scripts/pragmatic.js"}}
+{
+  "name": "provider-fuzzer",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "engines": {"node": ">=22"},
+  "scripts": {
+    "pretest": "node scripts/build-har-mcp.js",
+    "test": "node --test test/*.test.js",
+    "pragmatic": "node scripts/pragmatic.js",
+    "har": "node scripts/har.js",
+    "har:mcp": "node dist/har-mcp.cjs",
+    "har:build": "node scripts/build-har-mcp.js"
+  },
+  "dependencies": {"@modelcontextprotocol/sdk": "1.32.1", "zod": "4.6.5"},
+  "devDependencies": {"esbuild": "0.28.2"}
+}

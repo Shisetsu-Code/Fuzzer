@@ -1,5 +1,5 @@
 // One output boundary for tools, comparisons and CLI. Never mutate source evidence.
-const sensitive=/^(?:authorization|proxy[-_]?authorization|cookies?|set[-_]?cookie|password|passwd|pwd|secret|client[-_]?secret|api[-_]?key|access[-_]?token|refresh[-_]?token|id[-_]?token|token|jwt|bearer|session(?:[-_]?(?:id|key|token))?|sid|mgckey|gckey|auth(?:[-_]?(?:key|token))?|credential(?:s)?|email|username|player[-_]?id|user[-_]?id)$/i;
+const sensitive=/^(?:authorization|proxy[-_]?authorization|cookies?|set[-_]?cookie|password|passwd|pwd|secret|client[-_]?secret|(?:x[-_]?)?api[-_]?key|access[-_]?token|refresh[-_]?token|id[-_]?token|token|jwt|bearer|session(?:[-_]?(?:id|key|token))?|sid|mgckey|gckey|auth(?:[-_]?(?:key|token))?|credential(?:s)?|email|username|player[-_]?id|user[-_]?id)$/i;
 const REDACTED='[REDACTED]';
 export const isSensitiveKey=key=>sensitive.test(String(key));
 
@@ -16,11 +16,16 @@ function redactString(value,depth){
   }catch{return match;}
  });
  result=result.replace(/\b(Authorization|Proxy-Authorization|Cookie|Set-Cookie)\s*:\s*[^\r\n]+/gi,(_,key)=>`${key}: ${REDACTED}`);
+ result=result.replace(/^([\w-]+)\s*:\s*[^\r\n]+/gm,(all,key)=>isSensitiveKey(key)?`${key}: ${REDACTED}`:all);
  result=result.replace(/\b(?:Bearer|Basic)\s+[A-Za-z0-9._~+\/-]+=*/gi,REDACTED);
  // JSON-like script assignments, XML and URL/form fields without executing them.
  result=result.replace(/(["']?)([A-Za-z_][\w-]*)\1(\s*[:=]\s*)(["'])(.*?)\4/g, (all,quote,key,separator,q,content)=>isSensitiveKey(key)?`${quote}${key}${quote}${separator}${q}${REDACTED}${q}`:all);
- result=result.replace(/(^|[?&#\s;])([A-Za-z_][\w-]*)=([^&\s;#]*)/g,(all,prefix,key,content)=>{
-  if(isSensitiveKey(key))return `${prefix}${key}=${REDACTED}`;
+ result=result.replace(/(["']?)([A-Za-z_][\w-]*)\1(\s*[:=]\s*)([^"'\s,;&<>}]+)/g,(all,quote,key,separator)=>isSensitiveKey(key)?`${quote}${key}${quote}${separator}${REDACTED}`:all);
+ const tags=new RegExp('(<('+sensitive.source.slice(1,-1)+')(?:\\s[^>]*)?>)([\\s\\S]*?)(<\\/\\2\\s*>)','gi');
+ result=result.replace(tags,(_,open,key,content,close)=>open+REDACTED+close);
+ result=result.replace(/(^|[?&#\s;])([A-Za-z_%][\w%.-]*)=([^&\s;#]*)/g,(all,prefix,key,content)=>{
+  let decodedKey=key;try{decodedKey=decodeURIComponent(key);}catch{}
+  if(isSensitiveKey(decodedKey))return `${prefix}${key}=${REDACTED}`;
   try{const decoded=decodeURIComponent(content.replace(/\+/g,' '));const clean=redactString(decoded,depth+1);return clean===decoded?all:`${prefix}${key}=${encodeURIComponent(clean)}`;}catch{return all;}
  });
  result=result.replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g,REDACTED);

@@ -1,6 +1,20 @@
 # Fuzzer
 
-Scripts independientes por proveedor para ejecutar demos mediante el MCP local HardFire. No depende de Firetrace. La primera implementación corresponde a Pragmatic; otros proveedores no están implementados todavía.
+Dos recorridos complementarios: análisis offline de HAR mediante MCP local independiente, y exploración de demos mediante el MCP HardFire. No depende de Firetrace. El análisis especializado de funciones y el explorador corresponden a Pragmatic; otros proveedores admiten inspección y comparación genérica de HAR, con existencia de funciones desconocida.
+
+## Análisis de HAR sin navegador
+
+La versión `fuzzer-har` lee archivos locales, consulta solicitudes/respuestas por partes y compara capturas. No abre juegos, no toma screenshots y no reproduce peticiones. El bundle `dist/har-mcp.cjs` incluye sus dependencias y necesita Node.js 22 o posterior.
+
+En Windows, registrar el servidor en Codex desde este checkout:
+
+```powershell
+./scripts/install-har-mcp.ps1
+```
+
+También se puede ejecutar `npm ci` y `npm run har -- "C:/ruta/captura.har"` para obtener un resumen en consola. Las seis herramientas MCP son `har_open`, `har_entries`, `har_exchange`, `har_features`, `har_compare` y `har_close`. Ver [instalación, ejemplos y límites](docs/har-mcp.md).
+
+Las compras anunciadas, intentadas y aceptadas se muestran por separado. Los antebets y las continuaciones no se cuentan como compras. La falta de inicialización conserva `UNKNOWN`; un campo sugerente de otro proveedor no confirma una compra. Los HAR originales permanecen locales y sin cambios.
 
 ## Estado actual y recorrido recomendado
 

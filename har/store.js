@@ -25,7 +25,7 @@ export class HarStore{
  close(id){this.get(id);this.files.delete(id);return {closed:true};}
 }
 function summary(capture,index){
- const e=capture.entries[index],n=normalizeExchange(capture,index);let domain='',route='';try{const u=new URL(n.request.url);domain=u.hostname;route=u.pathname;}catch{/* Already warned in exchange. */}
+ const n=normalizeExchange(capture,index,{includeResponse:false});let domain='',route='';try{const u=new URL(n.request.url);domain=u.hostname;route=u.pathname;}catch{/* Already warned in exchange. */}
  return sanitize({entry_index:index,request:{url:n.request.url,domain,path:route,method:n.request.method,action:n.request.fields?.action??n.request.fields?.command??n.request.query?.action??null},response:{status:n.response.status,mimeType:n.response.body.mimeType,body_status:n.response.body.status},warnings:n.warnings});
 }
 export function listEntries(capture,{filters={},offset=0,limit=50}={}){
