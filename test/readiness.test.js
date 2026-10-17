@@ -69,3 +69,13 @@ test('requires actual observer and refuses one-sample stability',async()=>{
  await assert.rejects(()=>waitForStableState({}),/observe callback/);
  await assert.rejects(()=>waitForStableState({observe:async()=>base,minStable:1}),/minStable/);
 });
+
+test('direct purchase yes/no dialog beats base spin controls in classification',()=>{
+ const dialog={controls:[
+  button('Game/BuyFeatureV2/FeaturePurchase/FSPurchaseWindow/content/Buttons/Yes/ButtonOpt0'),
+  button('Game/GUI/SpinButtons/StartSpin_Button')
+ ]};
+ assert.equal(classifyDrawnState(dialog),'DIRECT_PURCHASE_CONFIRM');
+ const legacy={controls:[button('Game/FeaturePurchase/FSPurchaseWindow/content/Buttons/ButtonYes')]};
+ assert.equal(classifyDrawnState(legacy),'DIRECT_PURCHASE_CONFIRM');
+});
