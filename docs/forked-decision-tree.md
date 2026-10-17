@@ -1,0 +1,35 @@
+# Árbol de decisiones con cuatro clientes DEMO
+
+El planificador providers/pragmatic/forked-tree.js descubre opciones de menú y crea rutas observadas. Cada botón de menú requiere aprobación explícita del asistente antes de ejecutarse.
+
+## Recorrido
+
+Inicio → Abrir compras → Menú con cuatro compras.
+
+El asistente observa las cuatro opciones y las aprueba. El planificador asigna cada una a una sesión DEMO aislada, hasta cuatro concurrentes. Reconstruye desde el inicio el camino hacia ese menú, comprobando en cada paso la identidad y huella del control. Los cuatro clientes recorren sus ramas sin compartir sesión ni resultado aleatorio.
+
+Si una rama abre otro menú con dos opciones, aparecen dos hijos nuevos sin ejecutar. El asistente decide cuáles explorar y se repite el despacho. Nunca hace clic en controles desconocidos o ambiguos ni reenvía una compra cuyo estado sea incierto.
+
+Cuatro clientes es el límite simultáneo, NO el número total de sesiones usadas. Un árbol con muchas ramas necesita más sesiones sucesivas: max_sessions y max_depth limitan el coste.
+
+## Herramientas MCP
+
+- pragmatic_tree_start: descubre la raíz y guarda una captura.
+- pragmatic_tree_result: consulta nodos, controles y progreso sin hacer clic.
+- pragmatic_tree_approve: aprueba opciones observadas en un nodo, sin ejecutar.
+- pragmatic_tree_skip: descarta provisionalmente controles sin declararlos ausentes.
+- pragmatic_tree_run: distribuye las opciones aprobadas en hasta cuatro clientes.
+- pragmatic_tree_close: guarda el árbol completo y libera recursos.
+
+Ejemplo:
+pragmatic_tree_start({game_url:"https://www.pragmaticplay.fun/en/slots/candy-rush/",clients:4,max_sessions:40,max_depth:8})
+
+La evidencia y los HAR se guardan por sesión en la carpeta forked-tree del perfil HardFire; los HAR completos no se publican en GitHub.
+
+## Reglas de seguridad y cobertura
+
+Una compra aceptada mediante doSpin pur=0 HTTP 200 no es un bonus completo. Si la acción inicia un bonus, se registra OPERATION_STARTED_NEEDS_GUIDED_COMPLETION y se detiene allí: no elige picks RNG ni reenvía la compra. Para cerrar ese camino hará falta una etapa guiada con validación del retorno al juego base.
+
+Las rutas de menú son reproducibles si siguen apareciendo los mismos controles. Los eventos RNG no se reproducen como si fueran estados deterministas.
+
+En GitHub Actions, las pruebas del algoritmo utilizan sesiones simuladas con cuatro clientes concurrentes. El modo de decisión dinámico necesita un agente conectado al navegador; los runners no tienen un LLM integrado por defecto.
