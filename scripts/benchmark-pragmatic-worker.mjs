@@ -236,6 +236,157 @@ async function runGame(gameUrl,index){
   const screenshotFile=path.join(output,String(index+1).padStart(2,'0')+'-'+slug+'.jpg');
   await captureIfChanged(page,screenshotFile,scan,{quality:65});
   t('full_screenshot_jpeg65',x);
+
+  // Bounded five-game end-to-end DEMO attempt. This is a strict observed-control
+  // decision policy: no blind coordinate guesses, no session authentication,
+  // never resubmit a purchase after a timeout. Every stop remains PARTIAL.
+  if(process.env.DEMO_E2E==='1'){
+   const e2e=result.e2e={status:'PARTIAL',phase:'INITIAL',steps:[],
+    purchaseSubmitted:false,purchaseHttp200:false,bonusFinished:false,
+    postBonusSpinVerified:false,missing:[],notes:[]};
+   const sample=()=>frame.evaluate(inspectDrawnButtons);
+   const recordStep=(kind,detail={})=>e2e.steps.push({kind,t_ms:round(clock()-start),...detail});
+   const getKinds=c=>(c.handlers||[]).map(h=>h.event).filter(Boolean);
+   const clickRuntime=async(control,observed,kind)=>{
+    if(!control?.hit_rect||control.occlusion==='VERIFIED_HIDDEN')
+     throw Error('NO_VERIFIED_HIT_RECT: '+kind);
+    const fresh=await sample();
+    const nowMatches=(fresh.controls||[]).filter(c=>c.path===control.path&&c.hit_rect&&
+     c.name===control.name&&JSON.stringify(getKinds(c))===JSON.stringify(getKinds(control)));
+    if(nowMatches.length!==1)throw Error('CONTROL_CHANGED_OR_AMBIGUOUS: '+kind);
+    const hit=chooseHitPoint(nowMatches[0],fresh.controls||[]);
+    if(!hit)throw Error('HIT_POINT_AMBIGUOUS: '+kind);
+    const rect=await (await frame.frameElement()).boundingBox();
+    const vp=await frame.evaluate(()=>({width:innerWidth,height:innerHeight}));
+    if(!rect||rect.width<=0||rect.height<=0)throw Error('GAME_FRAME_OUT_OF_VIEW: '+kind);
+    const point={x:rect.x+hit.x*rect.width/vp.width,y:rect.y+hit.y*rect.height/vp.height};
+    if(!Number.isFinite(point.x)||!Number.isFinite(point.y)||
+      point.x<rect.x||point.y<rect.y||
+      point.x>rect.x+rect.width||point.y>rect.y+rect.height)
+      throw Error('CLICK_OUTSIDE_DEMO: '+kind);
+    const started=clock();
+    await page.mouse.click(point.x,point.y);
+    recordStep(kind,{path:control.path,latencyMs:round(clock()-started)});
+   };
+   const snap=async(tag,observed,force=false)=>{
+    const filename=path.join(output,String(index+1).padStart(2,'0')+'-'+slug+'-'+tag+'.jpg');
+    const tShot=clock();
+    await captureIfChanged(page,filename,observed,{quality:58,force});
+    recordStep('SCREENSHOT',{tag,elapsedMs:round(clock()-tShot)});
+   };
+   const waitKind=async(kind,ms=12000)=>{
+    const tick=clock();
+    const gateResult=await gate([kind],ms);
+    recordStep('WAIT_'+kind,{status:gateResult.status,observed:gateResult.kind,
+     durationMs:round(clock()-tick)});
+    return gateResult;
+   };
+   try{
+    let current=scan,phase=classifyDrawnState(current);
+    // An INTRO may appear late, as seen in the previous five-game study.
+    if(phase==='INTRO'){
+     const starts=(current.controls||[]).filter(c=>c.hit_rect&&
+      /\/IntroScreen\//i.test(c.path)&&getKinds(c).includes('Evt_DataToCode_IntroClosePressed'));
+     recordStep('INTRO_CANDIDATES',{count:starts.length,paths:starts.map(c=>c.path)});
+     if(starts.length!==1)throw Error('INTRO_CONTROL_NOT_UNIQUE');
+     await snap('before-intro',current);
+     await clickRuntime(starts[0],current,'CLICK_INTRO');
+     const post=await waitKind('BASE_CONTROLS',18000);
+     if(post.status!=='STABLE')throw Error('INTRO_BASE_NOT_STABLE:'+post.kind);
+     current=post.scan;phase=post.kind;
+     await snap('base-after-intro',current,true);
+    }
+    if(phase!=='BASE_CONTROLS')throw Error('NOT_BASE:'+phase);
+    e2e.phase='BASE';
+    const baseCandidates=(current.controls||[]).filter(c=>c.hit_rect);
+    recordStep('BASE_INVENTORY',{count:baseCandidates.length,
+     candidates:baseCandidates.map(c=>({path:c.path,labels:c.labels||[],
+      events:getKinds(c)})).slice(0,40)});
+    // Only open an explicitly named BUY feature entry, not AnteBet or a backdrop.
+    const buy=baseCandidates.filter(c=>/buy|purchase/i.test(c.path+' '+c.name+' '+(c.labels||[]).join(' '))&&
+      !/antebet|betlevel/i.test(c.path)&&
+      (/MainButton|BuyButton|BuyFeature|PurchaseButton/i.test(c.path)||
+       (c.labels||[]).some(l=>/BUY\s*(?:FEATURE|BONUS|FREE SPINS)/i.test(l))));
+    recordStep('BUY_ENTRY_CANDIDATES',{count:buy.length,paths:buy.map(c=>c.path)});
+    if(buy.length!==1)throw Error(buy.length?'BUY_ENTRY_AMBIGUOUS':'NO_VISIBLE_BUY_ENTRY');
+    await clickRuntime(buy[0],current,'OPEN_BUY_MENU');
+    const opened=await waitKind('PURCHASE_OPTIONS',12000);
+    if(opened.status!=='STABLE')throw Error('BUY_MENU_NOT_READY:'+opened.kind);
+    current=opened.scan;e2e.phase='PURCHASE_OPTIONS';
+    const options=(current.controls||[]).filter(c=>c.hit_rect&&
+      /\/PurchaseWindow\/.*\/Options\/Option\d+\//i.test(c.path));
+    recordStep('BUY_OPTIONS',{options:options.map(c=>({path:c.path,labels:c.labels||[]}))});
+    await snap('buy-menu',current,true);
+    const first=options.filter(c=>/\/Option1\//i.test(c.path)&&
+      !/Cancel|Back|Close/i.test(c.name));
+    if(first.length!==1)throw Error('OPTION_1_NOT_UNIQUE');
+    await clickRuntime(first[0],current,'CHOOSE_FIRST_BUY_OPTION');
+    const confirmation=await waitKind('CONFIRM_PURCHASE',12000);
+    if(confirmation.status!=='STABLE')throw Error('CONFIRM_SCREEN_NOT_READY:'+confirmation.kind);
+    current=confirmation.scan;e2e.phase='CONFIRM_PURCHASE';
+    const yes=(current.controls||[]).filter(c=>c.hit_rect&&
+      /ConfirmPurchaseWindow\/.*(?:AcceptButton|ConfirmButton|YesButton)/i.test(c.path)&&
+      (c.labels||[]).some(l=>/^\s*(YES|CONFIRM|BUY)\s*$/i.test(l)));
+    recordStep('CONFIRM_BUTTONS',{yesCount:yes.length,paths:yes.map(c=>c.path)});
+    await snap('before-confirm',current,true);
+    if(yes.length!==1)throw Error('NO_UNIQUE_YES_CONFIRMATION');
+    const prior=result.traffic.protocolActions.length,clickAt=clock();
+    await clickRuntime(yes[0],current,'CONFIRM_DEMO_PURCHASE_ONCE');
+    e2e.purchaseSubmitted=true;
+    e2e.phase='AWAIT_PURCHASE_SERVER';
+    let acknowledged=null;
+    for(let tick=0;tick<50;tick++){
+     acknowledged=result.traffic.protocolActions.slice(prior).find(p=>
+      p.action==='doSpin'&&p.pur!==null&&p.status===200);
+     if(acknowledged)break;
+     await delay(200);
+    }
+    e2e.purchaseHttp200=Boolean(acknowledged);
+    recordStep('PURCHASE_HTTP',{confirmed:e2e.purchaseHttp200,
+     pur:acknowledged?.pur||null,bl:acknowledged?.bl||null,
+     ackElapsedMs:acknowledged?round(clock()-clickAt):null});
+    current=await sample();
+    await snap('after-purchase',current,true);
+    if(!acknowledged)throw Error('PURCHASE_SERVER_NOT_CONFIRMED');
+    // Give autonomous Free Spins a bounded opportunity to finish. Never
+    // assume the bonus ended from HTTP 200; no arbitrary picks are sent.
+    const returnDeadline=clock()+45000;
+    let stableBase=0,lastSignature=null,probeCount=0;
+    while(clock()<returnDeadline){
+     probeCount++;
+     const detected=await sample(),kind=classifyDrawnState(detected);
+     const signature=stateSignature(detected);
+     const latest=result.traffic.protocolActions.at(-1);
+     const live=await frame.evaluate(()=>{
+      const get=k=>{try{return globalThis.Vars?.[k]?XT.GetBool(Vars[k]):null}catch{return null}};
+      return {canSpin:get('CanSpin'),freeSpins:get('Logic_IsFreeSpin'),
+       blocked:get('SpinBlockingFeatureIsRunning'),respin:get('RespinInProgress')};
+     }).catch(()=>null);
+     if(kind==='BASE_CONTROLS'&&live?.canSpin===true&&live?.freeSpins===false&&
+       live?.blocked===false&&live?.respin===false&&signature===lastSignature)
+      stableBase++;
+     else stableBase=0;
+     lastSignature=signature;
+     if(stableBase>=2){e2e.bonusFinished=true;recordStep('BONUS_RETURNED_BASE',
+       {probeCount,kind,live});await snap('returned-base',detected,true);break;}
+     if(probeCount%12===0)recordStep('BONUS_PENDING',{kind,live,
+      lastProtocolAction:latest?.action||null,protocolRequests:result.traffic.protocolActions.length});
+     await delay(500);
+    }
+    if(!e2e.bonusFinished)throw Error('BONUS_NOT_CONFIRMED_COMPLETE_45S');
+    // No automatic normal wager after bonus: certification requires a normal
+    // spin and its server response, so leave this explicit missing evidence.
+    e2e.postBonusSpinVerified=false;
+    e2e.missing.push('POST_BONUS_NORMAL_SPIN_NOT_RUN');
+    e2e.status='PURCHASE_ACCEPTED_BONUS_CLOSED';
+   }catch(err){
+    e2e.failure=String(err.message||err).slice(0,300);
+    recordStep('E2E_BLOCKED',{reason:e2e.failure});
+    const recent=await sample().catch(()=>null);
+    if(recent)await snap('blocked',recent,true).catch(()=>{});
+    e2e.status=e2e.purchaseHttp200?'PURCHASE_ACCEPTED_BONUS_UNVERIFIED':'PARTIAL';
+   }
+  }
   // These two intro controls were explicitly selected after reviewing the
   // FIVE-NEW-GAME artifact photos from the previous workflow run.
   // Do not infer intro buttons for other providers/games or click purchases.
