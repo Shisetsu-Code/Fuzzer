@@ -14,7 +14,7 @@ test('batch scheduler processes exactly 600 demos with max two workers and bound
  const runGame=async(controller,args)=>{
   assert.equal(args.mode,'batch');assert.equal(args.maxSessions,4);
   inFlight++;highWater=Math.max(highWater,inFlight);calls++;
-  await Promise.resolve(); // Permit the second worker to overlap.
+  await new Promise(resolve=>setTimeout(resolve,2)); // Model overlapping browser work.
   inFlight--;
   return {status:'TARGETS_EXHAUSTED',actions:3,sessions:1,verifiedPurchases:2,
    pending:[],ignored:[],nodes:[],edges:[],completeGame:false};
