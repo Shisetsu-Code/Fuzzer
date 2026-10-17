@@ -61,15 +61,19 @@ export function registerBatchTools({register,z,text,controller,artifactDir,activ
       current:job.current,results:job.results.filter(Boolean)},null,2)).catch(()=>{});
     }
    };
+   let finalStatus='ERROR';
    try{
     await fs.mkdir(dir,{recursive:true});
     await Promise.all(Array.from({length:args.concurrency},()=>worker()));
-    job.status=job.failed?'PARTIAL':'FINISHED';
-   }catch(error){job.status='ERROR';job.error=String(error.message||error).slice(0,300);}
+    finalStatus=job.failed?'PARTIAL':'FINISHED';
+   }catch(error){job.error=String(error.message||error).slice(0,300);}
    finally{
-    delete job.current;
-    await fs.mkdir(dir,{recursive:true}).catch(()=>{});
-    await fs.writeFile(job.artifact,JSON.stringify(job,null,2)).catch(error=>{job.artifactError=String(error.message)});
+    job.status='SAVING';delete job.current;
+    try{
+     await fs.mkdir(dir,{recursive:true});
+     await fs.writeFile(job.artifact,JSON.stringify({...job,status:finalStatus},null,2));
+     job.status=finalStatus;
+    }catch(error){job.status='ERROR';job.artifactError=String(error.message||error);}
     activeJobs.delete(id);
    }
   })();
