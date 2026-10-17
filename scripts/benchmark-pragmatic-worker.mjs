@@ -84,11 +84,25 @@ async function runGame(gameUrl,index){
   cookieRejected=await safeClick(page.getByText('Reject All',{exact:true}));
   if(!cookieRejected)cookieRejected=await safeClick(page.getByRole('button',{name:/Reject All/i}));
   if(!cookieRejected)cookieRejected=await safeClick(page.locator('.cky-btn-reject, [data-cky-tag="reject-button"]'));
+  if(!cookieRejected){
+   const reject=page.locator('[data-cky-tag="reject-button"], .cky-btn-reject').first();
+   if(await reject.count())cookieRejected=await reject.evaluate(button=>{button.click();return true;}).catch(()=>false);
+  }
   t('cookie_consent_rejection',x);
   x=clock();
   ageHandled=await safeClick(page.getByText('Yes, I am 18 years or older',{exact:true}));
   if(!ageHandled)ageHandled=await safeClick(page.getByRole('link',{name:/Yes, I am 18 years/i}));
   if(!ageHandled)ageHandled=await safeClick(page.locator('[data-age-gate-confirm]'));
+  // Catalog age confirmation is a known, explicit non-game control. Use DOM
+  // click only if pointer click is blocked by a decorative/consent overlay.
+  // This fallback is NEVER used on a game canvas or a purchase button.
+  if(!ageHandled){
+   const age=page.locator('button[data-age-gate-confirm="true"]');
+   if(await age.count()){
+    ageHandled=await age.first().evaluate(button=>{button.click();return true;}).catch(()=>false);
+    result.catalogAgeDomFallback=ageHandled;
+   }
+  }
   t('catalog_age_confirmation',x);
   result.catalog={cookieRejected,ageHandled,title:(await page.title().catch(()=>'' )).slice(0,120)};
   if(!ageHandled){
