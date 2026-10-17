@@ -278,7 +278,7 @@ async function runGame(gameUrl,index){
     purchaseSubmitted:false,purchaseHttp200:false,bonusFinished:false,
     postBonusSpinVerified:false,missing:[],notes:[]};
    const sample=()=>frame.evaluate(inspectDrawnButtons);
-   const recordStep=(kind,detail={})=>e2e.steps.push({kind,t_ms:round(clock()-start),...detail});
+   const recordStep=(kind,detail={})=>e2e.steps.push({...detail,kind,t_ms:round(clock()-start)});
    const getKinds=c=>(c.handlers||[]).map(h=>h.event).filter(Boolean);
    const clickRuntime=async(control,observed,kind)=>{
     if(!control?.hit_rect||control.occlusion==='VERIFIED_HIDDEN')
@@ -309,7 +309,7 @@ async function runGame(gameUrl,index){
    };
    const waitKind=async(kind,ms=12000)=>{
     const tick=clock();
-    const gateResult=await gate([kind],ms);
+    const gateResult=await gate(Array.isArray(kind)?kind:[kind],ms);
     recordStep('WAIT_'+kind,{status:gateResult.status,observed:gateResult.kind,
      durationMs:round(clock()-tick)});
     return gateResult;
@@ -351,7 +351,7 @@ async function runGame(gameUrl,index){
      null:null;
     if(!chosenBuy)throw Error(buy.length?'BUY_ENTRY_AMBIGUOUS':'NO_VISIBLE_BUY_ENTRY');
     await clickRuntime(chosenBuy,current,'OPEN_BUY_MENU');
-    const opened=await waitKind('PURCHASE_OPTIONS',12000);
+    const opened=await waitKind(['PURCHASE_OPTIONS','DIRECT_PURCHASE_CONFIRM'],12000);
     if(opened.status!=='STABLE'){
      recordStep('BUY_MENU_TIMEOUT_DIAGNOSTIC',{kind:opened.kind,
       controls:(opened.scan?.controls||[]).filter(c=>c.hit_rect).map(c=>({
@@ -359,21 +359,30 @@ async function runGame(gameUrl,index){
      await snap('buy-entry-after-click',opened.scan||await sample(),true);
      throw Error('BUY_MENU_NOT_READY:'+opened.kind);
     }
-    current=opened.scan;e2e.phase='PURCHASE_OPTIONS';
-    const options=(current.controls||[]).filter(c=>c.hit_rect&&
+    current=opened.scan;
+    if(opened.kind==='DIRECT_PURCHASE_CONFIRM'){
+     e2e.phase='CONFIRM_PURCHASE';
+     recordStep('DIRECT_CONFIRM_OBSERVED',{
+      controls:(current.controls||[]).filter(c=>c.hit_rect&&/FSPurchaseWindow/.test(c.path))
+       .map(c=>({path:c.path,name:c.name,labels:c.labels||[]}))});
+    }else{
+     e2e.phase='PURCHASE_OPTIONS';
+     const options=(current.controls||[]).filter(c=>c.hit_rect&&
       /\/PurchaseWindow\/.*\/Options\/Option\d+\//i.test(c.path));
-    recordStep('BUY_OPTIONS',{options:options.map(c=>({path:c.path,labels:c.labels||[]}))});
-    await snap('buy-menu',current,true);
-    const first=options.filter(c=>/\/Option1\//i.test(c.path)&&
+     recordStep('BUY_OPTIONS',{options:options.map(c=>({path:c.path,labels:c.labels||[]}))});
+     await snap('buy-menu',current,true);
+     const first=options.filter(c=>/\/Option1\//i.test(c.path)&&
       !/Cancel|Back|Close/i.test(c.name));
-    if(first.length!==1)throw Error('OPTION_1_NOT_UNIQUE');
-    await clickRuntime(first[0],current,'CHOOSE_FIRST_BUY_OPTION');
-    const confirmation=await waitKind('CONFIRM_PURCHASE',12000);
-    if(confirmation.status!=='STABLE')throw Error('CONFIRM_SCREEN_NOT_READY:'+confirmation.kind);
-    current=confirmation.scan;e2e.phase='CONFIRM_PURCHASE';
-    const yes=(current.controls||[]).filter(c=>c.hit_rect&&
-      /ConfirmPurchaseWindow\/.*(?:AcceptButton|ConfirmButton|YesButton)/i.test(c.path)&&
-      (c.labels||[]).some(l=>/^\s*(YES|CONFIRM|BUY)\s*$/i.test(l)));
+     if(first.length!==1)throw Error('OPTION_1_NOT_UNIQUE');
+     await clickRuntime(first[0],current,'CHOOSE_FIRST_BUY_OPTION');
+     const confirmation=await waitKind('CONFIRM_PURCHASE',12000);
+     if(confirmation.status!=='STABLE')throw Error('CONFIRM_SCREEN_NOT_READY:'+confirmation.kind);
+     current=confirmation.scan;e2e.phase='CONFIRM_PURCHASE';
+    }
+    const yes=(current.controls||[]).filter(c=>c.hit_rect&&(
+      (/ConfirmPurchaseWindow\/.*(?:AcceptButton|ConfirmButton|YesButton)/i.test(c.path)&&
+       (c.labels||[]).some(l=>/^\s*(YES|CONFIRM|BUY)\s*$/i.test(l)))||
+      /\/FSPurchaseWindow\/content\/Buttons\/(?:Yes\/ButtonOpt\d+|ButtonYes)$/i.test(c.path)));
     recordStep('CONFIRM_BUTTONS',{yesCount:yes.length,paths:yes.map(c=>c.path)});
     await snap('before-confirm',current,true);
     if(yes.length!==1)throw Error('NO_UNIQUE_YES_CONFIRMATION');
