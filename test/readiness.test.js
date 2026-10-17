@@ -18,6 +18,14 @@ test('classifies intro/base/menu/confirm without mistaking generic canvas collid
  assert.equal(classifyDrawnState({controls:[{path:'IntroScreen/FakeButton'}]}),'UNKNOWN');
 });
 
+test('ordinary-spin-only base is recognized after intro without purchase controls',()=>{
+ const state={controls:[{path:'GameRoot/SpinPanel/SpinButton',name:'SpinButton',
+  hit_rect:{x:100,y:100,width:40,height:40},
+  handlers:[{event:'Evt_DataToCode_Pressed_Spin'}],labels:[]}]};
+ assert.equal(classifyDrawnState(state),'BASE_CONTROLS');
+ const hidden={controls:[{...state.controls[0],hit_rect:null}]};
+ assert.equal(classifyDrawnState(hidden),'UNKNOWN');
+});
 test('stable gate returns after two matching samples, not a seven second sleep',async()=>{
  let time=0,calls=0;
  const result=await waitForStableState({
