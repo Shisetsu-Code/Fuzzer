@@ -6,6 +6,8 @@
 export function classifyDrawnState(scan){
  const items=(scan?.controls||[]).filter(c=>c.hit_rect);
  const paths=items.map(c=>String(c.path||''));
+ if(paths.some(p=>/\/FSPurchaseWindow\/content\/Buttons\/(?:Yes\/|ButtonYes|ButtonOpt\d+)/i.test(p)))
+  return 'DIRECT_PURCHASE_CONFIRM';
  if(paths.some(p=>/\/ConfirmPurchaseWindow\/content\//i.test(p)))
   return 'CONFIRM_PURCHASE';
  if(paths.some(p=>/\/PurchaseWindow\/content\/Options\/Option\d+\//i.test(p)))
