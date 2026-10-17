@@ -77,5 +77,7 @@ test('control priority is conservative for generic UI and prefers buy over dismi
  assert(controlPriority(c('x','Buy Feature'))>controlPriority(c('y','Open Options')));
  assert.equal(controlPriority(c('x','Cancel')),-1);
  assert.equal(controlPriority(c('z','Volume Button')),0);
+ assert.equal(controlPriority({key:'buy',name:'ConfirmButton',path:'Game/Background/BuyFeature/ConfirmButton',labels:['BUY NOW']}),100);
+ assert.equal(controlPriority({key:'menu',name:'OpenCloseButton',path:'FeatureMenu/OpenCloseButton'}),30);
  await assert.rejects(()=>explorePurchaseBatch({},{maxSessions:5,wait:transition}),/maxSessions/);
 });
