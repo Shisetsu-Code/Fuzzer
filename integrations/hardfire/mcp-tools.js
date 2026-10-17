@@ -1,4 +1,5 @@
 import {randomUUID} from 'node:crypto';
+import {registerBatchTools} from './batch-tools.js';
 import fs from 'node:fs/promises';import path from 'node:path';import os from 'node:os';
 import {createHardFireSession,selectDemoFrame} from './session.js';
 import {inspectDrawnButtons} from '../../providers/pragmatic/drawn-buttons.js';
@@ -68,4 +69,5 @@ export function registerFuzzerTools({register,z,text,controller,sessionFactory=c
    const total=job.result?.tree?.length||0;
    return text({...job,result,next_offset:args.offset+args.limit<total?args.offset+args.limit:null});
  });
+ registerBatchTools({register,z,text,controller,artifactDir,activeJobs,jobs});
 }
