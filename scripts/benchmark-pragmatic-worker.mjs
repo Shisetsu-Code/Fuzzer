@@ -52,6 +52,18 @@ async function runGame(gameUrl,index){
   errors:[],artifacts:[],context_reused_browser:true};
  let context,page;
  const t=(name,at)=>{result.phases_ms[name]=round(clock()-at);};
+ let previousCapturedSignature=null;
+ const captureIfChanged=async(page,filename,scan,{quality=60,force=false}={})=>{
+  const signature=stateSignature(scan);
+  if(!force&&previousCapturedSignature===signature){
+   (result.skippedDuplicateCaptures??=[]).push(path.basename(filename));
+   return false;
+  }
+  await page.screenshot({path:filename,type:'jpeg',quality,timeout:15000});
+  result.artifacts.push(path.basename(filename));
+  previousCapturedSignature=signature;
+  return true;
+ };
  try{
   let x=clock();
   context=await browser.newContext({viewport:{width:1280,height:720},deviceScaleFactor:1,
@@ -219,9 +231,8 @@ async function runGame(gameUrl,index){
   t('readiness_flags_probe',x);
   x=clock();
   const screenshotFile=path.join(output,String(index+1).padStart(2,'0')+'-'+slug+'.jpg');
-  await page.screenshot({path:screenshotFile,type:'jpeg',quality:65,timeout:15000});
+  await captureIfChanged(page,screenshotFile,scan,{quality:65});
   t('full_screenshot_jpeg65',x);
-  result.artifacts.push(path.basename(screenshotFile));
   // This ONE selected control was approved after reviewing the prior Candy Rush
   // screenshot + extracted path. No purchase, spin or unknown menu is selected.
   if(slug==='candy-rush'){
@@ -251,9 +262,8 @@ async function runGame(gameUrl,index){
       result.approvedProbe.responsesAfterClick=result.traffic.responses-beforeNetwork;
       const afterPath=path.join(output,String(index+1).padStart(2,'0')+'-'+slug+'-after-intro.jpg');
       const screenAt=clock();
-      await page.screenshot({path:afterPath,type:'jpeg',quality:60,timeout:15000});
+      await captureIfChanged(page,afterPath,scanNext);
       t('approved_intro_after_screenshot',screenAt);
-      result.artifacts.push(path.basename(afterPath));
       // Approved next step from the photographed base: OPEN THE BUY FEATURE MENU
       // only. Explicitly forbid a price/confirmation button or any purchase.
       const menus=(scanNext.controls||[]).filter(c=>
@@ -285,9 +295,8 @@ async function runGame(gameUrl,index){
           .map(c=>({name:c.name,path:c.path,labels:c.labels||[]})).slice(0,20);
          const menuPhoto=path.join(output,String(index+1).padStart(2,'0')+'-'+slug+'-buy-menu.jpg');
          const photoStart=clock();
-         await page.screenshot({path:menuPhoto,type:'jpeg',quality:60,timeout:15000});
+         await captureIfChanged(page,menuPhoto,menuScan);
          t('approved_buy_menu_screenshot',photoStart);
-         result.artifacts.push(path.basename(menuPhoto));
          // One strictly assistant-approved DEMO purchase candidate, selected
          // from the photographed menu: Free Spins for $200 at base bet $2.
          const firstOption=(menuScan.controls||[]).filter(c=>c.hit_rect&&
@@ -319,9 +328,8 @@ async function runGame(gameUrl,index){
             result.approvedPurchaseProbe.candidatesAfter=filterKnownControls(follow.controls||[]).keep
              .map(c=>({path:c.path,labels:c.labels||[]})).slice(0,20);
             const purchasedPhoto=path.join(output,String(index+1).padStart(2,'0')+'-'+slug+'-after-purchase-option.jpg');
-            const shot=clock();await page.screenshot({path:purchasedPhoto,type:'jpeg',quality:60,timeout:15000});
+            const shot=clock();await captureIfChanged(page,purchasedPhoto,follow);
             t('approved_purchase_outcome_screenshot',shot);
-            result.artifacts.push(path.basename(purchasedPhoto));
             // Model-reviewed confirmation: "CONFIRM BUY / FREE SPINS $200 / YES".
             // Submit once, then only observe the provider response.
             const yesButtons=(follow.controls||[]).filter(c=>c.hit_rect&&
@@ -357,9 +365,9 @@ async function runGame(gameUrl,index){
                result.approvedConfirmProbe.serverAckElapsedMs=ack?round(ack.at_ms-relativeAt):null;
                result.approvedConfirmProbe.bonusCompletionVerified=false;
                const confirmPhoto=path.join(output,String(index+1).padStart(2,'0')+'-'+slug+'-after-yes.jpg');
-               const confirmScreenAt=clock();await page.screenshot({path:confirmPhoto,type:'jpeg',quality:60,timeout:15000});
+               const confirmScreenAt=clock(),postYesScan=await frame.evaluate(inspectDrawnButtons);
+               await captureIfChanged(page,confirmPhoto,postYesScan,{force:true});
                t('approved_yes_after_screenshot',confirmScreenAt);
-               result.artifacts.push(path.basename(confirmPhoto));
               }
              }else result.approvedConfirmProbe.reason='AMBIGUOUS_CONFIRM_HIT_POINT';
             }else result.approvedConfirmProbe.reason='CONFIRM_CONTROL_NOT_UNIQUE';
