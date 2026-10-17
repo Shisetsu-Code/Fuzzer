@@ -18,11 +18,19 @@ try {
     & node --check (Join-Path $moduleRoot 'integrations\hardfire\mcp-tools.js')
     if ($LASTEXITCODE -ne 0) {throw 'Modulo Fuzzer invalido'}
     if (!$text.Contains('registerFuzzerTools')) {
-        if ((Get-FileHash -LiteralPath $mcpPath).Hash -ne $originalHash) {throw 'El registro MCP cambio durante la instalacion; no se sobrescribe.'}
         $block="  const {registerFuzzerTools}=await import('./fuzzer/integrations/hardfire/mcp-tools.js');`r`n  registerFuzzerTools({register,z,text,controller});`r`n`r`n"
-        $text=$text.Replace($marker,$block+$marker).Replace("['hardfire_status','hardfire_browser'","['pragmatic_fuzz_start','pragmatic_fuzz_result','hardfire_status','hardfire_browser'")
-        Set-Content -LiteralPath $mcpPath -Value $text -Encoding utf8
+        $text=$text.Replace($marker,$block+$marker)
     }
+    # Existing installations already contain registerFuzzerTools; expose newly
+    # registered MCP commands without injecting a duplicate registration.
+    $oldList="['pragmatic_fuzz_start','pragmatic_fuzz_result','hardfire_status','hardfire_browser'"
+    $baseList="['hardfire_status','hardfire_browser'"
+    $newList="['pragmatic_fuzz_start','pragmatic_fuzz_result','pragmatic_explore_start','pragmatic_explore_result','pragmatic_drawn_buttons','pragmatic_batch_start','pragmatic_batch_result','hardfire_status','hardfire_browser'"
+    if ($text.Contains($oldList)) {$text=$text.Replace($oldList,$newList)}
+    elseif ($text.Contains($baseList)) {$text=$text.Replace($baseList,$newList)}
+    elseif (!$text.Contains("'pragmatic_batch_start'")) {throw 'Lista de herramientas HardFire no reconocida; no se modifica.'}
+    if ((Get-FileHash -LiteralPath $mcpPath).Hash -ne $originalHash) {throw 'El registro MCP cambio durante la instalacion; no se sobrescribe.'}
+    Set-Content -LiteralPath $mcpPath -Value $text -Encoding utf8
     & node --check $mcpPath
     if ($LASTEXITCODE -ne 0) {throw 'Registro MCP invalido'}
 } catch {
@@ -31,4 +39,4 @@ try {
     throw
 }
 Write-Output ('Instalado. Respaldo: '+$backup)
-Write-Output 'Guarda los HAR activos y reinicia HardFire para cargar las funciones pragmatic_fuzz_start/result.'
+Write-Output 'Guarda los HAR activos y reinicia HardFire para cargar pragmatic_batch_start/result y las otras funciones Fuzzer.'
