@@ -63,7 +63,7 @@ async function runGame(gameUrl,index){
    if(/\/gameService(?:\?|$)/.test(res.url())){
     const params=new URLSearchParams(res.request().postData()||'');
     result.traffic.protocolActions.push({action:params.get('action'),pur:params.get('pur'),
-     bl:params.get('bl'),status:res.status()});
+     bl:params.get('bl'),status:res.status(),at_ms:round(clock()-start)});
    }
    if(res.status()>=400&&res.status()<500)result.traffic.status_4xx++;
    if(res.status()>=500)result.traffic.status_5xx++;
@@ -301,6 +301,47 @@ async function runGame(gameUrl,index){
             const shot=clock();await page.screenshot({path:purchasedPhoto,type:'jpeg',quality:60,timeout:15000});
             t('approved_purchase_outcome_screenshot',shot);
             result.artifacts.push(path.basename(purchasedPhoto));
+            // Model-reviewed confirmation: "CONFIRM BUY / FREE SPINS $200 / YES".
+            // Submit once, then only observe the provider response.
+            const yesButtons=(follow.controls||[]).filter(c=>c.hit_rect&&
+             /\/ConfirmPurchaseWindow\/content\/AcceptButton\/Colliders\/ColliderOption1$/.test(c.path||'')&&
+             (c.labels||[]).some(t=>String(t).trim()==='YES'));
+            result.approvedConfirmProbe={
+             reason:'Assistant selected YES on photographed $200 DEMO confirmation',
+             matches:yesButtons.length,clicked:false,serverPurchaseConfirmed:false};
+            if(yesButtons.length===1){
+             const yes=yesButtons[0],target3=chooseHitPoint(yes,follow.controls||[]);
+             if(target3){
+              const r3=await (await frame.frameElement()).boundingBox();
+              const v3=await frame.evaluate(()=>({width:innerWidth,height:innerHeight}));
+              const click3=r3?{x:r3.x+target3.x*r3.width/v3.width,
+               y:r3.y+target3.y*r3.height/v3.height}:null;
+              if(click3&&click3.x>=r3.x&&click3.y>=r3.y&&click3.x<=r3.x+r3.width&&click3.y<=r3.y+r3.height){
+               const protocolsBefore=result.traffic.protocolActions.length;
+               const tClick=clock(),relativeAt=round(tClick-start);
+               await page.mouse.click(click3.x,click3.y);
+               t('approved_yes_confirmation_click',tClick);
+               result.approvedConfirmProbe.clicked=true;
+               const serverWait=clock();
+               for(let k=0;k<16;k++){
+                if(result.traffic.protocolActions.slice(protocolsBefore).some(p=>
+                 p.action==='doSpin'&&p.pur!==null&&p.status===200))break;
+                await delay(250);
+               }
+               t('approved_purchase_server_wait',serverWait);
+               const observations=result.traffic.protocolActions.slice(protocolsBefore);
+               result.approvedConfirmProbe.newProtocolResponses=observations;
+               const ack=observations.find(p=>p.action==='doSpin'&&p.pur!==null&&p.status===200);
+               result.approvedConfirmProbe.serverPurchaseConfirmed=Boolean(ack);
+               result.approvedConfirmProbe.serverAckElapsedMs=ack?round(ack.at_ms-relativeAt):null;
+               result.approvedConfirmProbe.bonusCompletionVerified=false;
+               const confirmPhoto=path.join(output,String(index+1).padStart(2,'0')+'-'+slug+'-after-yes.jpg');
+               const confirmScreenAt=clock();await page.screenshot({path:confirmPhoto,type:'jpeg',quality:60,timeout:15000});
+               t('approved_yes_after_screenshot',confirmScreenAt);
+               result.artifacts.push(path.basename(confirmPhoto));
+              }
+             }else result.approvedConfirmProbe.reason='AMBIGUOUS_CONFIRM_HIT_POINT';
+            }else result.approvedConfirmProbe.reason='CONFIRM_CONTROL_NOT_UNIQUE';
            }
           }else result.approvedPurchaseProbe.reason='AMBIGUOUS_PURCHASE_HIT_POINT';
          }else result.approvedPurchaseProbe.reason='PURCHASE_OPTION_NOT_UNIQUELY_IDENTIFIED';
