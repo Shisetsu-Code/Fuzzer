@@ -11,6 +11,7 @@ import {inspectDrawnButtons} from '../providers/pragmatic/drawn-buttons.js';
 import {filterKnownControls} from '../providers/pragmatic/known-controls.js';
 import {assertDemoUrl} from '../providers/pragmatic/session.js';
 import {controlPriority} from '../providers/pragmatic/batch-explorer.js';
+import {chooseHitPoint} from '../providers/pragmatic/hit-point.js';
 
 const defaultUrls=[
  'https://www.pragmaticplay.fun/en/slots/death-dominion/',
@@ -164,6 +165,15 @@ async function runGame(gameUrl,index){
   await delay(7000);
   t('post_runtime_visual_safety_wait',x);
   x=clock();
+  // CookieYes is inserted asynchronously: an early absent button is not consent.
+  const lateReject=page.locator('.cky-btn-reject, [data-cky-tag="reject-button"]').first();
+  result.catalog.lateConsentCleared=false;
+  if(await lateReject.count()){
+   result.catalog.lateConsentCleared=await lateReject.evaluate(b=>{b.click();return true;}).catch(()=>false);
+   if(result.catalog.lateConsentCleared)await delay(250);
+  }
+  t('late_cookie_overlay_cleanup',x);
+  x=clock();
   scan=await frame.evaluate(inspectDrawnButtons);
   const partition=filterKnownControls(scan.controls||[]);
   const targets=partition.keep.filter(c=>c.hit_rect);
@@ -189,6 +199,40 @@ async function runGame(gameUrl,index){
   await page.screenshot({path:screenshotFile,type:'jpeg',quality:65,timeout:15000});
   t('full_screenshot_jpeg65',x);
   result.artifacts.push(path.basename(screenshotFile));
+  // This ONE selected control was approved after reviewing the prior Candy Rush
+  // screenshot + extracted path. No purchase, spin or unknown menu is selected.
+  if(slug==='candy-rush'){
+   const approvedPath='GameRoot/UI Root/XTRoot/Root/IntroScreen/Content/Misc/IntroButtonsNewer/PlayButtonIntro';
+   const fresh=await frame.evaluate(inspectDrawnButtons);
+   const matches=(fresh.controls||[]).filter(c=>c.path===approvedPath&&c.hit_rect);
+   result.approvedProbe={reason:'Assistant selected observed intro Play control from prior screenshot',
+    path:approvedPath,matchingControls:matches.length,clicked:false};
+   if(matches.length===1){
+    const target=matches[0],hit=chooseHitPoint(target,fresh.controls||[]);
+    if(hit){
+     const iframeElement=await frame.frameElement(),rect=await iframeElement.boundingBox();
+     const viewport=await frame.evaluate(()=>({width:innerWidth,height:innerHeight}));
+     const point=rect?{x:rect.x+hit.x*rect.width/viewport.width,
+      y:rect.y+hit.y*rect.height/viewport.height}:null;
+     if(point&&point.x>=rect.x&&point.y>=rect.y&&point.x<=rect.x+rect.width&&point.y<=rect.y+rect.height){
+      const begin=clock(),beforeNetwork=result.traffic.responses;
+      await page.mouse.click(point.x,point.y);
+      t('approved_intro_click',begin);
+      result.approvedProbe.clicked=true;result.approvedProbe.pagePoint=point;
+      const settle=clock();await delay(1800);t('approved_intro_transition_wait',settle);
+      const scanNext=await frame.evaluate(inspectDrawnButtons);
+      result.approvedProbe.controlsAfter=scanNext.controls?.length||0;
+      result.approvedProbe.keptAfter=filterKnownControls(scanNext.controls||[]).keep.length;
+      result.approvedProbe.responsesAfterClick=result.traffic.responses-beforeNetwork;
+      const afterPath=path.join(output,String(index+1).padStart(2,'0')+'-'+slug+'-after-intro.jpg');
+      const screenAt=clock();
+      await page.screenshot({path:afterPath,type:'jpeg',quality:60,timeout:15000});
+      t('approved_intro_after_screenshot',screenAt);
+      result.artifacts.push(path.basename(afterPath));
+     }
+    }else result.approvedProbe.reason='AMBIGUOUS_HIT_POINT';
+   }else result.approvedProbe.reason='CONTROL_IDENTITY_NOT_UNIQUE_OR_ABSENT';
+  }
   result.status='CONTROLS_EXTRACTED_VISUAL_UNVERIFIED';
   if(errors.length)result.errors.push(...errors);
  }catch(e){
