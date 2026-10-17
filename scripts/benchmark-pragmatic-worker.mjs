@@ -236,6 +236,48 @@ async function runGame(gameUrl,index){
   const screenshotFile=path.join(output,String(index+1).padStart(2,'0')+'-'+slug+'.jpg');
   await captureIfChanged(page,screenshotFile,scan,{quality:65});
   t('full_screenshot_jpeg65',x);
+  // These two intro controls were explicitly selected after reviewing the
+  // FIVE-NEW-GAME artifact photos from the previous workflow run.
+  // Do not infer intro buttons for other providers/games or click purchases.
+  const approvedIntros={
+   '5-lions-reborn':'GameRoot/UI Root/XTRoot/Root/IntroScreen/Content/IntroButtons/CloseButton/ButtonSpin',
+   'jungle-gorilla':'GameRoot/UI Root/XTRoot/Root/IntroScreen/content/Buttons/CloseButton/ButtonSpin'
+  };
+  if(Object.hasOwn(approvedIntros,slug)){
+   const approvedPath=approvedIntros[slug];
+   const fresh=await frame.evaluate(inspectDrawnButtons);
+   const matches=(fresh.controls||[]).filter(c=>c.path===approvedPath&&
+    c.hit_rect&&(c.handlers||[]).some(h=>h.event==='Evt_DataToCode_IntroClosePressed'));
+   const probe=result.approvedIntroProbe={
+    approved_from:'previous-five-game-screenshot',path:approvedPath,
+    matches:matches.length,clicked:false,transitionVerified:false
+   };
+   if(matches.length===1){
+    const hit=chooseHitPoint(matches[0],fresh.controls||[]);
+    if(hit){
+     const box=await (await frame.frameElement()).boundingBox();
+     const vp=await frame.evaluate(()=>({width:innerWidth,height:innerHeight}));
+     const point=box?{x:box.x+hit.x*box.width/vp.width,
+      y:box.y+hit.y*box.height/vp.height}:null;
+     if(point&&point.x>=box.x&&point.y>=box.y&&point.x<=box.x+box.width&&point.y<=box.y+box.height){
+      const tClick=clock();
+      await page.mouse.click(point.x,point.y);
+      t('approved_second_pass_intro_click',tClick);
+      probe.clicked=true;
+      const tWait=clock();
+      const transitioned=await gate(['BASE_CONTROLS'],15000);
+      t('approved_second_pass_intro_transition_wait',tWait);
+      probe.transitionVerified=transitioned.status==='STABLE'&&transitioned.kind==='BASE_CONTROLS';
+      probe.afterKind=transitioned.kind;probe.waitStatus=transitioned.status;
+      probe.controlsAfter=(transitioned.scan?.controls||[]).length;
+      const img=path.join(output,String(index+1).padStart(2,'0')+'-'+slug+'-after-approved-intro.jpg');
+      const tImage=clock();
+      if(transitioned.scan)await captureIfChanged(page,img,transitioned.scan,{force:true});
+      t('approved_second_pass_intro_capture',tImage);
+     }else probe.reason='PROJECTED_HIT_NOT_VISIBLE';
+    }else probe.reason='AMBIGUOUS_HIT_POINT';
+   }else probe.reason='CONTROL_NOT_UNIQUE_OR_NOT_INTRO';
+  }
   // This ONE selected control was approved after reviewing the prior Candy Rush
   // screenshot + extracted path. No purchase, spin or unknown menu is selected.
   if(slug==='candy-rush'){
