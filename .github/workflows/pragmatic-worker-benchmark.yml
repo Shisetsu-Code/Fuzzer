@@ -40,7 +40,7 @@ jobs:
         with:
           node-version: "22"
       - name: Install Playwright library once
-        run: npm install --no-save --ignore-scripts playwright@1.56.1
+        run: npm install --no-save --ignore-scripts playwright@1.56.1 pngjs@7.0.0
       - name: Install Chromium once
         run: npx playwright install --with-deps chromium
       - name: Benchmark DEMOs in one Chromium process
