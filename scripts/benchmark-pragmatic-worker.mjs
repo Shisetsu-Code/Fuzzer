@@ -57,8 +57,14 @@ async function runGame(gameUrl,index){
    locale:'en-US',acceptDownloads:false,serviceWorkers:'block'});
   page=await context.newPage();
   t('new_isolated_context_and_page',x);
+  result.traffic.protocolActions=[];
   page.on('response',res=>{
    result.traffic.responses++;
+   if(/\/gameService(?:\?|$)/.test(res.url())){
+    const params=new URLSearchParams(res.request().postData()||'');
+    result.traffic.protocolActions.push({action:params.get('action'),pur:params.get('pur'),
+     bl:params.get('bl'),status:res.status()});
+   }
    if(res.status()>=400&&res.status()<500)result.traffic.status_4xx++;
    if(res.status()>=500)result.traffic.status_5xx++;
    if(/\/gameService(?:\?|$)/.test(res.url()))result.gameRequests++;
@@ -261,6 +267,43 @@ async function runGame(gameUrl,index){
          await page.screenshot({path:menuPhoto,type:'jpeg',quality:60,timeout:15000});
          t('approved_buy_menu_screenshot',photoStart);
          result.artifacts.push(path.basename(menuPhoto));
+         // One strictly assistant-approved DEMO purchase candidate, selected
+         // from the photographed menu: Free Spins for $200 at base bet $2.
+         const firstOption=(menuScan.controls||[]).filter(c=>c.hit_rect&&
+          /\/PurchaseWindow\/content\/Options\/Option1\//.test(c.path||'')&&
+          /FREE SPINS/i.test((c.labels||[]).join(' '))&&
+          /\$200\.00/.test((c.labels||[]).join(' ')));
+         result.approvedPurchaseProbe={
+          reason:'Assistant selected Free Spins $200 from the actual Candy Rush screenshot',
+          candidates:firstOption.length,clicked:false,serverConfirmed:false};
+         if(firstOption.length===1){
+          const control=firstOption[0],target=chooseHitPoint(control,menuScan.controls||[]);
+          if(target){
+           const frameRect=await (await frame.frameElement()).boundingBox();
+           const v=await frame.evaluate(()=>({width:innerWidth,height:innerHeight}));
+           const pt=frameRect?{x:frameRect.x+target.x*frameRect.width/v.width,
+            y:frameRect.y+target.y*frameRect.height/v.height}:null;
+           if(pt&&pt.x>=frameRect.x&&pt.y>=frameRect.y&&pt.x<=frameRect.x+frameRect.width&&pt.y<=frameRect.y+frameRect.height){
+            const clickTime=clock(),oldProtocol=result.traffic.protocolActions.length;
+            await page.mouse.click(pt.x,pt.y);
+            t('approved_demo_purchase_option_click',clickTime);
+            result.approvedPurchaseProbe.clicked=true;
+            const transitionTime=clock();
+            await delay(2200);
+            t('approved_purchase_transition_wait',transitionTime);
+            result.approvedPurchaseProbe.newProtocolResponses=result.traffic.protocolActions.slice(oldProtocol);
+            result.approvedPurchaseProbe.serverConfirmed=result.approvedPurchaseProbe.newProtocolResponses
+             .some(p=>p.action==='doSpin'&&p.pur!==null&&p.status===200);
+            const follow=await frame.evaluate(inspectDrawnButtons);
+            result.approvedPurchaseProbe.candidatesAfter=filterKnownControls(follow.controls||[]).keep
+             .map(c=>({path:c.path,labels:c.labels||[]})).slice(0,20);
+            const purchasedPhoto=path.join(output,String(index+1).padStart(2,'0')+'-'+slug+'-after-purchase-option.jpg');
+            const shot=clock();await page.screenshot({path:purchasedPhoto,type:'jpeg',quality:60,timeout:15000});
+            t('approved_purchase_outcome_screenshot',shot);
+            result.artifacts.push(path.basename(purchasedPhoto));
+           }
+          }else result.approvedPurchaseProbe.reason='AMBIGUOUS_PURCHASE_HIT_POINT';
+         }else result.approvedPurchaseProbe.reason='PURCHASE_OPTION_NOT_UNIQUELY_IDENTIFIED';
         }
        }else result.approvedMenuProbe.reason='AMBIGUOUS_MENU_HIT_AREA';
       }else result.approvedMenuProbe.reason='MENU_ENTRY_NOT_UNIQUELY_IDENTIFIED';
