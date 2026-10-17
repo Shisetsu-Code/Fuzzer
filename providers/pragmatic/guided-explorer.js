@@ -55,13 +55,13 @@ export function createGuidedExplorer(adapter,{maxSessions=4,wait,readEvidence=as
   if(!started||closed)throw Error('GUIDED_SESSION_NOT_ACTIVE');
   if(busy)throw Error('GUIDED_SESSION_BUSY');
   busy=true;
-  try{return await snapshotView(await adapter.snapshot());}
+  try{return await snapshotView(await adapter.snapshot({forceCapture:true}));}
   finally{busy=false;}
  }
  async function start(){
   if(started||closed)throw Error('GUIDED_ALREADY_STARTED');
   busy=true;
-  try{await adapter.reset();sessions++;started=true;return await snapshotView(await adapter.snapshot());}
+  try{await adapter.reset();sessions++;started=true;return await snapshotView(await adapter.snapshot({forceCapture:true}));}
   finally{busy=false;}
  }
  async function act({token,action_id}){
@@ -72,7 +72,7 @@ export function createGuidedExplorer(adapter,{maxSessions=4,wait,readEvidence=as
   if(!chosen)return {status:'INVALID_DECISION',reason:'Action not present in this observation; nothing clicked'};
   busy=true;
   try{
-   const before=await adapter.snapshot();
+   const before=await adapter.snapshot({forceCapture:true});
    if(before.key!==current.key||(before.operation?.sequence||0)!==(current.operation?.sequence||0)){
     return {status:'STATE_CHANGED',reason:'State changed since the decision; nothing clicked',view:await snapshotView(before)};
    }
@@ -100,7 +100,7 @@ export function createGuidedExplorer(adapter,{maxSessions=4,wait,readEvidence=as
    // IMPORTANT: disallow waitTransition's implicit center click and disallow
    // finishOperation's unapproved choice selection/normal spins.
    const outcome=await wait({...adapter,clickCenter:undefined},before);
-   const next=outcome.snapshot||await adapter.snapshot();
+   const next=outcome.snapshot||await adapter.snapshot({forceCapture:true});
    await record({action:chosen.kind,action_id:chosen.action_id,path:chosen.key||null,
     from:before.key,to:next.key,reason:outcome.reason,
     operationStart:(next.operation?.sequence||0)>(before.operation?.sequence||0),
@@ -120,7 +120,7 @@ export function createGuidedExplorer(adapter,{maxSessions=4,wait,readEvidence=as
   try{
    skipped.add(current.key+'|'+c.key+'|'+c.fingerprint);
    await record({action:'skip',path:c.key,at:new Date().toISOString()});
-   return {status:'SKIPPED_WITHOUT_CLICK',view:await snapshotView(await adapter.snapshot())};
+   return {status:'SKIPPED_WITHOUT_CLICK',view:await snapshotView(await adapter.snapshot({forceCapture:true}))};
   }finally{busy=false;}
  }
  async function reset(){
@@ -128,7 +128,7 @@ export function createGuidedExplorer(adapter,{maxSessions=4,wait,readEvidence=as
   if(sessions>=maxSessions)return {status:'SESSION_LIMIT',sessions_used:sessions};
   busy=true;
   try{await adapter.reset();sessions++;skipped.clear();await record({action:'reset',at:new Date().toISOString()});
-   return {status:'RESET',view:await snapshotView(await adapter.snapshot())};
+   return {status:'RESET',view:await snapshotView(await adapter.snapshot({forceCapture:true}))};
   }finally{busy=false;}
  }
  async function close(){
