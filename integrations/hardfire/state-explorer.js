@@ -10,7 +10,7 @@ export function createStateExplorerAdapter(controller,{gameUrl,artifactDir}={}){
  let session,lastEvidence,lastKey,lastCapture=0,rootSurface=null,rootConfiguration=null,lastActionAt=0;const savedHars=[];
  const close=async()=>{if(!session)return;const owned=session;session=null;await owned.close();if(owned.har?.path)savedHars.push(owned.har.path);};
  const adapter={now:()=>Date.now(),sleep:ms=>new Promise(r=>setTimeout(r,ms)),reset:async()=>{await close();session=await createHardFireSession(controller,{gameUrl,artifactDir,entryOnly:true});lastKey=null;rootSurface=null;rootConfiguration=null;await controller.tabs.activate(session.tabId);},
- snapshot:async()=>withSurfaceLock(async()=>{await ensurePainted(controller,session.tabId);const raw=await session.frame.evaluate(inspectDrawnButtons);const controls=filterKnownControls(raw.controls||[]).keep.filter(b=>b.hit_rect).map(b=>({...b,key:b.path,
+ snapshot:async({forceCapture=false}={})=>withSurfaceLock(async()=>{await ensurePainted(controller,session.tabId);const raw=await session.frame.evaluate(inspectDrawnButtons);const controls=filterKnownControls(raw.controls||[]).keep.filter(b=>b.hit_rect).map(b=>({...b,key:b.path,
  fingerprint:createHash('sha256').update(JSON.stringify({name:b.name,events:(b.handlers||[]).map(h=>h.event).filter(Boolean).sort(),sprites:[...(b.sprite_names||[])].sort()})).digest('hex').slice(0,20)}));const state=await session.provider.protocolState(session.frame);const flags={stages:state?.stages?.map(s=>s.name).sort(),logicIsFreeSpin:state?.logicIsFreeSpin,respinInProgress:state?.respinInProgress,spinBlockingFeatureIsRunning:state?.spinBlockingFeatureIsRunning,canSpin:state?.canSpin,stopActive:state?.stopActive,lastWinIsCounting:state?.lastWinIsCounting,waitInResultForBigWin:state?.waitInResultForBigWin};
  const wallet=await session.frame.evaluate(readRuntimeBalance);const entries=await session.entries();
  if(wallet.balance===null||wallet.balance===0){for(const entry of [...entries].reverse()){const content=entry.response?.content;if(!content?.text||content.encoding==='base64')continue;const fields=new URLSearchParams(content.text);const value=fields.get('balance');if(value!==null&&value.trim()!==''&&parseProtocolMoney(value)!==null){wallet.balance=parseProtocolMoney(value);wallet.balanceSource='server:balance';break;}}}
@@ -20,7 +20,7 @@ export function createStateExplorerAdapter(controller,{gameUrl,artifactDir}={}){
  if(rootSurface===null){rootSurface=surface;rootConfiguration=configuration;}
  wager.probeReady=configuration!==rootConfiguration&&baseSurfaceMatches(rootSurface,surface)&&!wager.menuOpen&&!state?.logicIsFreeSpin&&!state?.respinInProgress&&!state?.spinBlockingFeatureIsRunning;
  const key=createHash('sha256').update(JSON.stringify({configuration,flags})).digest('hex').slice(0,20);
- if(key!==lastKey||Date.now()-lastCapture>10000){lastEvidence=await captureDrawnButtons(controller,session.tabId,artifactDir);lastKey=key;lastCapture=Date.now();}
+ if(forceCapture||key!==lastKey||Date.now()-lastCapture>10000){lastEvidence=await captureDrawnButtons(controller,session.tabId,artifactDir);lastKey=key;lastCapture=Date.now();}
  // Every captured HTTP exchange is activity; no provider endpoint/action labels select clicks.
  const network=controller.withTab(session.tabId).networkEvents();
  const traffic=JSON.stringify(network);
