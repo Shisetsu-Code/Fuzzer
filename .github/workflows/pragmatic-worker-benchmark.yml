@@ -32,6 +32,7 @@ jobs:
       PARALLEL: ${{ inputs.parallel || '2' }}
       GAME_URLS: ${{ inputs.game_urls || '' }}
       GAME_TIMEOUT_MS: "85000"
+      DEMO_E2E: "1"
       BENCHMARK_OUTPUT: outputs/github-playwright-benchmark
     steps:
       - uses: actions/checkout@v4
@@ -50,7 +51,7 @@ jobs:
         run: |
           if [ -f outputs/github-playwright-benchmark/summary.json ]; then
             echo '## Real Pragmatic DEMO smoke benchmark' >> "$GITHUB_STEP_SUMMARY"
-            echo 'One Chromium process, isolated game contexts, purchases ONLY from previously reviewed fixture plan.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'One Chromium process, isolated DEMO contexts, bounded guided-control E2E attempts. Missing completion evidence remains PARTIAL.' >> "$GITHUB_STEP_SUMMARY"
             echo '~~~json' >> "$GITHUB_STEP_SUMMARY"
             cat outputs/github-playwright-benchmark/summary.json >> "$GITHUB_STEP_SUMMARY"
             echo '~~~' >> "$GITHUB_STEP_SUMMARY"
