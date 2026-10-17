@@ -78,7 +78,9 @@ export function createGuidedExplorer(adapter,{maxSessions=4,wait,readEvidence=as
   if(!chosen)return {status:'INVALID_DECISION',reason:'Action not present in this observation; nothing clicked'};
   busy=true;
   try{
-   const before=await adapter.snapshot({forceCapture:true});
+   // Fresh runtime values, but avoid an identical JPEG before every click:
+   // adapter.click() rescans the button and validates its current fingerprint.
+   const before=await adapter.snapshot();
    if(before.key!==current.key||(before.operation?.sequence||0)!==(current.operation?.sequence||0)){
     return {status:'STATE_CHANGED',reason:'State changed since the decision; nothing clicked',view:await snapshotView(before)};
    }
@@ -132,7 +134,7 @@ export function createGuidedExplorer(adapter,{maxSessions=4,wait,readEvidence=as
   try{
    skipped.add(current.key+'|'+c.key+'|'+c.fingerprint);
    await record({action:'skip',path:c.key,at:new Date().toISOString()});
-   return {status:'SKIPPED_WITHOUT_CLICK',view:await snapshotView(await adapter.snapshot({forceCapture:true}))};
+   return {status:'SKIPPED_WITHOUT_CLICK',view:await snapshotView(await adapter.snapshot())};
   }finally{busy=false;}
  }
  async function reset(){
