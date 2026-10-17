@@ -14,11 +14,14 @@ import {controlPriority} from '../providers/pragmatic/batch-explorer.js';
 import {chooseHitPoint} from '../providers/pragmatic/hit-point.js';
 import {waitForStableState,classifyDrawnState,stateSignature} from '../providers/pragmatic/readiness.js';
 
+// Five DIFFERENT real games, deliberately excluding the four previous benchmark fixtures.
+// Alternate 2..30 DEMO URLs may be supplied by workflow_dispatch GAME_URLS.
 const defaultUrls=[
- 'https://www.pragmaticplay.fun/en/slots/death-dominion/',
- 'https://www.pragmaticplay.fun/en/slots/coven-rising/',
- 'https://www.pragmaticplay.fun/en/slots/candy-rush/',
- 'https://www.pragmaticplay.fun/en/slots/alien-invaders/'
+ 'https://www.pragmaticplay.fun/en/slots/5-lions-reborn/',
+ 'https://www.pragmaticplay.fun/en/slots/big-bass-amazon-xtreme/',
+ 'https://www.pragmaticplay.fun/en/slots/helios-triple-sun/',
+ 'https://www.pragmaticplay.fun/en/slots/gates-of-olympus-2500/',
+ 'https://www.pragmaticplay.fun/en/slots/jungle-gorilla/'
 ];
 const allUrls=(process.env.GAME_URLS||'').trim()
  ?JSON.parse(process.env.GAME_URLS):defaultUrls;
