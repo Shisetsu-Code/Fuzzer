@@ -14,6 +14,11 @@ export function classifyDrawnState(scan){
   return 'INTRO';
  if(paths.some(p=>/\/GameFeatures\/|\/FeaturePurchase\/|\/AnteBet\//i.test(p)))
   return 'BASE_CONTROLS';
+ // Several Pragmatic families (e.g. Jungle Gorilla) have no BuyFeature /
+ // AnteBet runtime collider on the base screen. Use the live ordinary-spin
+ // handler ONLY when its drawn collider is present and no intro/menu active.
+ if(items.some(c=>(c.handlers||[]).some(h=>h.event==='Evt_DataToCode_Pressed_Spin')))
+  return 'BASE_CONTROLS';
  return 'UNKNOWN';
 }
 export function stateSignature(scan){
