@@ -132,12 +132,13 @@ export function createForkTree({makeSession,wait,onProgress=async()=>{},
     const control=(current.controls||[]).filter(c=>c.key===step.key&&
       (!step.fingerprint||c.fingerprint===step.fingerprint));
     if(control.length!==1)throw Error('REPLAY_CONTROL_MISSING_OR_CHANGED');
+    const previous=current;
     await sess.click(control[0]);
-    const settled=await settle(sess,current);
+    const settled=await settle(sess,previous);
     current=settled.snapshot;
     trace.push({from:step.from,action:step.key,to:current.key});
     if(current.key!==step.to)throw Error('REPLAY_ROUTE_DIVERGED');
-    if(sess.operationStarted?.({operation:{sequence:0}},current)){
+    if(sess.operationStarted?.(previous,current)){
      // Replay paths must be menu-only; never replay a purchased RNG.
      throw Error('REPLAY_OPERATION_NOT_DETERMINISTIC');
     }
@@ -197,8 +198,8 @@ export function createForkTree({makeSession,wait,onProgress=async()=>{},
     }
    }
    await Promise.all(Array.from({length:Math.min(maxParallel,items.length)},worker));
-   return result();
   }finally{running=false;await report();}
+  return result();
  }
  async function shutdown(){
   if(running)throw Error('TREE_RUNNING');
