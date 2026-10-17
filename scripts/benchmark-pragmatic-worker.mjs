@@ -410,7 +410,7 @@ async function runGame(gameUrl,index){
     let stableBase=0,lastSignature=null,probeCount=0;
     // Preapproved by the previous Helios/Gates screenshots showing
     // PRESS ANYWHERE TO CONTINUE. Limited to these public DEMOs.
-    let lastCenterAt=clock()-7000,centerClicks=0,lastNetworkAt=clock();
+    let lastCenterAt=clock()-7000,centerClicks=0,lastNetworkAt=clock(),selectedInitialBonusChoice=false;
     let previousProtocolCount=result.traffic.protocolActions.length;
     while(clock()<returnDeadline){
      probeCount++;
@@ -434,13 +434,33 @@ async function runGame(gameUrl,index){
        {probeCount,kind,live});await snap('returned-base',detected,true);break;}
      const hasPicker=(detected.controls||[]).some(c=>c.hit_rect&&
       /(?:Pick|Choice|Selection)Window\/|\/PickButtons\//i.test(c.path||''));
+     // Screenshots from the preceding run explicitly show the following
+     // FIRST feature choice. These are one-time model-selected DEMO coordinates;
+     // never extrapolate them to a different game or a second choice.
+     if(!selectedInitialBonusChoice&&probeCount>=4&&
+        ['5-lions-reborn','big-bass-amazon-xtreme'].includes(slug)){
+      const approved=slug==='5-lions-reborn'?{x:316,y:416,
+       label:'20 FREE SPINS / 2X (leftmost of 7)'}:{x:293,y:520,
+       label:'leftmost large pot on PICK A POT overlay'};
+      const view=page.viewportSize();
+      if(view?.width===1280&&view?.height===720){
+       const prior=result.traffic.protocolActions.length;
+       await page.mouse.click(approved.x,approved.y);
+       selectedInitialBonusChoice=true;lastCenterAt=clock();
+       recordStep('MODEL_APPROVED_FIRST_BONUS_CHOICE',{
+        game:slug,label:approved.label,point:approved,
+        priorProtocolCount:prior});
+      }
+     }
      if(['helios-triple-sun','gates-of-olympus-2500'].includes(slug)&&
        centerClicks<16&&!hasPicker&&
-       live?.canSpin!==true&&clock()-lastCenterAt>=6500&&
+       (live?.canSpin!==true||live?.freeSpins===true)&&clock()-lastCenterAt>=6500&&
        clock()-lastNetworkAt>=2200){
       const rect=await (await frame.frameElement()).boundingBox();
       if(rect){
-       await page.mouse.click(rect.x+rect.width/2,rect.y+rect.height/2);
+       // The observed "PRESS ANYWHERE TO CONTINUE" text lies near the
+       // bottom of the provider frame, not at the center of the prize panel.
+       await page.mouse.click(rect.x+rect.width/2,rect.y+rect.height*.8);
        centerClicks++;lastCenterAt=clock();
        recordStep('APPROVED_PRESS_ANYWHERE_CONTINUE',{
         centerClicks,reason:'Previously reviewed bonus intro/continuation overlay',
