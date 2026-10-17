@@ -229,6 +229,41 @@ async function runGame(gameUrl,index){
       await page.screenshot({path:afterPath,type:'jpeg',quality:60,timeout:15000});
       t('approved_intro_after_screenshot',screenAt);
       result.artifacts.push(path.basename(afterPath));
+      // Approved next step from the photographed base: OPEN THE BUY FEATURE MENU
+      // only. Explicitly forbid a price/confirmation button or any purchase.
+      const menus=(scanNext.controls||[]).filter(c=>
+       c.hit_rect&&/FeaturePurchase|BuyFeature/i.test(c.path||'')&&
+       /BUY\s*FEATURE/i.test((c.labels||[]).join(' '))&&
+       /OPTIONS/i.test((c.labels||[]).join(' ')));
+      result.approvedMenuProbe={reason:'Assistant selected visible Buy Feature 3 Options entry from Candy Rush base screenshot',
+       candidateCount:menus.length,opened:false};
+      if(menus.length===1){
+       const entry=menus[0],hit2=chooseHitPoint(entry,scanNext.controls||[]);
+       if(hit2){
+        const iframeRect=await (await frame.frameElement()).boundingBox();
+        const vp=await frame.evaluate(()=>({width:innerWidth,height:innerHeight}));
+        const p2=iframeRect?{x:iframeRect.x+hit2.x*iframeRect.width/vp.width,
+         y:iframeRect.y+hit2.y*iframeRect.height/vp.height}:null;
+        if(p2&&p2.x>=iframeRect.x&&p2.y>=iframeRect.y&&p2.x<=iframeRect.x+iframeRect.width&&p2.y<=iframeRect.y+iframeRect.height){
+         const clickStart=clock(),beforeRes=result.traffic.responses;
+         await page.mouse.click(p2.x,p2.y);
+         t('approved_buy_menu_open_click',clickStart);
+         result.approvedMenuProbe.opened=true;
+         result.approvedMenuProbe.path=entry.path;
+         const settle2=clock();await delay(950);t('approved_menu_animation_wait',settle2);
+         const menuScan=await frame.evaluate(inspectDrawnButtons);
+         result.approvedMenuProbe.responsesAfterClick=result.traffic.responses-beforeRes;
+         result.approvedMenuProbe.buttonsAfter=menuScan.controls?.length||0;
+         result.approvedMenuProbe.candidatesAfter=filterKnownControls(menuScan.controls||[]).keep
+          .map(c=>({name:c.name,path:c.path,labels:c.labels||[]})).slice(0,20);
+         const menuPhoto=path.join(output,String(index+1).padStart(2,'0')+'-'+slug+'-buy-menu.jpg');
+         const photoStart=clock();
+         await page.screenshot({path:menuPhoto,type:'jpeg',quality:60,timeout:15000});
+         t('approved_buy_menu_screenshot',photoStart);
+         result.artifacts.push(path.basename(menuPhoto));
+        }
+       }else result.approvedMenuProbe.reason='AMBIGUOUS_MENU_HIT_AREA';
+      }else result.approvedMenuProbe.reason='MENU_ENTRY_NOT_UNIQUELY_IDENTIFIED';
      }
     }else result.approvedProbe.reason='AMBIGUOUS_HIT_POINT';
    }else result.approvedProbe.reason='CONTROL_IDENTITY_NOT_UNIQUE_OR_ABSENT';
