@@ -73,9 +73,9 @@ test('unresolved drawings prevent a false clean coverage result',async()=>{
  const r=await explorePurchaseBatch(a,{wait:transition});
  assert.equal(r.status,'PARTIAL');assert.equal(r.pending[0].reason,'UNRESOLVED_DRAWING');
 });
-test('control priority is conservative for generic UI and prefers buy over dismiss',()=>{
+test('control priority is conservative for generic UI and prefers buy over dismiss',async()=>{
  assert(controlPriority(c('x','Buy Feature'))>controlPriority(c('y','Open Options')));
  assert.equal(controlPriority(c('x','Cancel')),-1);
  assert.equal(controlPriority(c('z','Volume Button')),0);
- assert.throws(()=>explorePurchaseBatch({},{maxSessions:5,wait:transition}),/maxSessions/);
+ await assert.rejects(()=>explorePurchaseBatch({},{maxSessions:5,wait:transition}),/maxSessions/);
 });
