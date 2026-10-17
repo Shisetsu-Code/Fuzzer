@@ -89,3 +89,19 @@ test('continue center is offered as visually-gated action and never auto-fired o
  const result=await g.act({token:v.token,action_id:'continue_center'});
  assert.equal(result.status,'DECISION_EXECUTED');assert.equal(d.metrics().center,1);
 });
+
+test('provider continuation and model rationale only run after explicit selection',async()=>{
+ const d=demo(),events=[];
+ const orig=d.a.snapshot;
+ d.a.snapshot=async arg=>{const s=await orig(arg);return {...s,
+  operation:{...s.operation,protocolComplete:s.key==='bonus'}};};
+ d.a.advance=async()=>{d.setState('root');return {ok:true,kind:'provider-continue'};};
+ const g=createGuidedExplorer(d.a,{wait,onRecord:async r=>events.push(r.history.at(-1))});
+ await g.start();d.setState('bonus');
+ const v=await g.observe();assert(v.actions.some(a=>a.action_id==='advance_protocol'));
+ assert.equal(events.length,0);
+ const result=await g.act({token:v.token,action_id:'advance_protocol',reason:'Provider completion pending; selected controlled continue'});
+ assert.equal(result.status,'DECISION_EXECUTED');
+ assert.equal(events[0].decision_reason,'Provider completion pending; selected controlled continue');
+ assert.deepEqual(d.metrics().clicks,[]);
+});
