@@ -270,6 +270,8 @@ async function runGame(gameUrl,index){
       probe.transitionVerified=transitioned.status==='STABLE'&&transitioned.kind==='BASE_CONTROLS';
       probe.afterKind=transitioned.kind;probe.waitStatus=transitioned.status;
       probe.controlsAfter=(transitioned.scan?.controls||[]).length;
+      probe.visibleControlsAfter=(transitioned.scan?.controls||[]).filter(c=>c.hit_rect)
+       .map(c=>({name:c.name,path:c.path,events:(c.handlers||[]).map(h=>h.event).filter(Boolean)})).slice(0,25);
       const img=path.join(output,String(index+1).padStart(2,'0')+'-'+slug+'-after-approved-intro.jpg');
       const tImage=clock();
       if(transitioned.scan)await captureIfChanged(page,img,transitioned.scan,{force:true});
