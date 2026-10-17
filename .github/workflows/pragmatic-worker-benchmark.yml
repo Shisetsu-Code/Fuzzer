@@ -7,6 +7,18 @@ on:
       - scripts/benchmark-pragmatic-worker.mjs
       - .github/workflows/pragmatic-worker-benchmark.yml
   workflow_dispatch:
+    inputs:
+      game_urls:
+        description: "JSON array of 2 to 30 official DEMO URLs; blank uses the four regression games"
+        type: string
+        required: false
+        default: ""
+      parallel:
+        description: "Concurrent isolated contexts (1 or 2)"
+        type: choice
+        options: ["1", "2"]
+        required: false
+        default: "2"
 permissions:
   contents: read
 concurrency:
@@ -17,7 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 16
     env:
-      PARALLEL: "2"
+      PARALLEL: ${{ inputs.parallel || '2' }}
+      GAME_URLS: ${{ inputs.game_urls || '' }}
       GAME_TIMEOUT_MS: "85000"
       BENCHMARK_OUTPUT: outputs/github-playwright-benchmark
     steps:
@@ -29,16 +42,15 @@ jobs:
         run: npm install --no-save --ignore-scripts playwright@1.56.1
       - name: Install Chromium once
         run: npx playwright install --with-deps chromium
-      - name: Test four official DEMOs in one Chromium process
+      - name: Benchmark DEMOs in one Chromium process
         id: bench
-        continue-on-error: true
         run: node scripts/benchmark-pragmatic-worker.mjs
       - name: Write benchmark summary
         if: always()
         run: |
           if [ -f outputs/github-playwright-benchmark/summary.json ]; then
             echo '## Real Pragmatic DEMO smoke benchmark' >> "$GITHUB_STEP_SUMMARY"
-            echo 'One Chromium process, four isolated game contexts; no automated purchases.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'One Chromium process, isolated game contexts, purchases ONLY from previously reviewed fixture plan.' >> "$GITHUB_STEP_SUMMARY"
             echo '~~~json' >> "$GITHUB_STEP_SUMMARY"
             cat outputs/github-playwright-benchmark/summary.json >> "$GITHUB_STEP_SUMMARY"
             echo '~~~' >> "$GITHUB_STEP_SUMMARY"
