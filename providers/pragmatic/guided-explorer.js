@@ -39,7 +39,7 @@ export function createGuidedExplorer(adapter,{maxSessions=4,wait,readEvidence=as
     priority:10,requiresDecision:true});
   }
   // No automatic center clicks: only the model may request this with visual evidence.
-  if(!f.canSpin&&!(s.choices||[]).length){
+  if(!(s.choices||[]).length){
    actions.push({action_id:'continue_center',kind:'continue',label:'Center of DEMO frame: verify overlay visually first',
     priority:-100,requiresDecision:true,risk:'UNVERIFIED_OVERLAY'});
   }
@@ -92,8 +92,8 @@ export function createGuidedExplorer(adapter,{maxSessions=4,wait,readEvidence=as
     result=await adapter.spinNormal(before);
     if(result?.ok!==true)throw Error('NORMAL_SPIN_UNAVAILABLE');
    }else if(chosen.kind==='continue'){
-    if(before.choices?.length||before.flags?.canSpin===true)
-     return {status:'CONTINUE_UNAVAILABLE',reason:'A picker or normal spin is available; nothing clicked',view:await snapshotView(before)};
+    if(before.choices?.length)
+     return {status:'CONTINUE_UNAVAILABLE',reason:'A feature picker is available; nothing clicked',view:await snapshotView(before)};
     result=await adapter.clickCenter(before);
     if(result?.ok!==true)throw Error('CONTINUE_FAILED');
    }else throw Error('UNSUPPORTED_ACTION');
