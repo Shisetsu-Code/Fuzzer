@@ -242,8 +242,10 @@ async function runGame(gameUrl,index){
       await page.mouse.click(point.x,point.y);
       t('approved_intro_click',begin);
       result.approvedProbe.clicked=true;result.approvedProbe.pagePoint=point;
-      const settle=clock();await delay(1800);t('approved_intro_transition_wait',settle);
-      const scanNext=await frame.evaluate(inspectDrawnButtons);
+      const settle=clock(),introNext=await gate(['BASE_CONTROLS'],9000);
+      t('approved_intro_transition_wait',settle);
+      if(introNext.status!=='STABLE')throw Error('INTRO_NOT_FINISHED: '+introNext.kind);
+      const scanNext=introNext.scan;
       result.approvedProbe.controlsAfter=scanNext.controls?.length||0;
       result.approvedProbe.keptAfter=filterKnownControls(scanNext.controls||[]).keep.length;
       result.approvedProbe.responsesAfterClick=result.traffic.responses-beforeNetwork;
@@ -273,8 +275,10 @@ async function runGame(gameUrl,index){
          t('approved_buy_menu_open_click',clickStart);
          result.approvedMenuProbe.opened=true;
          result.approvedMenuProbe.path=entry.path;
-         const settle2=clock();await delay(950);t('approved_menu_animation_wait',settle2);
-         const menuScan=await frame.evaluate(inspectDrawnButtons);
+         const settle2=clock(),menuNext=await gate(['PURCHASE_OPTIONS'],7000);
+         t('approved_menu_animation_wait',settle2);
+         if(menuNext.status!=='STABLE')throw Error('PURCHASE_MENU_NOT_READY: '+menuNext.kind);
+         const menuScan=menuNext.scan;
          result.approvedMenuProbe.responsesAfterClick=result.traffic.responses-beforeRes;
          result.approvedMenuProbe.buttonsAfter=menuScan.controls?.length||0;
          result.approvedMenuProbe.candidatesAfter=filterKnownControls(menuScan.controls||[]).keep
@@ -305,13 +309,13 @@ async function runGame(gameUrl,index){
             await page.mouse.click(pt.x,pt.y);
             t('approved_demo_purchase_option_click',clickTime);
             result.approvedPurchaseProbe.clicked=true;
-            const transitionTime=clock();
-            await delay(2200);
+            const transitionTime=clock(),optionNext=await gate(['CONFIRM_PURCHASE'],7000);
             t('approved_purchase_transition_wait',transitionTime);
+            if(optionNext.status!=='STABLE')throw Error('CONFIRM_PURCHASE_NOT_READY: '+optionNext.kind);
             result.approvedPurchaseProbe.newProtocolResponses=result.traffic.protocolActions.slice(oldProtocol);
             result.approvedPurchaseProbe.serverConfirmed=result.approvedPurchaseProbe.newProtocolResponses
              .some(p=>p.action==='doSpin'&&p.pur!==null&&p.status===200);
-            const follow=await frame.evaluate(inspectDrawnButtons);
+            const follow=optionNext.scan;
             result.approvedPurchaseProbe.candidatesAfter=filterKnownControls(follow.controls||[]).keep
              .map(c=>({path:c.path,labels:c.labels||[]})).slice(0,20);
             const purchasedPhoto=path.join(output,String(index+1).padStart(2,'0')+'-'+slug+'-after-purchase-option.jpg');
