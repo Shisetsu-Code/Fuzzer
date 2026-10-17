@@ -3,6 +3,7 @@ import {createHardFireSession} from './session.js';import {captureDrawnButtons} 
 import {explorePurchaseBatch} from '../../providers/pragmatic/batch-explorer.js';
 import {consolidateHars} from './har-consolidation.js';
 import {chooseHitPoint} from '../../providers/pragmatic/hit-point.js';
+import {observedFingerprint,projectObservedHit} from './fast-hit.js';
 import {withSurfaceLock,ensurePainted} from './paint-guard.js';
 import {wagerEvidence,readRuntimeBalance,baseSurfaceMatches,parseProtocolMoney,classifySpinDebit} from '../../providers/pragmatic/wager-evidence.js';
 import {operationStateFromEntries,finishOperation,visibleOperationChoices} from '../../providers/pragmatic/operation-completion.js';
@@ -26,7 +27,28 @@ export function createStateExplorerAdapter(controller,{gameUrl,artifactDir}={}){
  const traffic=JSON.stringify(network);
  const choices=visibleOperationChoices(state?.pickerControls,raw.controls);
  return {key,controls,choices,operation:operationStateFromEntries(entries),unresolved:filterKnownControls(raw.unresolved||[]).keep,traffic,wager,evidence:{tab_id:session.tabId,capture_id:lastEvidence.capture_id,full_path:lastEvidence.full_path,artifact_dir:lastEvidence.artifact_dir},flags};}),
- click:async b=>withSurfaceLock(async()=>{await ensurePainted(controller,session.tabId);const fresh=await captureDrawnButtons(controller,session.tabId,artifactDir,{includeUniversal:true});const target=fresh.controls.find(c=>c.path===b.key&&(!b.fingerprint||c.fingerprint===b.fingerprint));if(!target?.center)throw Error('STALE_OR_CHANGED_CONTROL');const point=chooseHitPoint(target,fresh.controls);if(!point)throw Error('AMBIGUOUS_HIT_AREA');lastActionAt=Date.now();await controller.withTab(session.tabId).click(point.x,point.y);}),
+ click:async b=>withSurfaceLock(async()=>{
+  await ensurePainted(controller,session.tabId);
+  // Fresh scanner + collider fingerprint. The model has already received a
+  // screenshot; do not allocate more crops/JPEGs merely to perform this click.
+  const raw=await session.frame.evaluate(inspectDrawnButtons);
+  const targets=(raw.controls||[]).filter(c=>c.path===b.key&&c.hit_rect&&
+   (!b.fingerprint||observedFingerprint(c)===b.fingerprint));
+  if(targets.length!==1)throw Error('STALE_OR_AMBIGUOUS_CONTROL');
+  const hit=chooseHitPoint(targets[0],raw.controls||[]);
+  if(!hit)throw Error('AMBIGUOUS_HIT_AREA');
+  const placement=await controller.withTab(session.tabId)._wc().executeJavaScript(`(()=>{
+   const viewport={width:innerWidth,height:innerHeight};
+   if(location.hostname==='demogamesfree.pragmaticplay.net')return {viewport,frame:{x:0,y:0,...viewport}};
+   const f=[...document.querySelectorAll('iframe')].find(e=>e.src.startsWith('https://demogamesfree.pragmaticplay.net/'));
+   if(!f)return null;const r=f.getBoundingClientRect();
+   return {viewport,frame:{x:r.x+f.clientLeft,y:r.y+f.clientTop,width:f.clientWidth,height:f.clientHeight}};
+  })()`);
+  const point=projectObservedHit(hit,placement,raw.viewport);
+  if(!point)throw Error('HIT_OUTSIDE_VISIBLE_DEMO_FRAME');
+  lastActionAt=Date.now();
+  await controller.withTab(session.tabId).click(point.x,point.y);
+ }),
  clickCenter:async()=>withSurfaceLock(async()=>{await ensurePainted(controller,session.tabId);return session.clickContinue();}),
  operationStarted:(before,after)=>(after.operation?.sequence||0)>(before.operation?.sequence||0),
  finishOperation:async(before,after,options)=>{session.started=true;return finishOperation(adapter,before,after,options);},
