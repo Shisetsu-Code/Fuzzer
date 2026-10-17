@@ -7,6 +7,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {performance} from 'node:perf_hooks';
 import {chromium} from 'playwright';
+import {PNG} from 'pngjs';
+import {surfaceEdgeScore,detailedSurface} from '../providers/pragmatic/visual-surface.js';
 import {inspectDrawnButtons} from '../providers/pragmatic/drawn-buttons.js';
 import {filterKnownControls} from '../providers/pragmatic/known-controls.js';
 import {assertDemoUrl} from '../providers/pragmatic/session.js';
@@ -213,6 +215,37 @@ async function runGame(gameUrl,index){
   if(readiness.status!=='STABLE')throw Error('STATE_NOT_STABLE: '+readiness.kind+' blocked='+readiness.blocked);
   x=clock();
   scan=readiness.scan;
+  // A stable collider can exist behind a logo/progress splash. Sample only a
+  // small inner-left region of the rendered DEMO; loading gradients have ~0
+  // spatial detail while painted reels have substantial fine detail.
+  const visualDeadline=clock()+50000;
+  let visuallyReady=0,visualSampleCount=0,lastScore=0,visualError=null;
+  const visualStart=clock();
+  while(clock()<visualDeadline){
+   visualSampleCount++;
+   try{
+    const bounds=await (await frame.frameElement()).boundingBox();
+    const clip=bounds?{x:Math.max(0,Math.floor(bounds.x+bounds.width*.27)),
+     y:Math.max(0,Math.floor(bounds.y+bounds.height*.25)),
+     width:Math.max(32,Math.floor(bounds.width*.09)),
+     height:Math.max(32,Math.floor(bounds.height*.5))}:null;
+    if(clip){
+     const png=PNG.sync.read(await page.screenshot({type:'png',clip,timeout:7000}));
+     lastScore=surfaceEdgeScore(png);
+     visuallyReady=detailedSurface(lastScore)?visuallyReady+1:0;
+     if(visuallyReady>=2)break;
+    }
+   }catch(error){visualError=String(error.message||error).slice(0,120);visuallyReady=0;}
+   await delay(450);
+  }
+  t('rendered_surface_wait',visualStart);
+  result.visualGate={ready:visuallyReady>=2,samples:visualSampleCount,
+   lastEdgeScore:round(lastScore),threshold:5,error:visualError};
+  if(!result.visualGate.ready)throw Error('RENDERED_SPLASH_NOT_CLEARED');
+  // Re-read the live controls after rendering: the original splash-time scan
+  // can contain stale or hidden controls from the game behind the loader.
+  const visibleGate=await gate(null,9000);
+  if(visibleGate.status==='STABLE')scan=visibleGate.scan;
   const partition=filterKnownControls(scan.controls||[]);
   const targets=partition.keep.filter(c=>c.hit_rect);
   result.controls={
