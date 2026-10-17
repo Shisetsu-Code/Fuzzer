@@ -90,18 +90,13 @@ async function runGame(gameUrl,index){
   }
   t('cookie_consent_rejection',x);
   x=clock();
-  ageHandled=await safeClick(page.getByText('Yes, I am 18 years or older',{exact:true}));
-  if(!ageHandled)ageHandled=await safeClick(page.getByRole('link',{name:/Yes, I am 18 years/i}));
-  if(!ageHandled)ageHandled=await safeClick(page.locator('[data-age-gate-confirm]'));
-  // Catalog age confirmation is a known, explicit non-game control. Use DOM
-  // click only if pointer click is blocked by a decorative/consent overlay.
-  // This fallback is NEVER used on a game canvas or a purchase button.
-  if(!ageHandled){
-   const age=page.locator('button[data-age-gate-confirm="true"]');
-   if(await age.count()){
-    ageHandled=await age.first().evaluate(button=>{button.click();return true;}).catch(()=>false);
-    result.catalogAgeDomFallback=ageHandled;
-   }
+  // The real-site benchmark established that pointer-based age clicks spend
+  // 10s on overlays. This explicit catalogue-only control has a fixed selector.
+  // NEVER use DOM click on the game canvas, purchases, or feature choices.
+  const age=page.locator('button[data-age-gate-confirm="true"]');
+  if(await age.count()){
+   ageHandled=await age.first().evaluate(button=>{button.click();return true;}).catch(()=>false);
+   result.catalogAgeDomFallback=ageHandled;
   }
   t('catalog_age_confirmation',x);
   result.catalog={cookieRejected,ageHandled,title:(await page.title().catch(()=>'' )).slice(0,120)};
@@ -162,6 +157,12 @@ async function runGame(gameUrl,index){
   }
   t('visible_button_wait',x);
   if(!result.uiObserved)throw Error('NO_OBSERVED_GAME_UI: '+lastReason);
+  // Runtime construction precedes visible gameplay: previous captures were
+  // still loading splashes. Never treat a collider as visual click approval.
+  // Time this deliberate safety delay separately from game/network load.
+  x=clock();
+  await delay(7000);
+  t('post_runtime_visual_safety_wait',x);
   x=clock();
   scan=await frame.evaluate(inspectDrawnButtons);
   const partition=filterKnownControls(scan.controls||[]);
@@ -175,11 +176,20 @@ async function runGame(gameUrl,index){
   };
   t('drawn_control_scan_and_filter',x);
   x=clock();
+  const protocol=await frame.evaluate(()=>{
+   const rt=globalThis.globalRuntime||{};
+   return {runtimePresent:!!globalThis.XT,sceneRootCount:(rt.sceneRoots||[]).length,
+    canSpin:typeof globalThis.Vars?.canSpin==='boolean'?globalThis.Vars.canSpin:null};
+  }).catch(()=>({runtimePresent:false}));
+  result.readiness={...protocol,visuallyConfirmed:false,
+   note:'Human review of final JPEG required; runtime colliders may be obscured by splash/overlays'};
+  t('readiness_flags_probe',x);
+  x=clock();
   const screenshotFile=path.join(output,String(index+1).padStart(2,'0')+'-'+slug+'.jpg');
   await page.screenshot({path:screenshotFile,type:'jpeg',quality:65,timeout:15000});
   t('full_screenshot_jpeg65',x);
   result.artifacts.push(path.basename(screenshotFile));
-  result.status='OBSERVED';
+  result.status='CONTROLS_EXTRACTED_VISUAL_UNVERIFIED';
   if(errors.length)result.errors.push(...errors);
  }catch(e){
   result.status='PARTIAL';
@@ -205,7 +215,7 @@ try{await Promise.all(Array.from({length:parallel},worker));}
 finally{const t=clock();await browser.close();globalStats.shutdownMs=round(clock()-t);}
 globalStats.wallMs=round(clock()-overallStart);
 globalStats.finished_at=nowIso();
-const ok=results.filter(r=>r?.status==='OBSERVED').length;
+const ok=results.filter(r=>r?.status==='CONTROLS_EXTRACTED_VISUAL_UNVERIFIED').length;
 const totals=results.map(r=>r.phases_ms.total).sort((a,b)=>a-b);
 const median=totals.length?(totals.length%2?totals[(totals.length-1)/2]:(totals[totals.length/2-1]+totals[totals.length/2])/2):null;
 const summary={...globalStats,observed:ok,partial:results.length-ok,median_game_ms:round(median||0),
