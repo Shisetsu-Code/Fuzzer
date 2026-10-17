@@ -4,7 +4,7 @@ import {randomUUID} from 'node:crypto';
 import {assertDemoUrl} from '../../providers/pragmatic/session.js';
 import {runStateExplorer} from './state-explorer.js';
 
-export function registerBatchTools({register,z,text,controller,artifactDir,activeJobs,jobs}){
+export function registerBatchTools({register,z,text,controller,artifactDir,activeJobs,jobs,runGame=runStateExplorer}){
  register('pragmatic_batch_start',
   'Process 1..600 official Pragmatic DEMO games. Purchase-first, at most 3-4 isolated sessions per game, sequential actions in each session; no real-money URLs. Returns job_id immediately.',
   {game_urls:z.array(z.string().url()).min(1).max(600),
@@ -31,7 +31,7 @@ export function registerBatchTools({register,z,text,controller,artifactDir,activ
      let record;
      try{
       await fs.mkdir(gameDir,{recursive:true});
-      const result=await runStateExplorer(controller,{gameUrl:url,artifactDir:gameDir,
+      const result=await runGame(controller,{gameUrl:url,artifactDir:gameDir,
        mode:'batch',maxSessions:args.sessions_per_game,
        maxActions:args.actions_per_game,maxDepth:args.depth,
        timeoutMs:args.timeout_ms_per_game,
