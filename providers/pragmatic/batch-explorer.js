@@ -7,7 +7,9 @@ export function controlPriority(control) {
  const text=[control.name,control.path,...(control.labels||[]),...(control.sprite_names||[]),
   ...(control.handlers||[]).flatMap(h=>[h.event,h.catEventPress,h.catEventClick])]
   .filter(Boolean).join(' ').toLowerCase();
- if (/cancel|close|back|exit|dismiss|decline|reject/.test(text)) return -1;
+ const basename=String(control.name||String(control.path||'').split('/').at(-1));
+ const dismiss=/^(cancel|close|back|exit|dismiss|decline|reject)(?:button|btn|menu|panel|[_-].*)?$/i;
+ if(dismiss.test(basename)||(control.labels||[]).some(label=>/^(cancel|close|back|exit|no|dismiss|decline|reject)$/i.test(String(label).trim())))return -1;
  if (/buy|purchase|compr|feature.?buy|bonus.?buy/.test(text)) return 100;
  if (/ante|super.?spin|feature|free.?spin|bonus|respin|booster/.test(text)) return 75;
  if (/confirm|accept|select|choice|pick|collect|continue|yes/.test(text)) return 55;
