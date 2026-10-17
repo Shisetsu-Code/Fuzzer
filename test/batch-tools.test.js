@@ -27,7 +27,7 @@ test('batch scheduler processes exactly 600 demos with max two workers and bound
  let result;
  for(let n=0;n<300;n++){
   result=await tools.get('pragmatic_batch_result')({job_id:started.job_id,offset:590,limit:20});
-  if(result.status!=='RUNNING')break;
+  if(['FINISHED','PARTIAL','ERROR'].includes(result.status))break;
   await new Promise(resolve=>setTimeout(resolve,20));
  }
  assert.equal(result.status,'FINISHED');
