@@ -76,8 +76,8 @@ export function registerGuidedTools({register,z,text,controller,artifactDir,acti
  register('pragmatic_guided_status','Read the last observation without issuing any click or rotating the token.',
  {job_id:z.string().uuid()},true,async args=>text(state(get(args.job_id))));
  register('pragmatic_guided_act','Execute exactly one chosen candidate from the latest token; blocks stale IDs and changed controls. No autonomous spins or bonus picks.',
- {job_id:z.string().uuid(),token:z.string(),action_id:z.string()},false,
- async args=>execute(args.job_id,j=>j.guide.act({token:args.token,action_id:args.action_id})));
+ {job_id:z.string().uuid(),token:z.string(),action_id:z.string(),reason:z.string().max(256).optional()},false,
+ async args=>execute(args.job_id,j=>j.guide.act({token:args.token,action_id:args.action_id,reason:args.reason})));
  register('pragmatic_guided_skip','Exclude one observed control without clicking. It remains documented as untested.',
  {job_id:z.string().uuid(),token:z.string(),action_id:z.string()},false,
  async args=>execute(args.job_id,j=>j.guide.skip({token:args.token,action_id:args.action_id})));
