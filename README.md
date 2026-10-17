@@ -2,6 +2,23 @@
 
 Scripts independientes por proveedor para ejecutar demos mediante el MCP local HardFire. No depende de Firetrace. La primera implementación corresponde a Pragmatic; otros proveedores no están implementados todavía.
 
+## Modo guiado por el asistente (recomendado cuando el automático se pierde)
+
+El fuzzer **solo observa y filtra** controles comunes; el asistente ve la captura con
+`hardfire_screenshot(tab_id)` y decide **cada clic**. Ya no se recorren de forma
+automática botones ambiguos, compras, pickers de bonus ni continuaciones. Cada
+decisión requiere un token del estado observado; un control cambiado cancela
+la acción. Permite un máximo de 3–4 sesiones aisladas por juego, sin tocar el
+juego con dinero real. Los comandos MCP son `pragmatic_guided_start`,
+`pragmatic_guided_observe`, `pragmatic_guided_act`,
+`pragmatic_guided_skip`, `pragmatic_guided_reset` y
+`pragmatic_guided_close`. Detalles: [modo guiado](docs/guided-mode.md).
+
+El modo batch automático anterior continúa disponible como alternativa,
+pero **no** comparte esta garantía de decisión visual por el asistente.
+Para procesar 600 juegos supervisados hace falta la conexión local HardFire
+y una interacción real del asistente por cada paso.
+
 ## Estado actual y recorrido recomendado
 
 El recorrido actual por botones observados usa `pragmatic_explore_start/result`. El flujo económico anterior `pragmatic_fuzz_start/result` sigue disponible; sus límites y verificaciones son distintos. El extractor `pragmatic_drawn_buttons` permite inspeccionar los botones sin hacer clics.
