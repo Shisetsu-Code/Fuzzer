@@ -6,11 +6,12 @@ import {chooseHitPoint} from '../../providers/pragmatic/hit-point.js';
 import {withSurfaceLock,ensurePainted} from './paint-guard.js';
 import {wagerEvidence,readRuntimeBalance,baseSurfaceMatches,parseProtocolMoney,classifySpinDebit} from '../../providers/pragmatic/wager-evidence.js';
 import {operationStateFromEntries,finishOperation,visibleOperationChoices} from '../../providers/pragmatic/operation-completion.js';
-export async function runStateExplorer(controller,{gameUrl,artifactDir,maxActions=20,maxDepth=4,timeoutMs=600000,onProgress,mode='standard',maxSessions=4}={}){
+export function createStateExplorerAdapter(controller,{gameUrl,artifactDir}={}){
  let session,lastEvidence,lastKey,lastCapture=0,rootSurface=null,rootConfiguration=null,lastActionAt=0;const savedHars=[];
  const close=async()=>{if(!session)return;const owned=session;session=null;await owned.close();if(owned.har?.path)savedHars.push(owned.har.path);};
  const adapter={now:()=>Date.now(),sleep:ms=>new Promise(r=>setTimeout(r,ms)),reset:async()=>{await close();session=await createHardFireSession(controller,{gameUrl,artifactDir,entryOnly:true});lastKey=null;rootSurface=null;rootConfiguration=null;await controller.tabs.activate(session.tabId);},
- snapshot:async()=>withSurfaceLock(async()=>{await ensurePainted(controller,session.tabId);const raw=await session.frame.evaluate(inspectDrawnButtons);const controls=filterKnownControls(raw.controls||[]).keep.filter(b=>b.hit_rect).map(b=>({...b,key:b.path}));const state=await session.provider.protocolState(session.frame);const flags={stages:state?.stages?.map(s=>s.name).sort(),logicIsFreeSpin:state?.logicIsFreeSpin,respinInProgress:state?.respinInProgress,spinBlockingFeatureIsRunning:state?.spinBlockingFeatureIsRunning,canSpin:state?.canSpin,stopActive:state?.stopActive,lastWinIsCounting:state?.lastWinIsCounting,waitInResultForBigWin:state?.waitInResultForBigWin};
+ snapshot:async()=>withSurfaceLock(async()=>{await ensurePainted(controller,session.tabId);const raw=await session.frame.evaluate(inspectDrawnButtons);const controls=filterKnownControls(raw.controls||[]).keep.filter(b=>b.hit_rect).map(b=>({...b,key:b.path,
+ fingerprint:createHash('sha256').update(JSON.stringify({name:b.name,events:(b.handlers||[]).map(h=>h.event).filter(Boolean).sort(),sprites:[...(b.sprite_names||[])].sort()})).digest('hex').slice(0,20)}));const state=await session.provider.protocolState(session.frame);const flags={stages:state?.stages?.map(s=>s.name).sort(),logicIsFreeSpin:state?.logicIsFreeSpin,respinInProgress:state?.respinInProgress,spinBlockingFeatureIsRunning:state?.spinBlockingFeatureIsRunning,canSpin:state?.canSpin,stopActive:state?.stopActive,lastWinIsCounting:state?.lastWinIsCounting,waitInResultForBigWin:state?.waitInResultForBigWin};
  const wallet=await session.frame.evaluate(readRuntimeBalance);const entries=await session.entries();
  if(wallet.balance===null||wallet.balance===0){for(const entry of [...entries].reverse()){const content=entry.response?.content;if(!content?.text||content.encoding==='base64')continue;const fields=new URLSearchParams(content.text);const value=fields.get('balance');if(value!==null&&value.trim()!==''&&parseProtocolMoney(value)!==null){wallet.balance=parseProtocolMoney(value);wallet.balanceSource='server:balance';break;}}}
  const menu=await session.purchaseMenu();const wager={...wallet,betLevelIndex:state?.betLevelIndex??null,canSpin:state?.canSpin===true,menuOpen:menu.open===true,serverMarker:JSON.stringify(controller.withTab(session.tabId).networkEvents())};
@@ -25,7 +26,7 @@ export async function runStateExplorer(controller,{gameUrl,artifactDir,maxAction
  const traffic=JSON.stringify(network);
  const choices=visibleOperationChoices(state?.pickerControls,raw.controls);
  return {key,controls,choices,operation:operationStateFromEntries(entries),unresolved:filterKnownControls(raw.unresolved||[]).keep,traffic,wager,evidence:{tab_id:session.tabId,capture_id:lastEvidence.capture_id,full_path:lastEvidence.full_path,artifact_dir:lastEvidence.artifact_dir},flags};}),
- click:async b=>withSurfaceLock(async()=>{await ensurePainted(controller,session.tabId);const fresh=await captureDrawnButtons(controller,session.tabId,artifactDir,{includeUniversal:true});const target=fresh.controls.find(c=>c.path===b.key);if(!target?.center)throw Error('Observed control is no longer available');const point=chooseHitPoint(target,fresh.controls);if(!point)throw Error('AMBIGUOUS_HIT_AREA');lastActionAt=Date.now();await controller.withTab(session.tabId).click(point.x,point.y);}),
+ click:async b=>withSurfaceLock(async()=>{await ensurePainted(controller,session.tabId);const fresh=await captureDrawnButtons(controller,session.tabId,artifactDir,{includeUniversal:true});const target=fresh.controls.find(c=>c.path===b.key&&(!b.fingerprint||c.fingerprint===b.fingerprint));if(!target?.center)throw Error('STALE_OR_CHANGED_CONTROL');const point=chooseHitPoint(target,fresh.controls);if(!point)throw Error('AMBIGUOUS_HIT_AREA');lastActionAt=Date.now();await controller.withTab(session.tabId).click(point.x,point.y);}),
  clickCenter:async()=>withSurfaceLock(async()=>{await ensurePainted(controller,session.tabId);return session.clickContinue();}),
  operationStarted:(before,after)=>(after.operation?.sequence||0)>(before.operation?.sequence||0),
  finishOperation:async(before,after,options)=>{session.started=true;return finishOperation(adapter,before,after,options);},
@@ -54,10 +55,16 @@ export async function runStateExplorer(controller,{gameUrl,artifactDir,maxAction
  probeResult:async followup=>{const entries=(await session.entries()).slice(followup.entryCountBefore);const entry=entries.find(e=>new URLSearchParams(e.request?.postData?.text||'').get('action')==='doSpin');if(!entry||entry.response?.status!==200)return {classification:'UNKNOWN',reason:'NO_COMPLETED_SPIN_RESPONSE'};const content=entry.response.content;const response=new URLSearchParams(content.encoding==='base64'?Buffer.from(content.text,'base64').toString():content.text);const request=new URLSearchParams(entry.request.postData.text);const read=k=>parseProtocolMoney(response.get(k));const c=Number(request.get('c')),l=Number(request.get('l'));const cost=classifySpinDebit({balanceBefore:followup.balanceAfter,balance:response.get('balance'),nextAction:response.get('na'),baseCost:c*l});return {...cost,request:{action:'doSpin',bl:request.get('bl'),c:request.get('c'),l:request.get('l')},responseBalance:read('balance'),responseWin:read('w'),nextAction:response.get('na'),status:entry.response.status};}
 
  };
+ return {adapter,currentTab:()=>session?.tabId,cleanup:async()=>{
+  await close();const combinedPath=await consolidateHars(savedHars,artifactDir);
+  await fs.writeFile(path.join(artifactDir,'har-reference.json'),JSON.stringify({path:combinedPath}));
+  return {har:combinedPath,sessions:savedHars.length};
+ }};
+}
+export async function runStateExplorer(controller,{gameUrl,artifactDir,maxActions=20,maxDepth=4,timeoutMs=600000,onProgress,mode='standard',maxSessions=4}={}){
+ const {adapter,cleanup}=createStateExplorerAdapter(controller,{gameUrl,artifactDir});
  try{const deadline=Date.now()+timeoutMs;
- if(mode==='batch')return await explorePurchaseBatch(adapter,{maxSessions,maxActions,maxDepth,deadline,onProgress,wait:(a,b)=>waitTransition(a,b,{quietMs:2000,activeMs:20000,pollMs:400})});
- return await exploreStates(adapter,{maxActions,maxDepth,deadline,onProgress});}finally{await close();
- // Keep the latest automatic branch HAR only. All screenshots/graph evidence remain.
- const combinedPath=await consolidateHars(savedHars,artifactDir);
- await fs.writeFile(path.join(artifactDir,'har-reference.json'),JSON.stringify({path:combinedPath}));}
+  if(mode==='batch')return await explorePurchaseBatch(adapter,{maxSessions,maxActions,maxDepth,deadline,onProgress,wait:(a,b)=>waitTransition(a,b,{quietMs:2000,activeMs:20000,pollMs:400})});
+  return await exploreStates(adapter,{maxActions,maxDepth,deadline,onProgress});
+ }finally{await cleanup();}
 }
