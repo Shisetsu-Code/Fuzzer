@@ -12,6 +12,7 @@ import {filterKnownControls} from '../providers/pragmatic/known-controls.js';
 import {assertDemoUrl} from '../providers/pragmatic/session.js';
 import {controlPriority} from '../providers/pragmatic/batch-explorer.js';
 import {chooseHitPoint} from '../providers/pragmatic/hit-point.js';
+import {waitForStableState,classifyDrawnState,stateSignature} from '../providers/pragmatic/readiness.js';
 
 const defaultUrls=[
  'https://www.pragmaticplay.fun/en/slots/death-dominion/',
@@ -56,6 +57,22 @@ async function runGame(gameUrl,index){
   context=await browser.newContext({viewport:{width:1280,height:720},deviceScaleFactor:1,
    locale:'en-US',acceptDownloads:false,serviceWorkers:'block'});
   page=await context.newPage();
+  // Reject only the site's public cookie banner, including late mount.
+  // MutationObserver avoids expensive repeated Playwright click timeouts.
+  await page.addInitScript(() => {
+   if(location.hostname!=='www.pragmaticplay.fun')return;
+   const tried=new WeakSet();
+   const reject=()=>{
+    const b=document.querySelector('[data-cky-tag="reject-button"],.cky-btn-reject');
+    if(!b||b.disabled||tried.has(b))return;
+    tried.add(b);b.click();
+    window.__pragmaticCookieReject={at:performance.now(),count:(window.__pragmaticCookieReject?.count||0)+1};
+   };
+   const run=()=>{try{reject();}catch{}};
+   new MutationObserver(run).observe(document,{subtree:true,childList:true});
+   document.addEventListener('DOMContentLoaded',run,{once:true});
+   run();
+  });
   t('new_isolated_context_and_page',x);
   result.traffic.protocolActions=[];
   page.on('response',res=>{
@@ -88,13 +105,7 @@ async function runGame(gameUrl,index){
   // Read-only site entry: reject cookies; only age acknowledgement and demo are clicked.
   // Buttons may not be under .cky-consent-container in the published catalogue.
   let cookieRejected=false,ageHandled=false;
-  cookieRejected=await safeClick(page.getByText('Reject All',{exact:true}));
-  if(!cookieRejected)cookieRejected=await safeClick(page.getByRole('button',{name:/Reject All/i}));
-  if(!cookieRejected)cookieRejected=await safeClick(page.locator('.cky-btn-reject, [data-cky-tag="reject-button"]'));
-  if(!cookieRejected){
-   const reject=page.locator('[data-cky-tag="reject-button"], .cky-btn-reject').first();
-   if(await reject.count())cookieRejected=await reject.evaluate(button=>{button.click();return true;}).catch(()=>false);
-  }
+  cookieRejected=await page.evaluate(()=>Boolean(window.__pragmaticCookieReject?.count)).catch(()=>false);
   t('cookie_consent_rejection',x);
   x=clock();
   // The real-site benchmark established that pointer-based age clicks spend
@@ -164,23 +175,29 @@ async function runGame(gameUrl,index){
   }
   t('visible_button_wait',x);
   if(!result.uiObserved)throw Error('NO_OBSERVED_GAME_UI: '+lastReason);
-  // Runtime construction precedes visible gameplay: previous captures were
-  // still loading splashes. Never treat a collider as visual click approval.
-  // Time this deliberate safety delay separately from game/network load.
+  // Wait for TWO matching classified control observations, not a fixed 7s.
+  // This is readiness for screenshot/agent REVIEW, never proof of no occlusion.
+  const blocked=async()=>page.evaluate(()=>{
+   const visible=e=>{if(!e||!e.isConnected)return false;
+    const s=getComputedStyle(e),r=e.getBoundingClientRect();
+    return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0;};
+   return visible(document.querySelector('.cky-consent-container'))||
+    visible(document.querySelector('.age-gate-modal'));
+  }).catch(()=>false);
+  const gate=async(expected=null,timeoutMs=12500)=>waitForStableState({
+   observe:()=>frame.evaluate(inspectDrawnButtons),isBlocked:blocked,
+   now:clock,sleep:delay,timeoutMs,pollMs:300,minStable:2,expected
+  });
   x=clock();
-  await delay(7000);
-  t('post_runtime_visual_safety_wait',x);
+  const readiness=await gate();
+  t('runtime_stable_state_wait',x);
+  result.readinessGate={status:readiness.status,kind:readiness.kind,samples:readiness.samples,
+   visuallyVerified:false};
+  result.catalog.cookieWatcher=await page.evaluate(()=>window.__pragmaticCookieReject||null).catch(()=>null);
+  result.catalog.lateConsentCleared=Boolean(result.catalog.cookieWatcher?.count);
+  if(readiness.status!=='STABLE')throw Error('STATE_NOT_STABLE: '+readiness.kind+' blocked='+readiness.blocked);
   x=clock();
-  // CookieYes is inserted asynchronously: an early absent button is not consent.
-  const lateReject=page.locator('.cky-btn-reject, [data-cky-tag="reject-button"]').first();
-  result.catalog.lateConsentCleared=false;
-  if(await lateReject.count()){
-   result.catalog.lateConsentCleared=await lateReject.evaluate(b=>{b.click();return true;}).catch(()=>false);
-   if(result.catalog.lateConsentCleared)await delay(250);
-  }
-  t('late_cookie_overlay_cleanup',x);
-  x=clock();
-  scan=await frame.evaluate(inspectDrawnButtons);
+  scan=readiness.scan;
   const partition=filterKnownControls(scan.controls||[]);
   const targets=partition.keep.filter(c=>c.hit_rect);
   result.controls={
