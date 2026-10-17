@@ -81,14 +81,22 @@ async function runGame(gameUrl,index){
   // Read-only site entry: reject cookies; only age acknowledgement and demo are clicked.
   // Buttons may not be under .cky-consent-container in the published catalogue.
   let cookieRejected=false,ageHandled=false;
-  cookieRejected=await safeClick(page.getByRole('button',{name:/^Reject All$/i}));
+  cookieRejected=await safeClick(page.getByText('Reject All',{exact:true}));
+  if(!cookieRejected)cookieRejected=await safeClick(page.getByRole('button',{name:/Reject All/i}));
   if(!cookieRejected)cookieRejected=await safeClick(page.locator('.cky-btn-reject, [data-cky-tag="reject-button"]'));
   t('cookie_consent_rejection',x);
   x=clock();
-  ageHandled=await safeClick(page.getByRole('button',{name:/^Yes, I am 18 years or older$/i}));
+  ageHandled=await safeClick(page.getByText('Yes, I am 18 years or older',{exact:true}));
+  if(!ageHandled)ageHandled=await safeClick(page.getByRole('link',{name:/Yes, I am 18 years/i}));
   if(!ageHandled)ageHandled=await safeClick(page.locator('[data-age-gate-confirm]'));
   t('catalog_age_confirmation',x);
   result.catalog={cookieRejected,ageHandled,title:(await page.title().catch(()=>'' )).slice(0,120)};
+  if(!ageHandled){
+   result.catalog.ageCandidates=await page.evaluate(()=>[...document.querySelectorAll('a,button,[role="button"],input,div,span')].filter(
+    e=>e.textContent&&/Yes, I am 18 years or older/i.test(e.textContent)&&e.textContent.length<170).slice(-12)
+    .map(e=>({tag:e.tagName,cls:String(e.className||'').slice(0,120),html:e.outerHTML.slice(0,300)}))).catch(()=>[]);
+   throw Error('AGE_GATE_NOT_CLEARED: no matching clickable catalog age control');
+  }
   x=clock();
   const findRuntime=async()=>{
    for(const f of page.frames()){
