@@ -319,7 +319,12 @@ async function runGame(gameUrl,index){
     // An INTRO may appear late, as seen in the previous five-game study.
     if(phase==='INTRO'){
      const starts=(current.controls||[]).filter(c=>c.hit_rect&&
-      /\/IntroScreen\//i.test(c.path)&&getKinds(c).includes('Evt_DataToCode_IntroClosePressed'));
+      /\/IntroScreen\//i.test(c.path)&&(
+       getKinds(c).includes('Evt_DataToCode_IntroClosePressed')||
+       /PlayButtonIntro|StartSpin_Button|ButtonSpin/i.test(c.name)));
+     recordStep('INTRO_ALL_VISIBLE',{controls:(current.controls||[]).filter(c=>
+      /\/IntroScreen\//i.test(c.path)).map(c=>({path:c.path,
+      name:c.name,labels:c.labels||[],events:getKinds(c)})).slice(0,25)});
      recordStep('INTRO_CANDIDATES',{count:starts.length,paths:starts.map(c=>c.path)});
      if(starts.length!==1)throw Error('INTRO_CONTROL_NOT_UNIQUE');
      await snap('before-intro',current);
@@ -341,10 +346,19 @@ async function runGame(gameUrl,index){
       (/MainButton|BuyButton|BuyFeature|PurchaseButton/i.test(c.path)||
        (c.labels||[]).some(l=>/BUY\s*(?:FEATURE|BONUS|FREE SPINS)/i.test(l))));
     recordStep('BUY_ENTRY_CANDIDATES',{count:buy.length,paths:buy.map(c=>c.path)});
-    if(buy.length!==1)throw Error(buy.length?'BUY_ENTRY_AMBIGUOUS':'NO_VISIBLE_BUY_ENTRY');
-    await clickRuntime(buy[0],current,'OPEN_BUY_MENU');
+    const chosenBuy=buy.length===1?buy[0]:slug==='5-lions-reborn'?
+     buy.find(c=>/\/FSPurchaseButton\/content\/Collider$/.test(c.path))||
+     null:null;
+    if(!chosenBuy)throw Error(buy.length?'BUY_ENTRY_AMBIGUOUS':'NO_VISIBLE_BUY_ENTRY');
+    await clickRuntime(chosenBuy,current,'OPEN_BUY_MENU');
     const opened=await waitKind('PURCHASE_OPTIONS',12000);
-    if(opened.status!=='STABLE')throw Error('BUY_MENU_NOT_READY:'+opened.kind);
+    if(opened.status!=='STABLE'){
+     recordStep('BUY_MENU_TIMEOUT_DIAGNOSTIC',{kind:opened.kind,
+      controls:(opened.scan?.controls||[]).filter(c=>c.hit_rect).map(c=>({
+       name:c.name,path:c.path,labels:c.labels||[],events:getKinds(c)})).slice(0,35)});
+     await snap('buy-entry-after-click',opened.scan||await sample(),true);
+     throw Error('BUY_MENU_NOT_READY:'+opened.kind);
+    }
     current=opened.scan;e2e.phase='PURCHASE_OPTIONS';
     const options=(current.controls||[]).filter(c=>c.hit_rect&&
       /\/PurchaseWindow\/.*\/Options\/Option\d+\//i.test(c.path));
