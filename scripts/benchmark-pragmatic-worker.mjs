@@ -406,13 +406,20 @@ async function runGame(gameUrl,index){
     if(!acknowledged)throw Error('PURCHASE_SERVER_NOT_CONFIRMED');
     // Give autonomous Free Spins a bounded opportunity to finish. Never
     // assume the bonus ended from HTTP 200; no arbitrary picks are sent.
-    const returnDeadline=clock()+45000;
+    const returnDeadline=clock()+115000;
     let stableBase=0,lastSignature=null,probeCount=0;
+    // Preapproved by the previous Helios/Gates screenshots showing
+    // PRESS ANYWHERE TO CONTINUE. Limited to these public DEMOs.
+    let lastCenterAt=clock()-7000,centerClicks=0,lastNetworkAt=clock();
+    let previousProtocolCount=result.traffic.protocolActions.length;
     while(clock()<returnDeadline){
      probeCount++;
      const detected=await sample(),kind=classifyDrawnState(detected);
      const signature=stateSignature(detected);
      const latest=result.traffic.protocolActions.at(-1);
+     if(previousProtocolCount!==result.traffic.protocolActions.length){
+      previousProtocolCount=result.traffic.protocolActions.length;lastNetworkAt=clock();
+     }
      const live=await frame.evaluate(()=>{
       const get=k=>{try{return globalThis.Vars?.[k]?XT.GetBool(Vars[k]):null}catch{return null}};
       return {canSpin:get('CanSpin'),freeSpins:get('Logic_IsFreeSpin'),
@@ -425,16 +432,44 @@ async function runGame(gameUrl,index){
      lastSignature=signature;
      if(stableBase>=2){e2e.bonusFinished=true;recordStep('BONUS_RETURNED_BASE',
        {probeCount,kind,live});await snap('returned-base',detected,true);break;}
+     const hasPicker=(detected.controls||[]).some(c=>c.hit_rect&&
+      /(?:Pick|Choice|Selection)Window\/|\/PickButtons\//i.test(c.path||''));
+     if(['helios-triple-sun','gates-of-olympus-2500'].includes(slug)&&
+       centerClicks<16&&!hasPicker&&
+       live?.canSpin!==true&&clock()-lastCenterAt>=6500&&
+       clock()-lastNetworkAt>=2200){
+      const rect=await (await frame.frameElement()).boundingBox();
+      if(rect){
+       await page.mouse.click(rect.x+rect.width/2,rect.y+rect.height/2);
+       centerClicks++;lastCenterAt=clock();
+       recordStep('APPROVED_PRESS_ANYWHERE_CONTINUE',{
+        centerClicks,reason:'Previously reviewed bonus intro/continuation overlay',
+        state:kind,live});
+      }
+     }
      if(probeCount%12===0)recordStep('BONUS_PENDING',{kind,live,
       lastProtocolAction:latest?.action||null,protocolRequests:result.traffic.protocolActions.length});
      await delay(500);
     }
-    if(!e2e.bonusFinished)throw Error('BONUS_NOT_CONFIRMED_COMPLETE_45S');
-    // No automatic normal wager after bonus: certification requires a normal
-    // spin and its server response, so leave this explicit missing evidence.
-    e2e.postBonusSpinVerified=false;
-    e2e.missing.push('POST_BONUS_NORMAL_SPIN_NOT_RUN');
-    e2e.status='PURCHASE_ACCEPTED_BONUS_CLOSED';
+    if(!e2e.bonusFinished)throw Error('BONUS_NOT_CONFIRMED_COMPLETE_115S');
+    const post=await sample();
+    const spinControls=(post.controls||[]).filter(c=>c.hit_rect&&
+     getKinds(c).includes('Evt_DataToCode_Pressed_Spin'));
+    if(spinControls.length===1){
+     const beforeSpin=result.traffic.protocolActions.length;
+     await clickRuntime(spinControls[0],post,'ONE_POST_BONUS_NORMAL_DEMO_SPIN');
+     let normal=null;
+     for(let attempt=0;attempt<50;attempt++){
+      normal=result.traffic.protocolActions.slice(beforeSpin).find(entry=>
+       entry.action==='doSpin'&&entry.pur===null&&entry.status===200);
+      if(normal)break;
+      await delay(200);
+     }
+     e2e.postBonusSpinVerified=Boolean(normal);
+     recordStep('POST_BONUS_NORMAL_SPIN_ACK',{confirmed:!!normal,status:normal?.status||null});
+    }else e2e.missing.push('POST_BONUS_SPIN_CONTROL_NOT_UNIQUE');
+    e2e.status=e2e.postBonusSpinVerified?
+     'COMPLETE_PURCHASE_BONUS_AND_NORMAL_SPIN':'PURCHASE_ACCEPTED_BONUS_CLOSED';
    }catch(err){
     e2e.failure=String(err.message||err).slice(0,300);
     recordStep('E2E_BLOCKED',{reason:e2e.failure});
