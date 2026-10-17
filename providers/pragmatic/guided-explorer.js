@@ -38,6 +38,12 @@ export function createGuidedExplorer(adapter,{maxSessions=4,wait,readEvidence=as
    actions.push({action_id:'spin_normal',kind:'spin',label:'One normal DEMO spin',
     priority:10,requiresDecision:true});
   }
+  // A runtime-reported continuation also requires explicit model selection.
+  if(!f.canSpin&&s.operation?.protocolComplete===true&&!(s.choices||[]).length){
+   actions.push({action_id:'advance_protocol',kind:'advance',
+    label:'Provider-declared DEMO continuation; review state before selecting',
+    priority:15,requiresDecision:true});
+  }
   // No automatic center clicks: only the model may request this with visual evidence.
   if(!(s.choices||[]).length){
    actions.push({action_id:'continue_center',kind:'continue',label:'Center of DEMO frame: verify overlay visually first',
@@ -64,7 +70,7 @@ export function createGuidedExplorer(adapter,{maxSessions=4,wait,readEvidence=as
   try{await adapter.reset();sessions++;started=true;return await snapshotView(await adapter.snapshot({forceCapture:true}));}
   finally{busy=false;}
  }
- async function act({token,action_id}){
+ async function act({token,action_id,reason=null}){
   if(!started||closed)throw Error('GUIDED_SESSION_NOT_ACTIVE');
   if(busy)throw Error('GUIDED_SESSION_BUSY');
   if(!view||token!==view.token)return {status:'STALE_DECISION',reason:'Token no longer matches the latest observation; nothing clicked'};
@@ -91,6 +97,11 @@ export function createGuidedExplorer(adapter,{maxSessions=4,wait,readEvidence=as
       return {status:'SPIN_UNAVAILABLE',reason:'No safe normal DEMO spin; nothing clicked',view:await snapshotView(before)};
     result=await adapter.spinNormal(before);
     if(result?.ok!==true)throw Error('NORMAL_SPIN_UNAVAILABLE');
+   }else if(chosen.kind==='advance'){
+    if(before.flags?.canSpin||before.choices?.length||before.operation?.protocolComplete!==true)
+     return {status:'ADVANCE_UNAVAILABLE',reason:'Provider continuation is no longer eligible; nothing clicked',view:await snapshotView(before)};
+    result=await adapter.advance(before);
+    if(result?.ok!==true||result.kind==='WAIT')throw Error('PROVIDER_CONTINUATION_NOT_OBSERVED');
    }else if(chosen.kind==='continue'){
     if(before.choices?.length)
      return {status:'CONTINUE_UNAVAILABLE',reason:'A feature picker is available; nothing clicked',view:await snapshotView(before)};
@@ -103,6 +114,7 @@ export function createGuidedExplorer(adapter,{maxSessions=4,wait,readEvidence=as
    const next=outcome.snapshot||await adapter.snapshot({forceCapture:true});
    await record({action:chosen.kind,action_id:chosen.action_id,path:chosen.key||null,
     from:before.key,to:next.key,reason:outcome.reason,
+    decision_reason:typeof reason==='string'?reason.slice(0,256):null,
     operationStart:(next.operation?.sequence||0)>(before.operation?.sequence||0),
     at:new Date().toISOString()});
    const nextView=await snapshotView(next);
