@@ -2,6 +2,17 @@
 
 Scripts independientes por proveedor para ejecutar demos mediante el MCP local HardFire. No depende de Firetrace. La primera implementación corresponde a Pragmatic; otros proveedores no están implementados todavía.
 
+## Árbol de decisiones con hasta cuatro clientes DEMO
+
+El modo **pragmatic_tree_start/result/approve/run/skip/close** construye un
+árbol persistente de controles observados y aprobados. Si un menú ofrece cuatro
+compras, las cuatro ramas se asignan a sesiones DEMO aisladas, ejecutando hasta
+cuatro clientes en paralelo. Cada ruta se reconstruye y verifica en el cliente
+antes del clic; al aparecer un nuevo menú se registran sus opciones y se espera
+una nueva decisión del asistente. No se adivinan los picks aleatorios ni se
+declara un bonus completo por una compra aceptada. Véase
+[árbol con forks](docs/forked-decision-tree.md).
+
 ## Modo guiado por el asistente (recomendado cuando el automático se pierde)
 
 El fuzzer **solo observa y filtra** controles comunes; el asistente ve la captura con
