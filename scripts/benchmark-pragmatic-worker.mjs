@@ -78,16 +78,16 @@ async function runGame(gameUrl,index){
    }catch{return false;}
   };
   x=clock();
-  // Catalog-only bootstrap. These are NOT game choices or purchases.
+  // Read-only site entry: reject cookies; only age acknowledgement and demo are clicked.
+  // Buttons may not be under .cky-consent-container in the published catalogue.
   let cookieRejected=false,ageHandled=false;
-  try{
-   const reject=page.locator('.cky-consent-container [data-cky-tag="reject-button"]');
-   cookieRejected=await safeClick(reject);
-  }catch{}
-  try{
-   ageHandled=await safeClick(page.locator('[data-age-gate-confirm]'));
-  }catch{}
-  t('catalog_consent_and_age',x);
+  cookieRejected=await safeClick(page.getByRole('button',{name:/^Reject All$/i}));
+  if(!cookieRejected)cookieRejected=await safeClick(page.locator('.cky-btn-reject, [data-cky-tag="reject-button"]'));
+  t('cookie_consent_rejection',x);
+  x=clock();
+  ageHandled=await safeClick(page.getByRole('button',{name:/^Yes, I am 18 years or older$/i}));
+  if(!ageHandled)ageHandled=await safeClick(page.locator('[data-age-gate-confirm]'));
+  t('catalog_age_confirmation',x);
   result.catalog={cookieRejected,ageHandled,title:(await page.title().catch(()=>'' )).slice(0,120)};
   x=clock();
   const findRuntime=async()=>{
