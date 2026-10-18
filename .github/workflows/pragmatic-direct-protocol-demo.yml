@@ -1,0 +1,49 @@
+name: Pragmatic direct protocol DEMO smoke
+on:
+  push:
+    branches: [feat/direct-protocol-demo-20261018]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: direct-protocol-demo-20261018
+  cancel-in-progress: true
+jobs:
+  protocol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OUTPUT: outputs/direct-protocol-demo
+      PUR_OPTIONS: 0,1
+      BONUS_STEPS: 100
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test protocol guards and entire fuzzer suite
+        run: |
+          node --check providers/pragmatic/protocol-direct.js
+          node --check scripts/pragmatic-direct-protocol-smoke.mjs
+          npm test
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Fresh session and HTTP-only gameplay, two independent clients
+        run: node scripts/pragmatic-direct-protocol-smoke.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pragmatic-direct-protocol-evidence
+          path: outputs/direct-protocol-demo
+          retention-days: 7
+          if-no-files-found: warn
+      - if: always()
+        run: |
+          if [ -f outputs/direct-protocol-demo/summary.json ]; then
+            echo '## Direct protocol DEMO outcome' >> "$GITHUB_STEP_SUMMARY"
+            echo '~~~json' >> "$GITHUB_STEP_SUMMARY"
+            cat outputs/direct-protocol-demo/summary.json >> "$GITHUB_STEP_SUMMARY"
+            echo '~~~' >> "$GITHUB_STEP_SUMMARY"
+          fi
