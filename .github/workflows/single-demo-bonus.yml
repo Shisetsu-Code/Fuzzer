@@ -1,0 +1,41 @@
+name: Pragmatic single bonus completion smoke
+on:
+  push:
+    branches: [feat/batch-purchase-600-20261017]
+    paths:
+      - .github/workflows/single-demo-bonus.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  single-bonus:
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    env:
+      OUTPUT: outputs/single-demo-bonus
+      BRANCH_IDS: buy-free-spins
+      STOP_BUDGET_MS: "225000"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-save --ignore-scripts playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - name: One isolated Candy Rush purchase, observe full feature
+        run: node scripts/forked-real-demo-smoke.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: single-demo-bonus-evidence
+          path: outputs/single-demo-bonus
+          retention-days: 7
+          if-no-files-found: warn
+      - if: always()
+        run: |
+          if [ -f outputs/single-demo-bonus/summary.json ]; then
+            echo '## Isolated DEMO bonus test' >> "$GITHUB_STEP_SUMMARY"
+            echo '~~~json' >> "$GITHUB_STEP_SUMMARY"
+            cat outputs/single-demo-bonus/summary.json >> "$GITHUB_STEP_SUMMARY"
+            echo '~~~' >> "$GITHUB_STEP_SUMMARY"
+          fi

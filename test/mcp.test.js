@@ -7,7 +7,7 @@ import {registerFuzzerTools} from '../integrations/hardfire/mcp-tools.js';
 
 test('MCP preserves startup evidence and reports screenshot failures without hiding the original error',async()=>{
  const chain={};for(const name of ['int','positive','optional','default','url','min','max','uuid'])chain[name]=()=>chain;
- const z={number:()=>chain,string:()=>chain,boolean:()=>chain};
+ const z={number:()=>chain,string:()=>chain,boolean:()=>chain,array:()=>chain};
  const artifactDir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-evidence-test-'));
  for(const startup of [true,false]){
   const tools=new Map();let closed=false;
@@ -29,7 +29,7 @@ test('MCP preserves startup evidence and reports screenshot failures without hid
 test('MCP limits jobs to two (four loaded game tabs) and recovers slots only after cleanup',async()=>{
  const tools=new Map(),chain={};
  for(const name of ['int','positive','optional','default','url','min','max','uuid'])chain[name]=()=>chain;
- const z={number:()=>chain,string:()=>chain,boolean:()=>chain};
+ const z={number:()=>chain,string:()=>chain,boolean:()=>chain,array:()=>chain};
  const artifactDir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-concurrency-test-'));
  const pending=new Map();let releaseCleanup;
  const cleanupGate=new Promise(resolve=>{releaseCleanup=resolve;});
@@ -79,7 +79,7 @@ test('MCP limits jobs to two (four loaded game tabs) and recovers slots only aft
 test('MCP retains known purchases without executing branches after an unfinished bet probe',async()=>{
  const tools=new Map(),chain={};
  for(const name of ['int','positive','optional','default','url','min','max','uuid'])chain[name]=()=>chain;
- const z={number:()=>chain,string:()=>chain,boolean:()=>chain};
+ const z={number:()=>chain,string:()=>chain,boolean:()=>chain,array:()=>chain};
  const artifactDir=await fs.mkdtemp(path.join(os.tmpdir(),'fuzzer-probe-test-'));
  let forked=false,closed=false;
  const screenshot={path:'fixture-probe.jpg',mimeType:'image/jpeg',tabId:31,reason:'PROBE_SPINS_NOT_COMPLETED'};

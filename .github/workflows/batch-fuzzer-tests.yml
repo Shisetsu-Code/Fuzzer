@@ -1,0 +1,25 @@
+name: Batch Fuzzer tests
+on:
+  push:
+    branches: ["feat/batch-purchase-600-20261017"]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  node-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax check
+        run: |
+          node --check providers/pragmatic/batch-explorer.js
+          node --check integrations/hardfire/batch-tools.js
+          node --check integrations/hardfire/state-explorer.js
+          node --check integrations/hardfire/mcp-tools.js
+      - name: Run full test suite
+        run: npm test

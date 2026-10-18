@@ -2,9 +2,54 @@
 
 Scripts independientes por proveedor para ejecutar demos mediante el MCP local HardFire. No depende de Firetrace. La primera implementación corresponde a Pragmatic; otros proveedores no están implementados todavía.
 
+## Árbol de decisiones con hasta cuatro clientes DEMO
+
+**[Estado técnico, ensayos reales y pendientes — 18/10/2026](docs/estado-fuzzer-2026-10-18.md)**
+
+El modo `pragmatic_tree_start/result/approve/skip/run` construye un árbol de
+opciones observadas y **aprobadas por el agente**. Cada menú puede bifurcarse
+en hasta cuatro clientes DEMO simultáneos y aislados. Las rutas se reconstruyen
+verificando estado y huella, nunca adivinando controles. Los caminos adicionales
+esperan aprobación y los resultados de RNG no se reproducen como rutas.
+
+Si un cliente inicia un bonus, la sesión queda **viva y reservada** en
+`OPERATION_PAUSED_LIVE`. Se continúa con
+`pragmatic_tree_live_observe/act/release`, una decisión por acción y
+sin repetir compras. El cierre requiere volver a base, confirmar una tirada
+normal de verificación y obtener dos observaciones terminales; un HTTP 200 o
+`doCollect` por sí solos no son suficientes.
+
+**Validación hasta el 18/10/2026:** 230 pruebas automatizadas aprobadas.
+GitHub Actions probó cuatro contextos DEMO de Candy Rush, tres compras aceptadas
+(`pur=0,1,2`), continuaciones y un ensayo aislado hasta `doCollect` con
+pantalla de resultado. **No está demostrado el cierre completo del bonus ni
+se probó aún el árbol genérico con un HardFire local conectado.** PR #3 sigue
+como borrador; `main` permanece intacta.
+
+Más detalles: [arquitectura del árbol](docs/forked-decision-tree.md),
+[modo guiado](docs/guided-mode.md) y
+[benchmark de workers](docs/github-worker-benchmark-2026-10-17.md).
+
+## Modo guiado por el asistente (recomendado cuando el automático se pierde)
+
+El fuzzer **solo observa y filtra** controles comunes; el asistente ve la captura con
+`hardfire_screenshot(tab_id)` y decide **cada clic**. Ya no se recorren de forma
+automática botones ambiguos, compras, pickers de bonus ni continuaciones. Cada
+decisión requiere un token del estado observado; un control cambiado cancela
+la acción. Permite un máximo de 3–4 sesiones aisladas por juego, sin tocar el
+juego con dinero real. Los comandos MCP son `pragmatic_guided_start`,
+`pragmatic_guided_observe`, `pragmatic_guided_act`,
+`pragmatic_guided_skip`, `pragmatic_guided_reset` y
+`pragmatic_guided_close`. Detalles: [modo guiado](docs/guided-mode.md).
+
+El modo batch automático anterior continúa disponible como alternativa,
+pero **no** comparte esta garantía de decisión visual por el asistente.
+Para procesar 600 juegos supervisados hace falta la conexión local HardFire
+y una interacción real del asistente por cada paso.
+
 ## Estado actual y recorrido recomendado
 
-El recorrido actual por botones observados usa `pragmatic_explore_start/result`. El flujo económico anterior `pragmatic_fuzz_start/result` sigue disponible; sus límites y verificaciones son distintos. El extractor `pragmatic_drawn_buttons` permite inspeccionar los botones sin hacer clics.
+Para exploración asistida se recomienda `pragmatic_tree_start` y la API de ramas vivas; `pragmatic_explore_start/result` sigue disponible como explorador anterior y no ofrece aprobación visual de cada acción. El flujo económico `pragmatic_fuzz_start/result` mantiene sus límites propios. `pragmatic_drawn_buttons` inspecciona controles sin hacer clics. La compatibilidad de versiones de HardFire debe comprobarse antes de ejecutar el modo árbol.
 
 ```json
 {"game_url":"https://www.pragmaticplay.fun/en/slots/death-dominion/","max_actions":200,"max_depth":8,"timeout_ms":1800000}

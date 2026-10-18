@@ -1,0 +1,43 @@
+name: Pragmatic four-client DEMO fork smoke
+on:
+  push:
+    branches: [feat/batch-purchase-600-20261017]
+    paths:
+      - scripts/forked-real-demo-smoke.mjs
+      - .github/workflows/forked-real-demo-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pragmatic-four-client-fork
+  cancel-in-progress: true
+jobs:
+  public-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    env:
+      OUTPUT: outputs/forked-real-demo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-save --ignore-scripts playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - name: Four isolated clients under one Chromium
+        run: node scripts/forked-real-demo-smoke.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: four-client-demo-evidence
+          path: outputs/forked-real-demo
+          retention-days: 7
+          if-no-files-found: warn
+      - if: always()
+        run: |
+          if [ -f outputs/forked-real-demo/summary.json ]; then
+            echo '## Four-client DEMO fork smoke' >> "$GITHUB_STEP_SUMMARY"
+            echo '~~~json' >> "$GITHUB_STEP_SUMMARY"
+            cat outputs/forked-real-demo/summary.json >> "$GITHUB_STEP_SUMMARY"
+            echo '~~~' >> "$GITHUB_STEP_SUMMARY"
+          fi
