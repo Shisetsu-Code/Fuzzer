@@ -82,6 +82,7 @@ export function acceptResponse(state,{status,text,action,pur}){
   const receipt={action,purchaseIndex:pur??null,httpStatus:status,
     nextAction:fields.na,requestIndex:state.index,responseIndex:index,
     responseCounter:counter,fieldNames:Object.keys(fields).filter(k=>!/key|token|session|secret|auth/i.test(k)).slice(0,100),
+    signals:Object.fromEntries(['puri','purtr','fs','fsmax','fsres','fsmul','fswin','tw'].filter(k=>fields[k]!==undefined).map(k=>[k,String(fields[k]).slice(0,100)])),
     outcome:pur===undefined?'PROTOCOL_RESPONSE':'PURCHASE_SPIN_RESPONSE_NOT_BONUS_VERIFIED'};
   return {next,receipt};
 }
