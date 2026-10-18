@@ -181,10 +181,20 @@ async function runBranch(config){
    record.actions.push(await sess.clickUnique(scan,c=>
     /\/AnteBet\/MainButton\//.test(c.path||'')&&
     /SPECIAL\s*BETS/i.test((c.labels||[]).join(' '))));
-   const menu=await sess.waitKinds(['BASE_CONTROLS','PURCHASE_OPTIONS'],5000).catch(()=>null);
+   await sess.waitKinds(['BASE_CONTROLS','PURCHASE_OPTIONS'],5000).catch(()=>null);
+   const menuState=await sess.frame.evaluate(inspectDrawnButtons);
+   const names=(menuState.controls||[]).filter(c=>c.hit_rect)
+     .flatMap(c=>c.labels||[]).map(v=>String(v).toUpperCase());
+   record.specialBetOptions={
+     anteBet:names.some(v=>v.includes('ANTE BET')),
+     superSpin1:names.some(v=>v.includes('SUPER SPIN 1')),
+     superSpin2:names.some(v=>v.includes('SUPER SPIN 2'))
+   };
    record.screens.push(await sess.capture('special-bets-after'));
-   record.status='SPECIAL_BETS_OPEN_ATTEMPTED';
-   record.reason='Menu photographed; no antebet or purchase confirmed';
+   const verified=Object.values(record.specialBetOptions).every(Boolean);
+   record.status=verified?'SPECIAL_BETS_MENU_VERIFIED':'SPECIAL_BETS_OPEN_ATTEMPTED';
+   record.reason=verified?'Three menu alternatives confirmed; not purchased':
+     'Menu photographed, option inventory partial';
   }else{
    record.actions.push(await sess.clickUnique(scan,c=>
     /\/FeaturePurchase\/MainButton\//.test(c.path||'')&&
@@ -200,7 +210,7 @@ async function runBranch(config){
     (c.labels||[]).some(label=>String(label).includes(config.price))));
    const confirm=await sess.waitKinds(['CONFIRM_PURCHASE']);
    record.screens.push(await sess.capture('confirm'));
-   const yes=(c)=>/\/ConfirmPurchaseWindow\/content\/AcceptButton\/Colliders\/ColliderOption1$/.test(c.path||'')&&
+   const yes=(c)=>/\/ConfirmPurchaseWindow\/content\/AcceptButton\/Colliders\/ColliderOption[1-9][0-9]*$/.test(c.path||'')&&
     (c.labels||[]).some(label=>String(label).trim()==='YES');
    const confirmedPrice=(confirm.controls||[]).some(c=>
     /ConfirmPurchaseWindow/.test(c.path||'')&&
