@@ -258,6 +258,38 @@ async function runBranch(config){
      });
     }
     record.screens.push(await sess.capture('bonus-observed'));
+    // Explicitly approved from the prior three real screenshots: visible
+    // "PRESS ANYWHERE TO CONTINUE" and one runtime ButtonContinue on FS start.
+    // Never click a generic center or an unknown provider bonus control.
+    const startScreen=await sess.frame.evaluate(inspectDrawnButtons);
+    const candidates=(startScreen.controls||[]).filter(c=>c.hit_rect&&
+     /\/FreeSpins\/Content\/Texts\/Start\/ButtonContinue$/.test(c.path||'')&&
+     (c.labels||[]).some(v=>/FREE SPINS/i.test(String(v))));
+    record.bonusContinue={approvedFrom:'2026-10-17 four-client screenshots',
+     candidates:candidates.length,clicked:false};
+    if(candidates.length===1){
+     record.actions.push(await sess.clickUnique(startScreen,c=>
+      c.path===candidates[0].path&&(c.labels||[]).some(v=>/FREE SPINS/i.test(String(v)))));
+     record.bonusContinue.clicked=true;
+     // Observe, do not send free spins or collect via protocol shortcuts.
+     await delay(25000);
+     const after=await sess.frame.evaluate(inspectDrawnButtons);
+     const flags=await sess.frame.evaluate(()=>{
+      const read=k=>{try{return globalThis.Vars?.[k]?XT.GetBool(Vars[k]):null;}catch{return null;}};
+      return {canSpin:read('CanSpin'),logicIsFreeSpin:read('Logic_IsFreeSpin'),
+       respinInProgress:read('RespinInProgress'),
+       spinBlockingFeatureIsRunning:read('SpinBlockingFeatureIsRunning')};
+     }).catch(()=>({}));
+     record.bonusContinue.postState={
+      flags,protocol:sess.network.slice(before),
+      controls:(after.controls||[]).filter(c=>c.hit_rect).map(c=>({
+       path:String(c.path||'').slice(0,240),
+       labels:(c.labels||[]).slice(0,4),
+       events:(c.handlers||[]).map(h=>h.event).filter(Boolean)
+      })).slice(0,30)
+     };
+     record.screens.push(await sess.capture('bonus-after-continue'));
+    }else record.bonusContinue.reason='OBSERVED_CONTINUE_NOT_UNIQUE';
    }
    record.status=ack?'PURCHASE_ACKED_BONUS_NOT_VERIFIED':'PURCHASE_ACK_NOT_OBSERVED';
    record.reason=ack?'Operation submitted; deliberately not assuming RNG bonus finished':
