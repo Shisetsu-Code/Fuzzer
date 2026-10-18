@@ -13,6 +13,11 @@ const OUTPUT=path.resolve(process.env.OUTPUT||'outputs/direct-protocol-demo');
 const now=()=>performance.now();
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const ms=x=>Math.round(x*10)/10;
+const withTimeout=(promise,timeoutMs)=>{
+ let timer;
+ const expiry=new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('LIVE_DOINIT_TIMEOUT')),timeoutMs);});
+ return Promise.race([promise,expiry]).finally(()=>clearTimeout(timer));
+};
 const safeError=e=>String(e?.message||e).replace(/mgckey=[^&\s]+/g,'mgckey=REDACTED').slice(0,300);
 await fs.mkdir(OUTPUT,{recursive:true});
 let browser;
@@ -58,7 +63,7 @@ async function startDemo(){
   const play=page.locator('.slide-item__actions [data-play-demo-open], .slots-inner-release-modal [data-play-demo-open], [data-play-demo-open]');
   await play.first().waitFor({state:'attached',timeout:16000});
   await play.first().evaluate(b=>b.click());
-  const init=await Promise.race([initSeen,delay(55000).then(()=>{throw Error('LIVE_DOINIT_TIMEOUT');})]);
+  const init=await withTimeout(initSeen,55000);
   const state=initProtocol(init);
   if(state.symbol!=='vs10bbveg1000')throw Error('UNEXPECTED_GAME_SYMBOL');
   let frame;
