@@ -119,7 +119,7 @@ async function runBranch(pur){
   // Bounded protocol continuation, no canvas events and no guessed doBonus.
   // Only issue another spin while the last response confirms free spins active.
   // A collect is allowed solely when the server explicitly advertises na=c.
-  const maxBonusSteps=Math.min(2,Math.max(0,Number(process.env.BONUS_STEPS||2)));
+  const maxBonusSteps=Math.min(60,Math.max(0,Number(process.env.BONUS_STEPS||2)));
   let lastSignals=purchaseSignal;
   for(let step=0;step<maxBonusSteps;step++){
    let action;
@@ -136,6 +136,8 @@ async function runBranch(pur){
    lastSignals=acceptedStep.receipt.signals||{};
   }
   result.afterContinuation=publicState(client.state);
+  result.lastBonusSignals=lastSignals;
+  result.bonusOperationsExecuted=result.steps.length-1;
   result.browserProtocolRequests=client.actions;
  }catch(error){
   result.status='BLOCKED_OR_REJECTED';
