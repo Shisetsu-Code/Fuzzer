@@ -3,7 +3,7 @@
  * No page/canvas interaction after a fresh, isolated official DEMO doInit.
  * Never copy/replay an mgckey from a HAR. It must come from the live session.
  */
-const endpointPath='/gs2c/ge/v5/gameService';
+const endpointPath=/^\/gs2c\/ge\/v\d+\/gameService$/;
 const allowedHost=h=>h==='demogamesfree.pragmaticplay.net'||h.endsWith('.demogamesfree.pragmaticplay.net');
 const integer=(value,label)=>{
   if(!/^(0|[1-9]\d*)$/.test(String(value??''))||!Number.isSafeInteger(Number(value)))
@@ -33,8 +33,8 @@ export function parsePurchases(reply){
 }
 export function initProtocol({url,requestText,responseText,status}){
   const endpoint=new URL(url);
-  if(endpoint.protocol!=='https:'||!allowedHost(endpoint.hostname)||endpoint.pathname!==endpointPath)
-    throw Error('Only official Pragmatic DEMO gameService is allowed');
+  if(endpoint.protocol!=='https:'||!allowedHost(endpoint.hostname)||!endpointPath.test(endpoint.pathname))
+    throw Error('Only official Pragmatic DEMO gameService is allowed: '+endpoint.hostname+endpoint.pathname);
   if(status!==200)throw Error('doInit HTTP '+status);
   const req=new URLSearchParams(requestText);
   if(req.get('action')!=='doInit'||!/^vs[a-z0-9]+$/.test(req.get('symbol')||''))
