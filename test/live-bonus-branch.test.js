@@ -87,3 +87,31 @@ test('explicit close of an incomplete branch never fabricates completion',async(
  assert.equal(summary.verified,false);
  await assert.rejects(()=>b.observe(),/UNAVAILABLE/);
 });
+
+test('StopSpin is a distinct approved control and cannot repeat within a single server spin',async()=>{
+ let sequence=1,clicks=0;
+ const before={key:'base',operation:{sequence:0}};
+ const capture=()=>({key:'bonus-spin-'+sequence,
+  operation:{sequence,transaction:{kind:'purchase',status:200,complete:true},
+   protocolComplete:true,nextAction:'s'},
+  controls:[{key:'Game/StopSpin_Button/Collider',
+   fingerprint:'stop-fp',handlers:[{event:'Evt_DataToCode_Pressed_Stop'}]}],
+  flags:{logicIsFreeSpin:true,stopActive:true,canSpin:false},
+  choices:[],wager:{menuOpen:false},evidence:{tab_id:11}});
+ const session={snapshot:async()=>capture(),click:async()=>{clicks++;return {ok:true};}};
+ const b=createLiveBonusBranch(session,{before,initial:capture()});
+ let s=await b.observe();
+ const stop=s.possibleActions.find(a=>a.kind==='stop');
+ assert(stop,'approved native STOP must be discoverable');
+ assert.equal(clicks,0);
+ const outcome=await b.act({token:s.token,action_id:stop.action_id,reason:'Stop the visible spin animation'});
+ assert.equal(outcome.status,'EXECUTED');assert.equal(clicks,1);
+ s=await b.observe();
+ assert.equal(s.possibleActions.filter(a=>a.kind==='stop').length,0);
+ sequence++;
+ s=await b.observe();
+ assert.equal(s.possibleActions.filter(a=>a.kind==='stop').length,1);
+ await b.act({token:s.token,action_id:s.possibleActions.find(a=>a.kind==='stop').action_id});
+ assert.equal(clicks,2);
+ assert.deepEqual(b.peek().stoppedSpinSequences,[1,2]);
+});
