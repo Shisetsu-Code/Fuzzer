@@ -47,8 +47,21 @@ test('MCP forked tree: observe, approve four branches, dispatch, persist, releas
  assert.equal(state.status,'AWAITING_APPROVAL');
  assert.equal(state.graph.peakParallel,4);
  assert.equal(state.graph.events.filter(e=>e.operationStarted).length,4);
- assert.equal(open,0);assert.equal(activeJobs.size,1);
+ assert.equal(open,4);assert.equal(activeJobs.size,1);
+ assert.equal(state.graph.liveBranches.length,4);
+ const firstLive=state.graph.liveBranches[0];
+ const observed=await methods.get('pragmatic_tree_live_observe')({
+  job_id:start.job_id,branch_id:firstLive.branchId
+ });
+ assert.equal(observed.view.status,'WAITING_FOR_PURCHASE_ACK');
+ assert.equal(observed.view.purchaseAcknowledged,false);
  assert.equal(clicks.filter(c=>c.startsWith('buy')).length,4);
+ for(const held of state.graph.liveBranches){
+  await methods.get('pragmatic_tree_live_release')({
+   job_id:start.job,branch_id:held.branchId,reason:'Fixture intentionally has no server ack'
+  });
+ }
+ assert.equal(open,0);
  const saved=JSON.parse(await fs.readFile(start.artifact,'utf8'));
  assert.equal(saved.graph.events.filter(e=>e.operationStarted).length,4);
  const closed=await methods.get('pragmatic_tree_close')({job_id:start.job_id});
