@@ -4,6 +4,7 @@
  * Each branch owns one isolated DEMO session and HAR. No replay of random RNG.
  */
 import {createHash} from 'node:crypto';
+import {createLiveBonusBranch} from './live-bonus-branch.js';
 
 const id=route=>'route:'+createHash('sha256').update(JSON.stringify(route)).digest('hex').slice(0,20);
 const clean=s=>String(s||'').slice(0,300);
@@ -29,6 +30,7 @@ export function createForkTree({makeSession,wait,onProgress=async()=>{},
  if(!Number.isInteger(maxParallel)||maxParallel<1||maxParallel>4)throw RangeError('maxParallel must be 1..4');
  if(!Number.isInteger(maxSessions)||maxSessions<1)throw RangeError('maxSessions must be positive');
  const nodes=new Map(),events=[],errors=[],queue=[],visitedTasks=new Set();
+ const live=new Map();
  let started=false,closed=false,running=false,sessions=0,peak=0,active=0,executed=0;
  const exposeNode=node=>({id:node.id,depth:node.route.length,state:node.state,route:node.route,
   status:node.status,evidence:node.evidence,
@@ -36,7 +38,12 @@ export function createForkTree({makeSession,wait,onProgress=async()=>{},
  const result=()=>({schema:'fuzzer/forked-decision-tree/v1',
   status:closed?'CLOSED':running?'RUNNING':queue.length?'APPROVED_PENDING':'AWAITING_APPROVAL',
   complete:false,sessionsUsed:sessions,maxSessions,parallelLimit:maxParallel,peakParallel:peak,
-  executed,queued:queue.length,nodes:[...nodes.values()].map(exposeNode),
+  executed,queued:queue.length,liveBranches:[...live.entries()].map(([branchId,entry])=>({
+    branchId,tab_id:entry.bonus.peek().view?.tab_id||entry.initial.evidence?.tab_id||null,
+    state:entry.bonus.peek().status,verified:entry.bonus.peek().verified,
+    purchaseAcknowledged:entry.bonus.peek().purchaseAcknowledged,
+    actionsExecuted:entry.bonus.peek().actionsExecuted
+  })),nodes:[...nodes.values()].map(exposeNode),
   events:[...events],errors:[...errors]});
  const report=async()=>onProgress(result());
  function discover(snapshot,route,ancestorStates=[]){
@@ -122,7 +129,7 @@ export function createForkTree({makeSession,wait,onProgress=async()=>{},
  async function task(task){
   const parent=nodes.get(task.nodeId),entry=parent?.controls.find(x=>x.key===task.key);
   if(!parent||!entry)return;
-  let sess=null;
+  let sess=null,held=false;
   const trace=[];
   try{
    sess=await make();
@@ -155,9 +162,17 @@ export function createForkTree({makeSession,wait,onProgress=async()=>{},
     operationStarted:startedOperation,to:null,trace,
     evidence:current.evidence||null};
    if(startedOperation){
-    // Confirmation of an HTTP purchase is not completion of its bonus.
-    edge.status='OPERATION_STARTED_NEEDS_GUIDED_COMPLETION';
+    // Pin the SAME session through the entire feature. Never recreate an RNG
+    // state, and do not release its tab until the agent resolves/closes it.
+    const bonus=createLiveBonusBranch(sess,{before,initial:current,
+     onRecord:async()=>report()});
+    const branchId=id([...parent.route,{from:before.key,key:task.key,
+      fingerprint:task.fingerprint,to:'LIVE_OPERATION'}]);
+    edge.status='OPERATION_PAUSED_LIVE';edge.liveBranchId=branchId;
     entry.status='OPERATION_PENDING';
+    live.set(branchId,{session:sess,bonus,parentId:parent.id,controlKey:task.key,
+     edge,initial:current});
+    held=true;
    }else if(current.key===before.key){
     edge.status='NO_CHANGE';entry.status='PENDING';
    }else if(parent.route.some(step=>step.from===current.key)||current.key===parent.route[0]?.from){
@@ -174,7 +189,7 @@ export function createForkTree({makeSession,wait,onProgress=async()=>{},
    entry.status='PENDING';
    errors.push({nodeId:task.nodeId,key:task.key,reason,trace});
   }finally{
-   if(sess)try{await release(sess);}catch(e){errors.push({nodeId:task.nodeId,key:task.key,reason:'CLOSE:'+clean(e.message)});}
+   if(sess&&!held)try{await release(sess);}catch(e){errors.push({nodeId:task.nodeId,key:task.key,reason:'CLOSE:'+clean(e.message)});}
    await report();
   }
  }
@@ -197,15 +212,70 @@ export function createForkTree({makeSession,wait,onProgress=async()=>{},
      await task(items[i]);
     }
    }
-   await Promise.all(Array.from({length:Math.min(maxParallel,items.length)},worker));
+   // Live bonuses hold a tab until guided completion. Never start another
+   // session when the four-tab budget is already held.
+   const freeSlots=Math.max(0,maxParallel-active);
+   if(!freeSlots){
+    queue.unshift(...items);
+   }else if(freeSlots<maxParallel){
+    // Each worker may finish with a pinned bonus. Remaining queued tasks stay
+    // pending for the next invocation, after a live slot has been released.
+    const work=items.slice(0,freeSlots);
+    queue.unshift(...items.slice(freeSlots));
+    let cursor=0;
+    await Promise.all(work.map(async t=>{if(sessions>=maxSessions){queue.push(t);return;}await task(t);}));
+   }else{
+    // Respect slots as they become pinned; do not refill a worker slot that
+    // is now held by an active bonus.
+    let cursor=0;
+    const workerSafe=async()=>{
+     while(cursor<items.length){
+      if(active>=maxParallel){queue.push(...items.slice(cursor));cursor=items.length;return;}
+      const i=cursor++;await task(items[i]);
+     }
+    };
+    await Promise.all(Array.from({length:Math.min(maxParallel,items.length)},workerSafe));
+   }
   }finally{running=false;await report();}
+  return result();
+ }
+ async function observeLive(branchId){
+  if(running||closed)throw Error('TREE_NOT_AVAILABLE');
+  const entry=live.get(branchId);if(!entry)throw Error('UNKNOWN_LIVE_BRANCH');
+  const view=await entry.bonus.observe();await report();return {branchId,view};
+ }
+ async function actLive(branchId,decision){
+  if(running||closed)throw Error('TREE_NOT_AVAILABLE');
+  const entry=live.get(branchId);if(!entry)throw Error('UNKNOWN_LIVE_BRANCH');
+  const action=await entry.bonus.act(decision);
+  if(action.view?.status==='COMPLETE'){
+   entry.edge.status='OPERATION_COMPLETE_VERIFIED';
+   const parent=nodes.get(entry.parentId);
+   const control=parent?.controls.find(c=>c.key===entry.controlKey);
+   if(control)control.status='COMPLETE';
+  }
+  await report();
+  return {branchId,...action};
+ }
+ async function closeLive(branchId,{reason='EXPLICIT_CLOSE'}={}){
+  if(running||closed)throw Error('TREE_NOT_AVAILABLE');
+  const entry=live.get(branchId);if(!entry)throw Error('UNKNOWN_LIVE_BRANCH');
+  const verified=entry.bonus.peek().verified;
+  entry.bonus.close();
+  entry.edge.status=verified?'OPERATION_COMPLETE_VERIFIED':'OPERATION_PENDING_CLOSED';
+  if(!verified)errors.push({nodeId:entry.parentId,key:entry.controlKey,
+   reason:'BONUS_NOT_VERIFIED:'+clean(reason)});
+  try{await release(entry.session);}finally{live.delete(branchId);await report();}
   return result();
  }
  async function shutdown(){
   if(running)throw Error('TREE_RUNNING');
+  // Release pinned tabs even if a bonus is incomplete; preserve its status.
+  for(const [branchId] of [...live.entries()])
+   await closeLive(branchId,{reason:'TREE_SHUTDOWN'});
   closed=true;
   await report();
   return result();
  }
- return {initialize,approve,decline,run,shutdown,summary:result};
+ return {initialize,approve,decline,run,shutdown,summary:result,observeLive,actLive,closeLive};
 }
