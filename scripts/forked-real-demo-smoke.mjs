@@ -228,6 +228,37 @@ async function runBranch(config){
    record.purchaseAcknowledged=!!ack;
    record.protocol=sess.network.slice(before);
    record.screens.push(await sess.capture('after-confirm'));
+   if(ack){
+    // Observation only: never guess picker/continuation or resend a purchase.
+    // Capture the next three feature states for a model-reviewed decision.
+    record.bonusObservations=[];
+    for(const intervalMs of [3500,6500,10000]){
+     await delay(intervalMs);
+     const snap=await sess.frame.evaluate(inspectDrawnButtons);
+     const flags=await sess.frame.evaluate(()=>{
+      const read=k=>{try{return globalThis.Vars?.[k]?
+       XT.GetBool(Vars[k]):null;}catch{return null;}};
+      return {canSpin:read('CanSpin'),logicIsFreeSpin:read('Logic_IsFreeSpin'),
+       respinInProgress:read('RespinInProgress'),
+       spinBlockingFeatureIsRunning:read('SpinBlockingFeatureIsRunning'),
+       lastWinIsCounting:read('LastWinIsCounting')};
+     }).catch(()=>({}));
+     const candidates=(snap.controls||[]).filter(c=>c.hit_rect).map(c=>({
+      path:String(c.path||'').slice(0,240),
+      labels:(c.labels||[]).slice(0,4),
+      events:(c.handlers||[]).map(h=>h.event).filter(Boolean)
+     }));
+     record.bonusObservations.push({
+      elapsedAfterAckMs:Math.round(record.bonusObservations.reduce((a,b)=>a+b.waitMs,0)+intervalMs),
+      waitMs:intervalMs,flags,
+      visibleControlCount:candidates.length,
+      controls:candidates.filter(c=>/bonus|pick|continue|collect|free.?spin|result|intro/i.test(
+       c.path+' '+c.labels.join(' ')+' '+c.events.join(' '))).slice(0,20),
+      protocolCount:sess.network.length
+     });
+    }
+    record.screens.push(await sess.capture('bonus-observed'));
+   }
    record.status=ack?'PURCHASE_ACKED_BONUS_NOT_VERIFIED':'PURCHASE_ACK_NOT_OBSERVED';
    record.reason=ack?'Operation submitted; deliberately not assuming RNG bonus finished':
     'No matching HTTP200 doSpin/pur. Do not retry the purchase.';
