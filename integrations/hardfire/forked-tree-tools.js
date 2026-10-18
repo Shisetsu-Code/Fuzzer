@@ -95,6 +95,41 @@ export function registerTreeTools({register,z,text,controller,artifactDir,active
    })();
    return text({job_id:j.id,status:'RUNNING',artifact:j.file});
   });
+ register('pragmatic_tree_live_observe',
+  'Inspect ONE purchased live DEMO bonus without clicking; returns current screenshot, protocol state, active picks and a new decision token.',
+  {job_id:z.string().uuid(),branch_id:z.string()},true,async args=>{
+   const j=requireJob(args.job_id);
+   if(j.busy||j.status!=='AWAITING_APPROVAL')throw Error('TREE_JOB_BUSY_OR_NOT_READY');
+   j.busy=true;clearTimeout(j.timer);
+   try{
+    const result=await j.tree.observeLive(args.branch_id);
+    await store(j);return text(result);
+   }finally{j.busy=false;idle(j);}
+  });
+ register('pragmatic_tree_live_act',
+  'Execute exactly one explicitly selected current bonus pick/continuation/verification spin. No auto-picks or purchase retries.',
+  {job_id:z.string().uuid(),branch_id:z.string(),token:z.string(),
+   action_id:z.string(),reason:z.string().max(256).optional()},false,async args=>{
+   const j=requireJob(args.job_id);
+   if(j.busy||j.status!=='AWAITING_APPROVAL')throw Error('TREE_JOB_BUSY_OR_NOT_READY');
+   j.busy=true;clearTimeout(j.timer);
+   try{
+    const result=await j.tree.actLive(args.branch_id,{
+     token:args.token,action_id:args.action_id,reason:args.reason});
+    await store(j);return text(result);
+   }finally{j.busy=false;idle(j);}
+  });
+ register('pragmatic_tree_live_release',
+  'Close one isolated DEMO after success or documented blockage; save HAR and free one slot for queued branches.',
+  {job_id:z.string().uuid(),branch_id:z.string(),reason:z.string().max(256).optional()},false,async args=>{
+   const j=requireJob(args.job_id);
+   if(j.busy||j.status!=='AWAITING_APPROVAL')throw Error('TREE_JOB_BUSY_OR_NOT_READY');
+   j.busy=true;clearTimeout(j.timer);
+   try{
+    const result=await j.tree.closeLive(args.branch_id,{reason:args.reason||'EXPLICIT_RELEASE'});
+    await store(j);return text({job_id:j.id,graph:result});
+   }finally{j.busy=false;idle(j);}
+  });
  register('pragmatic_tree_close',
   'Close a forked tree job and persist its complete graph; no DEMO tabs remain owned by this job.',
   {job_id:z.string().uuid()},false,async args=>{
