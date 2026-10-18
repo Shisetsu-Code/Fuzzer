@@ -271,8 +271,35 @@ async function runBranch(config){
      record.actions.push(await sess.clickUnique(startScreen,c=>
       c.path===candidates[0].path&&(c.labels||[]).some(v=>/FREE SPINS/i.test(String(v)))));
      record.bonusContinue.clicked=true;
-     // Observe, do not send free spins or collect via protocol shortcuts.
-     await delay(25000);
+     // Observe only on Super Free Spins for now. Pilot the native STOP
+     // animation control on one reviewed Free Spins branch, once per fresh
+     // server doSpin; never submit another doSpin or select random picks.
+     if(config.id==='buy-free-spins'){
+      const untilStop=now()+80000;
+      const attempts=[];
+      let lastStoppedSequence=0;
+      while(now()<untilStop){
+       await delay(800);
+       const spins=sess.network.filter(p=>p.action==='doSpin'&&p.status===200);
+       if(spins.length<=lastStoppedSequence)continue;
+       const live=await sess.frame.evaluate(inspectDrawnButtons);
+       const stop=(live.controls||[]).filter(c=>c.hit_rect&&
+        /\/StopSpin_Button\/Collider$/.test(c.path||'')&&
+        (c.handlers||[]).some(h=>h.event==='Evt_DataToCode_Pressed_Stop'));
+       if(stop.length!==1)continue;
+       try{
+        const done=await sess.clickUnique(live,c=>c.path===stop[0].path&&
+         (c.handlers||[]).some(h=>h.event==='Evt_DataToCode_Pressed_Stop'));
+        lastStoppedSequence=spins.length;
+        attempts.push({sequence:spins.length,path:done.path,at:round(now()-began)});
+       }catch(e){
+        attempts.push({sequence:spins.length,error:String(e.message||e).slice(0,110)});
+        lastStoppedSequence=spins.length; // Never repeat a failed click for a spin.
+       }
+      }
+      record.stopPilot={approvedFrom:'Observed StageSpin stop in previous screenshot',
+       attempts,uniqueServerSpins:sess.network.filter(p=>p.action==='doSpin'&&p.status===200).length};
+     }else await delay(25000);
      const after=await sess.frame.evaluate(inspectDrawnButtons);
      const flags=await sess.frame.evaluate(()=>{
       const read=k=>{try{return globalThis.Vars?.[k]?XT.GetBool(Vars[k]):null;}catch{return null;}};
