@@ -19,6 +19,9 @@ Cuatro clientes es el límite simultáneo, NO el número total de sesiones usada
 - pragmatic_tree_approve: aprueba opciones observadas en un nodo, sin ejecutar.
 - pragmatic_tree_skip: descarta provisionalmente controles sin declararlos ausentes.
 - pragmatic_tree_run: distribuye las opciones aprobadas en hasta cuatro clientes.
+- pragmatic_tree_live_observe: observa la pantalla de un bonus vivo, con token nuevo.
+- pragmatic_tree_live_act: ejecuta una acción elegida y revalida estado/control (incluido Stop una sola vez por tirada).
+- pragmatic_tree_live_release: registra auditoría, cierra ese cliente y libera su espacio.
 - pragmatic_tree_close: guarda el árbol completo y libera recursos.
 
 Ejemplo:
@@ -28,7 +31,16 @@ La evidencia y los HAR se guardan por sesión en la carpeta forked-tree del perf
 
 ## Reglas de seguridad y cobertura
 
-Una compra aceptada mediante doSpin pur=0 HTTP 200 no es un bonus completo. Si la acción inicia un bonus, se registra OPERATION_STARTED_NEEDS_GUIDED_COMPLETION y se detiene allí: no elige picks RNG ni reenvía la compra. Para cerrar ese camino hará falta una etapa guiada con validación del retorno al juego base.
+Una compra aceptada mediante `doSpin pur=0`, HTTP 200, no es un bonus completo.
+Si una operación comienza, su arista se marca `OPERATION_PAUSED_LIVE` y la
+sesión se conserva hasta resolución guiada o cierre explícito. No se eligen
+picks de RNG automáticamente ni se reenvía la compra por ausencia de respuesta.
+
+La operación solo recibe `OPERATION_COMPLETE_VERIFIED` tras cumplir
+el verificador de regreso a base (tirada normal adicional y dos snapshots
+terminales); si se cierra antes queda `OPERATION_PENDING_CLOSED`. Una
+liquidación `doCollect` y una pantalla de resultado **son evidencia útil
+pero no terminan la verificación**.
 
 Las rutas de menú son reproducibles si siguen apareciendo los mismos controles. Los eventos RNG no se reproducen como si fueran estados deterministas.
 
@@ -72,3 +84,13 @@ tirada de verificación y dos snapshots estables posteriores. La
 integración completa con HardFire real sigue pendiente mientras el
 agente local no esté conectado. Las pruebas Playwright de cuatro
 clientes, por separado, miden ramas reales sin un LLM dentro del runner.
+
+## Estado de validación y lectura obligatoria
+
+Consultar el **[informe consolidado del 18/10/2026](estado-fuzzer-2026-10-18.md)**:
+contiene los enlaces a GitHub Actions, resultados reales de compras DEMO,
+primer `doCollect`, tiempos, condiciones de `COMPLETE` y limitaciones del
+árbol genérico. Los workflows Playwright usaron rutas de Candy Rush
+preseleccionadas mediante capturas, **no decisiones en vivo de un LLM**.
+El árbol de HardFire retiene clientes vivos, pero esa integración de navegador
+no tiene todavía una prueba de extremo a extremo real.
