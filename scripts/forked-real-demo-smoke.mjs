@@ -274,12 +274,21 @@ async function runBranch(config){
      // Observe only on Super Free Spins for now. Pilot the native STOP
      // animation control on one reviewed Free Spins branch, once per fresh
      // server doSpin; never submit another doSpin or select random picks.
-     if(config.id==='buy-free-spins'){
-      const untilStop=now()+80000;
+     if(config.kind==='purchase'){
+      const untilStop=now()+125000;
       const attempts=[];
-      let lastStoppedSequence=0;
+      let lastStoppedSequence=0,terminalSamples=0,baseCandidate=false;
       while(now()<untilStop){
-       await delay(800);
+       await delay(750);
+       const flagsNow=await sess.frame.evaluate(()=>{
+        const r=k=>{try{return globalThis.Vars?.[k]?XT.GetBool(Vars[k]):null;}catch{return null;}};
+        return {canSpin:r('CanSpin'),isFree:r('Logic_IsFreeSpin'),
+         respin:r('RespinInProgress'),blocking:r('SpinBlockingFeatureIsRunning')};
+       }).catch(()=>({}));
+       const likelyBase=flagsNow.canSpin===true&&flagsNow.isFree===false&&
+        flagsNow.respin!==true&&flagsNow.blocking!==true;
+       terminalSamples=likelyBase?terminalSamples+1:0;
+       if(terminalSamples>=3){baseCandidate=true;break;}
        const spins=sess.network.filter(p=>p.action==='doSpin'&&p.status===200);
        if(spins.length<=lastStoppedSequence)continue;
        const live=await sess.frame.evaluate(inspectDrawnButtons);
@@ -298,7 +307,8 @@ async function runBranch(config){
        }
       }
       record.stopPilot={approvedFrom:'Observed StageSpin stop in previous screenshot',
-       attempts,uniqueServerSpins:sess.network.filter(p=>p.action==='doSpin'&&p.status===200).length};
+       attempts,baseCandidate,
+       uniqueServerSpins:sess.network.filter(p=>p.action==='doSpin'&&p.status===200).length};
      }else await delay(25000);
      const after=await sess.frame.evaluate(inspectDrawnButtons);
      const flags=await sess.frame.evaluate(()=>{
