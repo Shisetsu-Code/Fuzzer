@@ -3,7 +3,7 @@
  * No page/canvas interaction after a fresh, isolated official DEMO doInit.
  * Never copy/replay an mgckey from a HAR. It must come from the live session.
  */
-const endpointPath=/^\/gs2c\/ge\/v\d+\/gameService$/;
+const endpointPath=/^\/(?:gs2c|hub-demo)\/ge\/v\d+\/gameService$/;
 const allowedHost=h=>h==='demogamesfree.pragmaticplay.net'||h.endsWith('.demogamesfree.pragmaticplay.net');
 const integer=(value,label)=>{
   if(!/^(0|[1-9]\d*)$/.test(String(value??''))||!Number.isSafeInteger(Number(value)))
