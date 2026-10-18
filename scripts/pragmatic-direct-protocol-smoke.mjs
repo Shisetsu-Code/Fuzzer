@@ -111,17 +111,31 @@ async function runBranch(pur){
   result.purchaseResponse=true;
   result.steps.push(accepted.receipt);
   result.afterPurchase=publicState(client.state);
-  result.status='RESPONSE_RECEIVED_BONUS_NOT_VERIFIED';
-  if(client.state.na==='c'){
-   const collect=planOperation(client.state,{action:'doCollect'});
+  const purchaseSignal=accepted.receipt.signals||{};
+  result.purchaseConfirmed=purchaseSignal.puri===String(pur)&&
+   purchaseSignal.purtr==='1'&&Number(purchaseSignal.fs)>0&&Number(purchaseSignal.fsmax)>0;
+  if(!result.purchaseConfirmed)throw Error('PURCHASE_NOT_CONFIRMED_BY_SERVER_SIGNALS');
+  result.status='PURCHASE_CONFIRMED_BONUS_NOT_COMPLETE';
+  // Bounded protocol continuation, no canvas events and no guessed doBonus.
+  // Only issue another spin while the last response confirms free spins active.
+  // A collect is allowed solely when the server explicitly advertises na=c.
+  const maxBonusSteps=Math.min(2,Math.max(0,Number(process.env.BONUS_STEPS||2)));
+  let lastSignals=purchaseSignal;
+  for(let step=0;step<maxBonusSteps;step++){
+   let action;
+   if(client.state.na==='c')action='doCollect';
+   else if(client.state.na==='s'&&Number(lastSignals.fs)>0&&Number(lastSignals.fsmax)>0)action='doSpin';
+   else break;
+   const next=planOperation(client.state,{action});
    const began=now();
-   const done=await sendOnce(client,collect);
-   result.timings.collectResponseMs=ms(now()-began);
-   const collected=acceptResponse(client.state,{...done,action:'doCollect'});
-   client.state=collected.next;
-   result.steps.push(collected.receipt);
-   result.afterCollect=publicState(client.state);
+   const response=await sendOnce(client,next); // never retry submitted steps
+   result.timings['bonusStep'+step+'Ms']=ms(now()-began);
+   const acceptedStep=acceptResponse(client.state,{...response,action});
+   client.state=acceptedStep.next;
+   result.steps.push(acceptedStep.receipt);
+   lastSignals=acceptedStep.receipt.signals||{};
   }
+  result.afterContinuation=publicState(client.state);
   result.browserProtocolRequests=client.actions;
  }catch(error){
   result.status='BLOCKED_OR_REJECTED';
@@ -143,12 +157,12 @@ try{
  const summary={schema:'fuzzer/pragmatic-direct-demo/v1',game:GAME,
   source:'fresh official DEMO doInit, not saved HAR session',peakContexts:selected.length,
   bootstrapUsesCatalogueUI:true,gameplayUsesVisualUI:false,elapsedMs:ms(now()-runStarted),
-  options:results.map(r=>({branch:r.branch,status:r.status,requestReceived:r.purchaseResponse,
+  options:results.map(r=>({branch:r.branch,status:r.status,requestReceived:r.purchaseResponse,confirmed:r.purchaseConfirmed??false,
    na:r.afterPurchase?.na??null,steps:r.steps.map(s=>s.action),error:r.error,timings:r.timings})),
   bonusCompletionVerified:false};
  await fs.writeFile(path.join(OUTPUT,'summary.json'),JSON.stringify(summary,null,2));
  console.log(JSON.stringify(summary,null,2));
- if(results.some(r=>!r.purchaseResponse))process.exitCode=1;
+ if(results.some(r=>!r.purchaseConfirmed))process.exitCode=1;
 }catch(error){
  console.error('DIRECT_DEMO_SMOKE_ERROR:',safeError(error));
  process.exitCode=1;
