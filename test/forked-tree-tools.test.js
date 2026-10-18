@@ -58,7 +58,7 @@ test('MCP forked tree: observe, approve four branches, dispatch, persist, releas
  assert.equal(clicks.filter(c=>c.startsWith('buy')).length,4);
  for(const held of state.graph.liveBranches){
   await methods.get('pragmatic_tree_live_release')({
-   job_id:start.job,branch_id:held.branchId,reason:'Fixture intentionally has no server ack'
+   job_id:start.job_id,branch_id:held.branchId,reason:'Fixture intentionally has no server ack'
   });
  }
  assert.equal(open,0);
