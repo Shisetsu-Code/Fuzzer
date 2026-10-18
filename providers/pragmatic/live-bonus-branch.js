@@ -131,6 +131,7 @@ export function createLiveBonusBranch(session,{
     if(!purchased||verificationSequence!==null||readyTicks<2||!normalControlsReady(fresh))
      return {status:'SPIN_NOT_READY',clicked:false,view:build(fresh)};
     verificationSequence=fresh.operation.sequence;
+    readyTicks=0; // Require two stable post-verification observations, never carry pre-spin ticks.
     verificationStartedAt=now();
     answer=await session.spinNormal(fresh);
    }else if(selected.kind==='advance'){
