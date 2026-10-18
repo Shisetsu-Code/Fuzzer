@@ -23,6 +23,13 @@ const branches=[
  {id:'buy-super-2',kind:'purchase',option:3,label:/SUPER FREE SPINS 2/i,price:'$1,500.00',pur:'2'},
  {id:'special-bets',kind:'special-bets'}
 ];
+// Optionally limit a workflow to one approved branch to benchmark CPU
+// contention independently of the four-client full fanout.
+const selectedIds=(process.env.BRANCH_IDS||'').split(',').map(x=>x.trim()).filter(Boolean);
+const selectedBranches=selectedIds.length?branches.filter(b=>selectedIds.includes(b.id)):branches;
+if(!selectedBranches.length||selectedIds.some(id=>!selectedBranches.some(b=>b.id===id)))
+ throw Error('Unknown approved branch ID in BRANCH_IDS');
+const stopBudgetMs=Math.min(300000,Math.max(30000,Number(process.env.STOP_BUDGET_MS||125000)));
 let opened=0,peak=0,complete=0;
 const t0=now();
 const browser=await chromium.launch({headless:true,args:['--disable-dev-shm-usage','--no-sandbox']});
@@ -275,7 +282,7 @@ async function runBranch(config){
      // animation control on one reviewed Free Spins branch, once per fresh
      // server doSpin; never submit another doSpin or select random picks.
      if(config.kind==='purchase'){
-      const untilStop=now()+125000;
+      const untilStop=now()+stopBudgetMs;
       const attempts=[];
       let lastStoppedSequence=0,terminalSamples=0,baseCandidate=false;
       while(now()<untilStop){
@@ -352,7 +359,7 @@ try{
   await discovery.page.screenshot({path:file,type:'jpeg',quality:60});
   console.log('FORK_DISCOVERY '+JSON.stringify({state:classifyDrawnState(initial),controls:initial.controls?.length||0}));
  }finally{await discovery.context.close();opened--;}
- await Promise.all(branches.map(runBranch));
+ await Promise.all(selectedBranches.map(runBranch));
 }finally{await browser.close();}
 const totalMs=round(now()-t0);
 const summary={schema:'fuzzer/public-demo-four-forks/v1',game:GAME,peakConcurrent:peak,
