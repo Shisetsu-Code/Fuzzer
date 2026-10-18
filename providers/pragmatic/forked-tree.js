@@ -261,6 +261,13 @@ export function createForkTree({makeSession,wait,onProgress=async()=>{},
   if(running||closed)throw Error('TREE_NOT_AVAILABLE');
   const entry=live.get(branchId);if(!entry)throw Error('UNKNOWN_LIVE_BRANCH');
   const verified=entry.bonus.peek().verified;
+  // Persist full decision trace/evidence BEFORE releasing the only live
+  // browser that can prove what happened inside this particular bonus.
+  const audit=entry.bonus.peek();
+  entry.edge.bonusAudit={verified:audit.verified,
+   purchaseAcknowledged:audit.purchaseAcknowledged,
+   actionsExecuted:audit.actionsExecuted,verificationSequence:audit.verificationSequence,
+   history:audit.history.map(step=>({...step}))};
   entry.bonus.close();
   entry.edge.status=verified?'OPERATION_COMPLETE_VERIFIED':'OPERATION_PENDING_CLOSED';
   if(!verified)errors.push({nodeId:entry.parentId,key:entry.controlKey,
