@@ -49,11 +49,17 @@ test('four approved buys fork into 4 isolated clients with independent HAR ident
  assert.equal(r.events.filter(e=>e.status==='DISCOVERED').length,1);
  tree.approve(menu.id,menu.controls.map(o=>o.key));
  r=await tree.run();
- assert.equal(r.events.filter(e=>e.status==='OPERATION_STARTED_NEEDS_GUIDED_COMPLETION').length,4);
+ assert.equal(r.events.filter(e=>e.status==='OPERATION_PAUSED_LIVE').length,4);
  assert.equal(r.peakParallel,4);
- assert.equal(f.metrics().active,0);
+ assert.equal(f.metrics().active,4);
+ assert.equal(r.liveBranches.length,4);
  assert.equal(f.metrics().sessions,6); // discover+open+4 branches
- assert.equal(f.metrics().closes.length,6);
+ assert.equal(f.metrics().closes.length,2);
+ // All four clients retain their bonus, without opening any fifth tab.
+ const held=await tree.run();
+ assert.equal(held.liveBranches.length,4);assert.equal(f.metrics().peak,4);
+ for(const b of [...r.liveBranches])await tree.closeLive(b.branchId,{reason:'TEST_PENDING'});
+ assert.equal(f.metrics().active,0);assert.equal(f.metrics().closes.length,6);
  assert.equal(f.metrics().clicked.filter(x=>x.key==='open').length,5);
  assert(r.nodes.every(n=>n.route.every(step=>step.from&&step.to)));
  assert.equal(r.complete,false);
@@ -73,6 +79,8 @@ test('a branch may reveal nested children; agent approves only observed next act
  r=await tree.run();
  assert.equal(r.events.filter(e=>e.operationStarted).length,2);
  assert.equal(r.nodes.length,3);
+ assert.equal(f.metrics().active,2);
+ for(const b of r.liveBranches)await tree.closeLive(b.branchId,{reason:'TEST_CLOSE'});
  assert.equal(f.metrics().active,0);
 });
 test('unknown, ambiguous and duplicate control approvals fail without clicking',async()=>{
