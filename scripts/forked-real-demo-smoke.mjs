@@ -91,14 +91,53 @@ async function boot(dir){
    await page.screenshot({path:file,type:'jpeg',quality:65,timeout:12000});
    return path.basename(file);
   }
+  async function approvedIntroClose(){
+   // The approved control is INTRO CLOSE only, never purchase/spin. Some
+   // Pragmatic canvases draw the introduction while reporting base colliders.
+   return frame.evaluate(()=>{
+    const roots=globalThis.globalRuntime?.sceneRoots||[];
+    if(!globalThis.XTButton)return {clicked:false,reason:'XT_BUTTON_NOT_AVAILABLE'};
+    const found=[];
+    for(const root of roots)for(const b of root.GetComponentsInChildren(XTButton,true)||[]){
+     if(b.gameObject?.activeInHierarchy!==true||b.xtEnabled===false)continue;
+     const name=String(b.gameObject?.name||''),event=String(b.eventToCode?.name||'');
+     if(event==='Evt_DataToCode_IntroClosePressed'||/PlayButtonIntro/i.test(name))
+      found.push(b);
+    }
+    if(found.length===1){
+     const b=found[0];
+     if(typeof b.OnClick==='function'){b.OnClick();return {clicked:true,strategy:'observed-intro-OnClick'};}
+     if(typeof b.OnPress==='function'){b.OnPress(true);b.OnPress(false);return {clicked:true,strategy:'observed-intro-OnPress'};}
+    }
+    const read=k=>{try{return globalThis.Vars?.[k]?XT.GetBool(Vars[k]):null;}catch{return null;}};
+    if(found.length===0&&(read('ShouldDisplayIntro')===true||read('GameHasIntro')===true)&&
+       globalThis.Vars?.Evt_DataToCode_IntroClosePressed&&typeof XT.TriggerEvent==='function'){
+     XT.TriggerEvent(Vars.Evt_DataToCode_IntroClosePressed);
+     return {clicked:true,strategy:'explicit-validated-intro-event'};
+    }
+    return {clicked:false,reason:'NO_UNIQUE_ACTIVE_INTRO_CONTROL',count:found.length,
+     gameHasIntro:read('GameHasIntro'),shouldDisplayIntro:read('ShouldDisplayIntro')};
+   });
+  }
   async function clickUnique(snapshot,predicate){
    const candidates=(snapshot.controls||[]).filter(c=>c.hit_rect&&predicate(c));
-   if(candidates.length!==1)throw Error('CANDIDATE_COUNT_'+candidates.length);
+   const equivalent=(a,b)=>{
+    const ra=a.hit_rect,rb=b.hit_rect;
+    const group=path=>String(path||'').replace(/\/Colliders\/Collider(?:0|12)$/,'/Colliders/Collider');
+    return group(a.path)===group(b.path)&&
+     JSON.stringify(a.labels||[])===JSON.stringify(b.labels||[])&&
+     Math.abs(ra.x-rb.x)<2&&Math.abs(ra.y-rb.y)<2&&
+     Math.abs(ra.width-rb.width)<2&&Math.abs(ra.height-rb.height)<2;
+   };
+   if(!candidates.length)throw Error('CANDIDATE_COUNT_0');
+   if(candidates.length>1&&!candidates.every(c=>equivalent(c,candidates[0])))
+    throw Error('CANDIDATE_COUNT_'+candidates.length);
+   const chosen=candidates[0];
    // Revalidate current canvas before touching.
    const current=await frame.evaluate(inspectDrawnButtons);
-   const target=(current.controls||[]).filter(c=>c.hit_rect&&c.path===candidates[0].path);
+   const target=(current.controls||[]).filter(c=>c.hit_rect&&c.path===chosen.path);
    if(target.length!==1)throw Error('CONTROL_CHANGED');
-   const point=chooseHitPoint(target[0],current.controls||[]);
+   const point=chooseHitPoint(target[0],(current.controls||[]).filter(c=>!equivalent(c,chosen)||c.path===chosen.path));
    if(!point)throw Error('AMBIGUOUS_HIT');
    const rect=await (await frame.frameElement()).boundingBox();
    const size=await frame.evaluate(()=>({width:innerWidth,height:innerHeight}));
@@ -110,7 +149,7 @@ async function boot(dir){
    await page.mouse.click(p.x,p.y);
    return {path:target[0].path,labels:target[0].labels||[]};
   }
-  return {context,page,frame,network,waitKinds,capture,clickUnique};
+  return {context,page,frame,network,waitKinds,capture,clickUnique,approvedIntroClose};
  }catch(e){
   if(context){await context.close().catch(()=>{});opened--;}
   throw e;
@@ -127,12 +166,15 @@ async function runBranch(config){
   record.timings.bootstrap=round(now()-began);
   let scan=await sess.waitKinds(['INTRO','BASE_CONTROLS']);
   record.screens.push(await sess.capture('entry'));
-  if(classifyDrawnState(scan)==='INTRO'){
-   record.actions.push(await sess.clickUnique(scan,c=>
-    /\/IntroScreen\//i.test(c.path||'')&&(
-     /PlayButtonIntro/i.test(c.name||'')||
-     (c.handlers||[]).some(h=>h.event==='Evt_DataToCode_IntroClosePressed'))));
+  // Agent-approved known intro CLOSE from prior screenshots. Always check the
+  // active event/control even if base colliders are visible behind the overlay.
+  const intro=await sess.approvedIntroClose();
+  record.introProbe=intro;
+  if(intro.clicked){
+   record.actions.push({kind:'intro-close',strategy:intro.strategy});
    scan=await sess.waitKinds(['BASE_CONTROLS']);
+  }else if(classifyDrawnState(scan)==='INTRO'){
+   throw Error('VISIBLE_INTRO_NOT_DISMISSED:'+intro.reason);
   }
   record.screens.push(await sess.capture('base'));
   if(config.kind==='special-bets'){
