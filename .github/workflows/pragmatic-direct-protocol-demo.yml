@@ -15,7 +15,7 @@ jobs:
     env:
       OUTPUT: outputs/direct-protocol-demo
       PUR_OPTIONS: 0,1
-      BONUS_STEPS: 35
+      BONUS_STEPS: 100
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
