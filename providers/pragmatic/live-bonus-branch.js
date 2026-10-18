@@ -14,14 +14,14 @@ export function createLiveBonusBranch(session,{
   throw TypeError('A live session and purchase snapshots are required');
  let current=initial,view=null,closed=false,busy=false,actions=0,readyTicks=0;
  let purchased=false,verificationStartedAt=null,verificationSequence=null,verified=false;
- const history=[],initialSequence=before.operation?.sequence||0;
+ const history=[],stoppedSpins=new Set(),initialSequence=before.operation?.sequence||0;
  const initialPurchase=initial.operation?.transaction?.kind==='purchase';
  const value=()=>({
   status:closed?'CLOSED':view?.status||'WAITING_FOR_PURCHASE_ACK',
   purchaseAcknowledged:purchased,
   purchaseSubmission:initialPurchase?initial.operation?.transaction:null,
   verificationStartedAt,verificationSequence,verified,
-  actionsExecuted:actions,history:[...history],view
+  actionsExecuted:actions,stoppedSpinSequences:[...stoppedSpins],history:[...history],view
  });
  const record=async data=>{history.push(data);await onRecord(value());};
  function stateFor(snapshot){
@@ -55,6 +55,19 @@ export function createLiveBonusBranch(session,{
    acts.push({action_id:'pick:'+key,kind:'picker',key,
     label:String(choice.name||choice.labels?.join(' ')||'Pick').slice(0,120),
     event:choice.event,priority:100});
+  }
+  if(!choiceList.length&&status==='BONUS_ACTIVE'&&snapshot.flags?.stopActive===true&&purchased){
+   // Explicitly approved Stop only once per server spin, never resend doSpin.
+   // Prefer the leaf collider over its outer duplicate hit area.
+   const stops=(snapshot.controls||[]).filter(c=>c.fingerprint&&
+    (c.handlers||[]).some(h=>h.event==='Evt_DataToCode_Pressed_Stop'));
+   const specific=stops.filter(c=>/\/StopSpin_Button\/Collider$/.test(c.key||''));
+   for(const c of (specific.length?specific:stops)){
+    if(stoppedSpins.has(snapshot.operation?.sequence||0))break;
+    acts.push({action_id:'stop:'+c.key,kind:'stop',key:c.key,
+     fingerprint:c.fingerprint,label:'Stop current observed DEMO animation',
+     priority:90});
+   }
   }
   if(!choiceList.length&&verificationSequence===null&&purchased){
    for(const c of snapshot.controls||[]){
@@ -127,6 +140,17 @@ export function createLiveBonusBranch(session,{
     const button=(fresh.controls||[]).find(x=>x.key===selected.key&&x.fingerprint===selected.fingerprint);
     if(!button)return {status:'CONTROL_CHANGED',clicked:false,view:build(fresh)};
     answer=await session.click(button);
+   }else if(selected.kind==='stop'){
+    const sequence=fresh.operation?.sequence||0;
+    if(!purchased||fresh.flags?.stopActive!==true||
+       fresh.flags?.logicIsFreeSpin!==true||stoppedSpins.has(sequence))
+     return {status:'STOP_UNAVAILABLE_OR_ALREADY_SENT',clicked:false,view:build(fresh)};
+    const control=(fresh.controls||[]).filter(c=>c.key===selected.key&&
+     c.fingerprint===selected.fingerprint&&
+     (c.handlers||[]).some(h=>h.event==='Evt_DataToCode_Pressed_Stop'));
+    if(control.length!==1)return {status:'STOP_CONTROL_CHANGED',clicked:false,view:build(fresh)};
+    answer=await session.click(control[0]);
+    if(answer?.ok!==false)stoppedSpins.add(sequence);
    }else if(selected.kind==='spin'){
     if(!purchased||verificationSequence!==null||readyTicks<2||!normalControlsReady(fresh))
      return {status:'SPIN_NOT_READY',clicked:false,view:build(fresh)};
