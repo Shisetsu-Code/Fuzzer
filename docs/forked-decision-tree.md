@@ -33,3 +33,42 @@ Una compra aceptada mediante doSpin pur=0 HTTP 200 no es un bonus completo. Si l
 Las rutas de menú son reproducibles si siguen apareciendo los mismos controles. Los eventos RNG no se reproducen como si fueran estados deterministas.
 
 En GitHub Actions, las pruebas del algoritmo utilizan sesiones simuladas con cuatro clientes concurrentes. El modo de decisión dinámico necesita un agente conectado al navegador; los runners no tienen un LLM integrado por defecto.
+
+
+## Continuación de compras con sesión viva
+
+A diferencia del modo anterior, cuando una rama envía un `doSpin pur` **no se
+cierra la pestaña**. Se guarda con identificador `branchId` como
+`OPERATION_PAUSED_LIVE`. Estas pestañas cuentan para el máximo de
+cuatro sesiones abiertas. Si las cuatro están ocupadas, las demás tareas
+aprobadas permanecen en cola.
+
+El agente puede inspeccionar la pantalla de esa misma sesión mediante
+`pragmatic_tree_live_observe({job_id,branch_id})`, y elegir una única
+acción autorizada con
+`pragmatic_tree_live_act({job_id,branch_id,token,action_id,reason})`.
+
+Las opciones pueden ser un picker visible, un control Continue/Collect,
+una continuación explícita del proveedor o un clic al centro cuando el
+overlay lo justifique visualmente. **No se elige automáticamente ninguna
+alternativa** y nunca se reenvía una compra por timeout.
+
+La rama solo queda `OPERATION_COMPLETE_VERIFIED` cuando hay:
+1. Compra DEMO confirmada por el servidor.
+2. Ausencia de free spins, respins, selección pendiente, cascadas o menús.
+3. Dos observaciones del estado base preparado.
+4. Una tirada normal de verificación aprobada por el agente y confirmada
+   por el servidor.
+5. Dos nuevas observaciones estables posteriores a esa tirada.
+
+Finalmente `pragmatic_tree_live_release({job_id,branch_id,reason})`
+guarda la auditoría de decisiones dentro de la arista del árbol, cierra
+la pestaña y libera el slot. Si faltó alguna prueba, queda
+`OPERATION_PENDING_CLOSED` con motivo explícito, **nunca COMPLETE**.
+
+En GitHub Actions hay pruebas deterministas del supervisor de bonus,
+incluyendo pickers, tokens caducados, respuesta del servidor ausente,
+tirada de verificación y dos snapshots estables posteriores. La
+integración completa con HardFire real sigue pendiente mientras el
+agente local no esté conectado. Las pruebas Playwright de cuatro
+clientes, por separado, miden ramas reales sin un LLM dentro del runner.
