@@ -119,13 +119,14 @@ async function runBranch(pur){
   // Bounded protocol continuation, no canvas events and no guessed doBonus.
   // Only issue another spin while the last response confirms free spins active.
   // A collect is allowed solely when the server explicitly advertises na=c.
-  const maxBonusSteps=Math.min(60,Math.max(0,Number(process.env.BONUS_STEPS||2)));
+  const maxBonusSteps=Math.min(120,Math.max(0,Number(process.env.BONUS_STEPS||2)));
   let lastSignals=purchaseSignal;
   for(let step=0;step<maxBonusSteps;step++){
    let action;
    if(client.state.na==='c')action='doCollect';
    else if(client.state.na==='s'&&Number(lastSignals.fs)>0&&Number(lastSignals.fsmax)>0)action='doSpin';
    else break;
+   const beforeSignals=lastSignals;
    const next=planOperation(client.state,{action});
    const began=now();
    const response=await sendOnce(client,next); // never retry submitted steps
@@ -134,6 +135,14 @@ async function runBranch(pur){
    client.state=acceptedStep.next;
    result.steps.push(acceptedStep.receipt);
    lastSignals=acceptedStep.receipt.signals||{};
+   // Free-spin stage ended (fs field absent), server requested collect,
+   // and the collect reply restored na=s: protocol-level settlement.
+   if(action==='doCollect'&&client.state.na==='s'&&
+      beforeSignals.fs===undefined&&result.steps.some(s=>s.action==='doSpin'&&s.nextAction==='c')){
+    result.serverSettled=true;
+    result.status='BONUS_SETTLED_VIA_PROTOCOL_BASE_NOT_VERIFIED';
+    break;
+   }
   }
   result.afterContinuation=publicState(client.state);
   result.lastBonusSignals=lastSignals;
@@ -159,12 +168,12 @@ try{
  const summary={schema:'fuzzer/pragmatic-direct-demo/v1',game:GAME,
   source:'fresh official DEMO doInit, not saved HAR session',peakContexts:selected.length,
   bootstrapUsesCatalogueUI:true,gameplayUsesVisualUI:false,elapsedMs:ms(now()-runStarted),
-  options:results.map(r=>({branch:r.branch,status:r.status,requestReceived:r.purchaseResponse,confirmed:r.purchaseConfirmed??false,
+  options:results.map(r=>({branch:r.branch,status:r.status,requestReceived:r.purchaseResponse,confirmed:r.purchaseConfirmed??false,serverSettled:r.serverSettled??false,
    na:r.afterPurchase?.na??null,steps:r.steps.map(s=>s.action),error:r.error,timings:r.timings})),
   bonusCompletionVerified:false};
  await fs.writeFile(path.join(OUTPUT,'summary.json'),JSON.stringify(summary,null,2));
  console.log(JSON.stringify(summary,null,2));
- if(results.some(r=>!r.purchaseConfirmed))process.exitCode=1;
+ if(results.some(r=>!r.purchaseConfirmed||!r.serverSettled))process.exitCode=1;
 }catch(error){
  console.error('DIRECT_DEMO_SMOKE_ERROR:',safeError(error));
  process.exitCode=1;
